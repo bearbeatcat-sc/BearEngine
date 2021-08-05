@@ -1,0 +1,8 @@
+﻿#RenderingParams,#R,#G,#B,#A,
+#FluidColor,0.573529,0.840086,1.000000,1.000000,
+#SpecularLight,1.000000,1.000000,1.000000,0.556863,
+#AmbientLight,0.100000,0.100000,0.100000,0.100000,
+#DIffuseLight,0.616160,0.990196,0.354335,1.000000,
+,,,,
+#BlurParams,#Gaus,#Scale,#DepthFallOff,#FilterRadius,
+Prop,4.000000,0.293000,1.200000,8.000000,
