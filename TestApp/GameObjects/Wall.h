@@ -14,7 +14,7 @@ class Wall
 	:public Actor
 {
 public:
-	Wall(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& scale, InkManager* pInkManager);
+	Wall(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& scale);
 	~Wall();
 
 private:
@@ -25,7 +25,6 @@ private:
 
 private:
 	AABBCollisionComponent* m_pCollisionComponent;
-	InkManager* m_pInkManager;
 };
 
 #endif

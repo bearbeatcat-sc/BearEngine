@@ -4,17 +4,15 @@
 #include "ParticleActionManager.h"
 #include "../DirectX/DirectXGraphics.h"
 #include "../DirectX/DirectXDevice.h"
-#include "FluidParticleAction.h"
-#include "../DirectX/Core/Buffer.h"
 #include "../DirectX/Core/EffectManager.h"
 #include "../DirectX/Core/ShaderManager.h"
+#include "NormalParticleAction.h"
 
 ParticleManager::ParticleManager()
 {
 	m_ParticleActionManager = new ParticleActionManager();
 	GenerateHeap();
 	GenereteHandles();
-	InitFluidDepthPipeLine();
 	m_pCommandList = DirectXGraphics::GetInstance().GetCommandList();
 }
 
@@ -51,7 +49,7 @@ void ParticleManager::DeleteParticles()
 void ParticleManager::Draw()
 {
 	std::string psoName = "";
-	PSO* pso;	
+	PSO* pso;
 	ID3D12GraphicsCommandList* tempCommand = DirectXGraphics::GetInstance().GetCommandList();
 	auto heap = m_Heap.Get();
 
@@ -68,37 +66,14 @@ void ParticleManager::Draw()
 			tempCommand->SetPipelineState(pso->pso.Get());
 			tempCommand->SetGraphicsRootSignature(pso->rootSignature.Get());
 		}
-		
+
 		tempCommand->SetDescriptorHeaps(1, &heap);
 
-		if (emmit->GetDrawParticleMode() == ParticleEmitter::DrawParticleMode::DrawParticleMode_FluidDepth)
-		{
-			emmit->DrawWall();
-			continue;
-		}
-		
+
 		emmit->Draw();
 	}
 }
 
-void ParticleManager::ZbufferDraw()
-{
-	std::string psoName = "";
-	ID3D12GraphicsCommandList* tempCommand = DirectXGraphics::GetInstance().GetCommandList();
-	auto heap = m_Heap.Get();
-
-
-	tempCommand->SetPipelineState(m_DepthPSO.pso.Get());
-	tempCommand->SetGraphicsRootSignature(m_DepthPSO.rootSignature.Get());
-
-	for (auto& emmit : m_ParticleEmitters)
-	{
-		if (!emmit->GetDrawFlag()) continue;
-
-		tempCommand->SetDescriptorHeaps(1, &heap);
-		emmit->Draw();
-	}
-}
 
 void ParticleManager::AddParticleEmiiter(std::shared_ptr<ParticleEmitter> emiiter)
 {
@@ -135,7 +110,7 @@ void ParticleManager::DeleteAll()
 
 void ParticleManager::AddAction(std::shared_ptr<ParticleAction> action, const std::string& actionName)
 {
-	m_ParticleActionManager->AddAction(action,actionName);
+	m_ParticleActionManager->AddAction(action, actionName);
 }
 
 void ParticleManager::AddSequence(std::shared_ptr<ParticleSequence> sequence)
@@ -174,15 +149,10 @@ void ParticleManager::UpdateEmitter()
 		auto actionName = emmit->GetActionName();
 		auto action = m_ParticleActionManager->GetAction(actionName);
 
-		if(emmit->GetDrawParticleMode() == ParticleEmitter::DrawParticleMode_FluidDepth)
-		{
-			auto fluidAction = std::dynamic_pointer_cast<FluidParticleAction>(action);
-			emmit->UpdateFluidParticle(fluidAction, m_pCommandList);
+		const std::shared_ptr<NormalParticleAction> normalAction = std::static_pointer_cast<NormalParticleAction>(action);
 
-		}
-		
 		// 通常のパーティクル描画		
-		//emmit->UpdateNormalParticle(action, m_pCommandList);
+		emmit->UpdateNormalParticle(normalAction, m_pCommandList);
 	}
 
 }
@@ -260,117 +230,3 @@ void ParticleManager::GenereteHandles()
 	}
 }
 
-bool ParticleManager::InitFluidDepthPipeLine()
-{
-	CD3DX12_DESCRIPTOR_RANGE1 ranges[2];
-	ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
-	ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
-
-	CD3DX12_ROOT_PARAMETER1 rootParameters[3];
-	// 行列用
-	rootParameters[0].InitAsConstantBufferView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC, D3D12_SHADER_VISIBILITY_ALL);
-	// コンピュートシェーダーでの演算結果
-	rootParameters[1].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_VERTEX);
-	// テクスチャ
-	rootParameters[2].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_PIXEL);
-
-
-	D3D12_BLEND_DESC blendDesc = {};
-	blendDesc.AlphaToCoverageEnable = false;
-	blendDesc.IndependentBlendEnable = true;
-
-	D3D12_RENDER_TARGET_BLEND_DESC renderTargetBlendDesc = {};
-	renderTargetBlendDesc.BlendEnable = true;
-
-	renderTargetBlendDesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
-	renderTargetBlendDesc.SrcBlendAlpha = D3D12_BLEND_SRC_ALPHA;
-	renderTargetBlendDesc.DestBlendAlpha = D3D12_BLEND_DEST_ALPHA;
-
-	renderTargetBlendDesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-	renderTargetBlendDesc.BlendOp = D3D12_BLEND_OP_ADD;
-	renderTargetBlendDesc.SrcBlend = D3D12_BLEND_ONE;
-	renderTargetBlendDesc.DestBlend = D3D12_BLEND_ONE;
-
-
-	blendDesc.RenderTarget[0] = renderTargetBlendDesc;
-
-	D3D12_RENDER_TARGET_BLEND_DESC renderTargetBlendDesc2 = {};
-	renderTargetBlendDesc2.BlendEnable = false;
-
-	renderTargetBlendDesc2.BlendOpAlpha = D3D12_BLEND_OP_ADD;
-	renderTargetBlendDesc2.SrcBlendAlpha = D3D12_BLEND_SRC_ALPHA;
-	renderTargetBlendDesc2.DestBlendAlpha = D3D12_BLEND_DEST_ALPHA;
-
-	renderTargetBlendDesc2.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-	renderTargetBlendDesc2.BlendOp = D3D12_BLEND_OP_ADD;
-	renderTargetBlendDesc2.SrcBlend = D3D12_BLEND_ONE;
-	renderTargetBlendDesc2.DestBlend = D3D12_BLEND_ONE;
-	
-	blendDesc.RenderTarget[1] = renderTargetBlendDesc2;
-
-	D3D12_INPUT_ELEMENT_DESC inputLayout[] = {
-		{ "COLOR",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,D3D12_APPEND_ALIGNED_ELEMENT,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0 },
-	};
-
-	D3D12_RASTERIZER_DESC rasterizeDesc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-
-	D3D12_STATIC_SAMPLER_DESC samplerDesc = CD3DX12_STATIC_SAMPLER_DESC(0);
-
-	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
-	rootSignatureDesc.Init_1_1(_countof(rootParameters), rootParameters, 1, &samplerDesc, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
-
-	// テスト用
-	ID3DBlob* vertexShaderBlob = ShaderManager::GetInstance().GetShader("FluidDepthVertexShader");
-	ID3DBlob* pixelShaderBlob = ShaderManager::GetInstance().GetShader("FluidDepthPixelShader");
-	ID3DBlob* geomtryShaderBlob = ShaderManager::GetInstance().GetShader("FluidDepthGeometryShader");
-
-
-	//PSOの作成
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC gpipeline{};
-	gpipeline.VS = CD3DX12_SHADER_BYTECODE(vertexShaderBlob);
-	gpipeline.PS = CD3DX12_SHADER_BYTECODE(pixelShaderBlob);
-	gpipeline.GS = CD3DX12_SHADER_BYTECODE(geomtryShaderBlob);
-
-	gpipeline.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
-	gpipeline.RasterizerState = rasterizeDesc;
-	gpipeline.BlendState = blendDesc;
-
-	gpipeline.InputLayout.pInputElementDescs = inputLayout;
-	gpipeline.InputLayout.NumElements = _countof(inputLayout);
-
-	gpipeline.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
-
-	gpipeline.NumRenderTargets = 2;
-	gpipeline.RTVFormats[0] = DXGI_FORMAT_R32_FLOAT;
-	gpipeline.RTVFormats[1] = DXGI_FORMAT_R32_FLOAT;
-	gpipeline.SampleDesc.Count = 1;
-
-	gpipeline.DepthStencilState.DepthEnable = true;
-	gpipeline.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-	gpipeline.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
-	gpipeline.DSVFormat = DXGI_FORMAT_D32_FLOAT;
-
-	ID3DBlob* rootSigBlob;
-	ID3DBlob* errorBlob;
-
-	if (FAILED(D3DX12SerializeVersionedRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1_0, &rootSigBlob, &errorBlob)))
-	{
-		return false;
-	}
-
-	if (FAILED(DirectXDevice::GetInstance().GetDevice()->CreateRootSignature(0, rootSigBlob->GetBufferPointer(), rootSigBlob->GetBufferSize(), IID_PPV_ARGS(&m_DepthPSO.rootSignature))))
-	{
-		return false;
-	}
-
-	rootSigBlob->Release();
-
-
-	gpipeline.pRootSignature = m_DepthPSO.rootSignature.Get();
-	if (FAILED(DirectXDevice::GetInstance().GetDevice()->CreateGraphicsPipelineState(&gpipeline, IID_PPV_ARGS(&m_DepthPSO.pso))))
-	{
-		return false;
-	}
-
-	return true;
-}

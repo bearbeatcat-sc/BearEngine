@@ -11,9 +11,9 @@
 
 
 Sprite::Sprite(XMFLOAT2 anchorpoint, const std::string& effectName, int drawOreder)
-	:m_archopoint(anchorpoint), m_rotate(0.0f),m_Tex_x(0), m_Tex_y(0)
-	,m_DestroyFlag(false),m_Color(1,1,1,1), m_isFlipX(false), m_isFlipY(false),
-	m_DrawOrder(drawOreder),m_isDraw(true), m_IsUpdateTexture(false)
+	:m_archopoint(anchorpoint), m_rotate(0.0f), m_Tex_x(0), m_Tex_y(0)
+	, m_DestroyFlag(false), m_Color(1, 1, 1, 1), m_isFlipX(false), m_isFlipY(false),
+	m_DrawOrder(drawOreder), m_isDraw(true), m_IsUpdateTexture(false)
 {
 }
 
@@ -71,7 +71,7 @@ void Sprite::SetEffectName(const std::string& effectName)
 	m_EffectName = effectName;
 }
 
-void Sprite::SetFlip(bool xFlag,bool yFlag)
+void Sprite::SetFlip(bool xFlag, bool yFlag)
 {
 	m_isFlipX = xFlag;
 	m_isFlipY = yFlag;
@@ -84,7 +84,7 @@ void Sprite::SetTextureRange(float tex_x, float tex_y, float tex_Width, float te
 	m_Tex_x = tex_x;
 	m_Tex_y = tex_y;
 	m_Tex_Width = tex_Width;
-	m_Tex_Height = tex_Height;	
+	m_Tex_Height = tex_Height;
 
 	m_Size.x = tex_Width;
 	m_Size.y = tex_Height;
@@ -144,7 +144,7 @@ void Sprite::SetUpdateTextureFlag(bool flag)
 	m_IsUpdateTexture = flag;
 }
 
-bool Sprite::GetUpdateTextureFlag ()
+bool Sprite::GetUpdateTextureFlag()
 {
 	return m_IsUpdateTexture;
 }
@@ -249,6 +249,10 @@ void Sprite::UpdateVertexBuff()
 		{{right,top,0.0f},{1.0f,0.0f}},// ç∂â∫
 	};
 
+	m_VertexBuffer = std::make_shared<Buffer>();
+	UINT buffSize = sizeof(vertices);
+	ID3D12Resource* vertBuff = m_VertexBuffer->init(D3D12_HEAP_TYPE_UPLOAD, buffSize, D3D12_RESOURCE_STATE_GENERIC_READ);
+
 	auto textureData = m_TextureBuffer->GetDesc();
 	float tex_left = m_Tex_x / textureData.Width;
 	float tex_right = (m_Tex_x + m_Tex_Width) / textureData.Width;
@@ -269,7 +273,6 @@ void Sprite::UpdateVertexBuff()
 
 
 	Vertex* vertMap = nullptr;
-	auto vertBuff = m_VertexBuffer->getBuffer();
 
 	if (FAILED(vertBuff->Map(0, nullptr, (void**)&vertMap)))
 	{
@@ -282,6 +285,10 @@ void Sprite::UpdateVertexBuff()
 	}
 
 	vertBuff->Unmap(0, nullptr);
+
+	m_vbView.BufferLocation = vertBuff->GetGPUVirtualAddress();
+	m_vbView.SizeInBytes = sizeof(vertices);
+	m_vbView.StrideInBytes = sizeof(vertices[0]);
 }
 
 
@@ -296,7 +303,7 @@ void Sprite::GenerateIndexBuff()
 		2,1,3
 	};
 
-	
+
 	m_IndexBuffer = std::make_shared<Buffer>();
 	UINT buffSize = sizeof(indices);
 	ID3D12Resource* indexBuff = m_IndexBuffer->init(D3D12_HEAP_TYPE_UPLOAD, buffSize, D3D12_RESOURCE_STATE_GENERIC_READ);

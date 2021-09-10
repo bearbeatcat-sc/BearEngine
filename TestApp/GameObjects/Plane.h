@@ -17,7 +17,7 @@ class Plane
 	:public Actor
 {
 public:
-	Plane(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& scale, InkManager* pInkManager);
+	Plane(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& scale);
 	~Plane();
 	void SetColor(const SimpleMath::Color& color);
 	void SetDrawType(MeshDrawer::DrawType drawType);
@@ -30,7 +30,6 @@ private:
 
 private:
 	std::shared_ptr<MeshComponent> m_pMeshComponent;
-	InkManager* m_pInkManager;
 	
 	SimpleMath::Vector3 mScale;
 	MeshDrawer::DrawType mDrawType;

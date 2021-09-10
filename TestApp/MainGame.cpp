@@ -28,8 +28,7 @@
 
 #include "Utility/Timer.h"
 
-#include "GameObjects/InkManager.h"
-#include "GameObjects/Player.h"
+
 #include "GameObjects/Wall.h"
 
 MainGame::MainGame()
@@ -105,8 +104,7 @@ void MainGame::Init()
 	CollisionTagManagaer::GetInstance().AddTag("Object", objectTagTable);
 	CollisionTagManagaer::GetInstance().AddTag("Ball",ballTagTable);
 
-	m_pInkManager = new InkManager(60000);
-	ActorManager::GetInstance().AddActor(m_pInkManager);
+
 	
 
 	//m_GPUParticleEmitter = std::make_shared<ParticleEmitter>("ParticleCubeEffect", "Action1");
@@ -166,14 +164,12 @@ void MainGame::Init()
 	mSpehere->SetRotation(Quaternion::CreateFromYawPitchRoll(30.0f, 0, 0));
 	ActorManager::GetInstance().AddActor(mSpehere);
 
-	auto flor = new Flor(Vector3::Zero, Vector3::Zero, m_pInkManager);
+	auto flor = new Flor(Vector3::Zero, Vector3::Zero);
 	ActorManager::GetInstance().AddActor(flor);
 
-	auto wall = new Wall(Vector3(1.0f, 0.0f, 1.0f), Vector3::Zero,m_pInkManager);
+	auto wall = new Wall(Vector3(1.0f, 0.0f, 1.0f), Vector3::Zero);
 	ActorManager::GetInstance().AddActor(wall);
 
-	auto player = new Player(m_pInkManager);
-	ActorManager::GetInstance().AddActor(player);
 
 	//auto wallColor = SimpleMath::Color(0.8f, 0.8f, 0.8f);
 
@@ -258,5 +254,4 @@ void MainGame::Update()
 
 void MainGame::Destroy()
 {
-	m_pInkManager->Destroy();
 }

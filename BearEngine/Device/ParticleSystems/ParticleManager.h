@@ -25,7 +25,6 @@ public:
 	void Update();
 	void DeleteParticles();
 	void Draw();
-	void ZbufferDraw();	
 	void AddParticleEmiiter(std::shared_ptr<ParticleEmitter> emiiter);
 	void DeleteAll();
 	void AddAction(std::shared_ptr<ParticleAction> action, const std::string& actionName);
@@ -46,7 +45,6 @@ private:
 	void GenerateHeap();
 	bool GenerateView(std::shared_ptr<ParticleEmitter> emiiter);
 	void GenereteHandles();
-	bool InitFluidDepthPipeLine();
 
 protected:
 	ParticleManager();
@@ -54,8 +52,6 @@ protected:
 
 private:
 
-	// fluid用のDepth書き込みPSO
-	PSO m_DepthPSO;
 
 	const int m_EmitterMaxCount = 120;
 	std::vector<std::shared_ptr<ParticleEmitter>> m_ParticleEmitters;

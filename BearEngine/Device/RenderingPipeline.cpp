@@ -14,7 +14,6 @@
 #include "../Components/Collsions/CollisionManager.h"
 #include "../Utility/LogSystem.h"
 #include "../Device/Lights/LightManager.h"
-#include "../Device/ParticleSystems/FluidRenderingPipeLine.h"
 #include "../Utility/CameraManager.h"
 #include "../Utility/Camera.h"
 #include "SkyBox.h"
@@ -170,7 +169,6 @@ HRESULT RenderingPipeLine::Init()
 		return S_FALSE;
 	}
 
-	FluidRendringPipeLine::GetInstance().Init();
 
 	auto effect = std::shared_ptr<MeshEffect>(new MeshEffect());
 	effect->Init("ModelVertexShader", "ModelPixelShader", "");
@@ -183,10 +181,6 @@ HRESULT RenderingPipeLine::Init()
 	auto particleCubeEffect = std::shared_ptr<ParticleSpriteEffect>(new ParticleSpriteEffect());
 	particleCubeEffect->Init("GPUParticleVertexShader", "GPUParticlePixelShader", "GPUParticleCubeGeometryShader");
 	EffectManager::GetInstance().AddEffect(particleCubeEffect, "ParticleCubeEffect");
-
-	auto fluid_wall_Effect = std::shared_ptr<ParticleSpriteEffect>(new ParticleSpriteEffect());
-	fluid_wall_Effect->Init("Fluid_Wall_VertexShader", "GPUParticlePixelShader", "GPUParticleCubeGeometryShader");
-	EffectManager::GetInstance().AddEffect(fluid_wall_Effect, "Fluid_Wall_Effect");
 
 	auto spriteEffect = std::shared_ptr<SpriteEffect>(new SpriteEffect());
 	spriteEffect->Init("SpriteVertexShader", "SpritePixelShader", "");
@@ -243,30 +237,8 @@ void RenderingPipeLine::Draw()
 
 
 #endif
-
-#ifndef _DEBUG
-
-	ImGui::Begin("Rendering_System", nullptr, ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysVerticalScrollbar);
-
-	CollisionManager::GetInstance().Draw();
-
-	ImGui::Dummy(ImVec2(0, 30));
-
-	ImGui::BeginTabBar("DebugTabs");
-	UpdateConstantBuffers();
-
-	LogSystem::DrawLog();
-	MeshDrawer::GetInstance().DrawDebug();
-	LightManager::GetInstance().Draw();
-
-	ImGui::EndTabBar();
-
-	ImGui::End();
-
-	
-#endif
-	
 }
+	
 
 void RenderingPipeLine::DrawEnd()
 {
@@ -276,7 +248,6 @@ void RenderingPipeLine::DrawEnd()
 	DirectXGraphics::GetInstance().Present();
 	ParticleManager::GetInstance().DeleteParticles();
 
-	FluidRendringPipeLine::GetInstance().UpdateResultData();
 }
 
 bool RenderingPipeLine::DefaultRenderingBegin()
@@ -440,16 +411,21 @@ void RenderingPipeLine::EffectBloom()
 
 	m_pCommandList->SetGraphicsRootSignature(posteffect_bloom_hightLight_pso.rootSignature.Get());
 
-	//srvHandle = m_peraSRVHeap->GetGPUDescriptorHandleForHeapStart();
+	srvHandle = m_peraSRVHeap->GetGPUDescriptorHandleForHeapStart();
 	//srvHandle.ptr += DirectXDevice::GetInstance().GetDevice()
 	//	->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * (OutputRenderResouce + m_BlurWeights + m_BloomBufferCount + ResultBloomResource + BlurTextureCount);
 
 	// TODO:あとで状況によって切り替える。
 	// 現状は水のレンダリングしたテクスチャを使用
-	auto fluidRendringSRVHeap = FluidRendringPipeLine::GetInstance().GetFluidRenderDescriptorHeaps();
-	m_pCommandList->SetDescriptorHeaps(1, &fluidRendringSRVHeap);
-	m_pCommandList->SetGraphicsRootDescriptorTable(0, fluidRendringSRVHeap->GetGPUDescriptorHandleForHeapStart());
-	m_pCommandList->SetGraphicsRootDescriptorTable(Bloom_RootParamter_NormalColor, fluidRendringSRVHeap->GetGPUDescriptorHandleForHeapStart());
+	//auto fluidRendringSRVHeap = FluidRendringPipeLine::GetInstance().GetFluidRenderDescriptorHeaps();
+	//m_pCommandList->SetDescriptorHeaps(1, &fluidRendringSRVHeap);
+	//m_pCommandList->SetGraphicsRootDescriptorTable(0, fluidRendringSRVHeap->GetGPUDescriptorHandleForHeapStart());
+	//m_pCommandList->SetGraphicsRootDescriptorTable(Bloom_RootParamter_NormalColor, fluidRendringSRVHeap->GetGPUDescriptorHandleForHeapStart());
+
+	m_pCommandList->SetDescriptorHeaps(1, m_peraSRVHeap.GetAddressOf());
+	m_pCommandList->SetGraphicsRootDescriptorTable(Bloom_RootParamter_NormalColor, srvHandle);
+	
+	
 
 	m_pCommandList->SetDescriptorHeaps(1, m_peraSRVHeap.GetAddressOf());
 	srvHandle = m_peraSRVHeap->GetGPUDescriptorHandleForHeapStart();
@@ -514,20 +490,10 @@ void RenderingPipeLine::EffectDepthOfField()
 
 	
 	
-	// 通常の描画テクスチャ (今は、FluidRenderingのテクスチャ）
-	if(m_isDrawFluid)
-	{
-		auto fluidRendringSRVHeap = FluidRendringPipeLine::GetInstance().GetFluidRenderDescriptorHeaps();
-		m_pCommandList->SetDescriptorHeaps(1, &fluidRendringSRVHeap);
-		m_pCommandList->SetGraphicsRootDescriptorTable(0, fluidRendringSRVHeap->GetGPUDescriptorHandleForHeapStart());
-	}
-	else
-	{
-		m_pCommandList->SetDescriptorHeaps(1, m_peraSRVHeap.GetAddressOf());
-
-		auto renderingTexture = m_peraSRVHeap.Get()->GetGPUDescriptorHandleForHeapStart();
-		m_pCommandList->SetGraphicsRootDescriptorTable(0, renderingTexture);
-	}
+	// 通常の描画テクスチャ 
+	m_pCommandList->SetDescriptorHeaps(1, m_peraSRVHeap.GetAddressOf());
+	auto renderingTexture = m_peraSRVHeap.Get()->GetGPUDescriptorHandleForHeapStart();
+	m_pCommandList->SetGraphicsRootDescriptorTable(0, renderingTexture);
 	
 
 
@@ -575,21 +541,10 @@ void RenderingPipeLine::EffectDepthOfField()
 	m_pCommandList->OMSetRenderTargets(1, &dof_resultTexture_handle, false, nullptr);
 	m_pCommandList->ClearRenderTargetView(dof_resultTexture_handle, clerColorArray.data(), 0, nullptr);
 
-	// 通常の描画テクスチャ (今は、FluidRenderingのテクスチャ）
-	if (m_isDrawFluid)
-	{
-		auto fluidRendringSRVHeap = FluidRendringPipeLine::GetInstance().GetFluidRenderDescriptorHeaps();
-		m_pCommandList->SetDescriptorHeaps(1, &fluidRendringSRVHeap);
-		m_pCommandList->SetGraphicsRootDescriptorTable(0, fluidRendringSRVHeap->GetGPUDescriptorHandleForHeapStart());
-
-		m_pCommandList->SetDescriptorHeaps(1, m_peraSRVHeap.GetAddressOf());
-	}
-	else
-	{
-		m_pCommandList->SetDescriptorHeaps(1, m_peraSRVHeap.GetAddressOf());
-		auto renderingTexture = m_peraSRVHeap.Get()->GetGPUDescriptorHandleForHeapStart();
-		m_pCommandList->SetGraphicsRootDescriptorTable(0, renderingTexture);
-	}
+	// 通常の描画テクスチャ
+	m_pCommandList->SetDescriptorHeaps(1, m_peraSRVHeap.GetAddressOf());
+	 renderingTexture = m_peraSRVHeap.Get()->GetGPUDescriptorHandleForHeapStart();
+	m_pCommandList->SetGraphicsRootDescriptorTable(0, renderingTexture);
 
 	auto srvHandle = m_peraSRVHeap->GetGPUDescriptorHandleForHeapStart();
 
@@ -1550,36 +1505,17 @@ void RenderingPipeLine::DrawPostEffect()
 	ParticleManager::GetInstance().Draw();
 	DefaultRenderingEnd();
 
-	// 深度だけ書き込み
-	auto dsvHeaps = DirectXGraphics::GetInstance().GetDSVHeap();
-	auto dsvH = dsvHeaps->GetCPUDescriptorHandleForHeapStart();
-	dsvH.ptr += DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
-	dsvH.ptr += DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+	//// 深度だけ書き込み
+	//auto dsvHeaps = DirectXGraphics::GetInstance().GetDSVHeap();
+	//auto dsvH = dsvHeaps->GetCPUDescriptorHandleForHeapStart();
+	//dsvH.ptr += DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+	//dsvH.ptr += DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
-	m_pCommandList->OMSetRenderTargets(0, nullptr, false, &dsvH);
-	m_pCommandList->ClearDepthStencilView(dsvH, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+	//m_pCommandList->OMSetRenderTargets(0, nullptr, false, &dsvH);
+	//m_pCommandList->ClearDepthStencilView(dsvH, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
-	MeshDrawer::GetInstance().Draw();
+	//MeshDrawer::GetInstance().Draw();
 	
-
-#pragma region Fluid
-
-	if(m_isDrawFluid)
-	{
-		// 壁のみの描画
-		FluidRendringPipeLine::GetInstance().DrawWallMapBegin();
-		MeshDrawer::GetInstance().WallDraw();
-		FluidRendringPipeLine::GetInstance().DrawWallMapEnd();
-
-		FluidRendringPipeLine::GetInstance().DrawDepthMap();
-		FluidRendringPipeLine::GetInstance().SmoothDepthMap();
-		//FluidRendringPipeLine::GetInstance().SmoothThicknesshMap();
-		FluidRendringPipeLine::GetInstance().DrawFluid(m_peraSRVHeap.Get(), m_pSkyBox->GETDescHeap(), DirectXGraphics::GetInstance().GetDepthSRVHeap());
-	}
-
-
-#pragma endregion
-
 	// DOF 被写界深度
 	//EffectDepthOfField();
 	//Bloom

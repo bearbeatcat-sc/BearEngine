@@ -6,8 +6,7 @@
 #include "Components/Collsions/CollisionManager.h"
 #include "Game_Object/ActorManager.h"
 
-Wall::Wall(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& scale,InkManager* pInkManager)
-	:m_pInkManager(pInkManager)
+Wall::Wall(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& scale)
 {
 	SetPosition(pos);
 }
@@ -32,7 +31,7 @@ void Wall::Init()
 
 		float color = std::clamp((float)(i % 2), 0.5f, 0.8f);
 
-		auto plane = new ::Plane(basePos + (SimpleMath::Vector3(x, y, 0) * 2.0f), SimpleMath::Vector3(2, 2, 1), m_pInkManager);
+		auto plane = new ::Plane(basePos + (SimpleMath::Vector3(x, y, 0) * 2.0f), SimpleMath::Vector3(2, 2, 1));
 		plane->SetColor(SimpleMath::Color(color, color, color));
 		plane->SetDrawType(MeshDrawer::Wall);
 		ActorManager::GetInstance().AddActor(plane);

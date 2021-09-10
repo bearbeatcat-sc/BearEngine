@@ -46,7 +46,6 @@ private:
 	std::shared_ptr<ParticleEmitter> m_GPUParticleEmitter;	
 	std::list<std::shared_ptr<ParticleEmitter>> m_particles;
 
-	InkManager* m_pInkManager;
 
 	std::shared_ptr<Timer> mParticleTimer;
 	const float mParticleTime = 0.01f;

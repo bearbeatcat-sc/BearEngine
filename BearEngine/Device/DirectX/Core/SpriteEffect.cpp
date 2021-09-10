@@ -9,6 +9,7 @@ SpriteEffect::~SpriteEffect()
 {
 }
 
+// 現状はジオメトリーシェーダー対応していない
 bool SpriteEffect::Init(const std::string& vertexShaderName, const std::string& pixelShaderName, const std::string& geomtryShaderName)
 {
 	D3D12_DESCRIPTOR_RANGE descTblRange{};
@@ -87,7 +88,7 @@ bool SpriteEffect::Init(const std::string& vertexShaderName, const std::string& 
 	gps.SetRootSignatureDesc(rootSignatureDesc);
 	gps.SetBlendeState(renderTargetBlendDesc);
 	gps.SetDepthStencilState(depthDEsc);
-	gps.Init("BasicSpritePixelShader", "BasicSpriteVertexShader");
+	gps.Init(pixelShaderName, vertexShaderName);
 
 	if (!PSOManager::GetInstance().CreatePSO(m_PSO, gps))
 	{

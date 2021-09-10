@@ -3,6 +3,7 @@
 #include <wrl/client.h>
 #include <Xinput.h>
 #include <vector>
+#include <SimpleMath.h>
 
 #include "../Singleton.h"
 
@@ -91,6 +92,18 @@ private:
 	float m_Timer;
 };
 
+enum class MouseButton {
+	LEFT = 0,
+	RIGHT = 1,
+	CENTER = 2,
+};
+
+struct TriggerState
+{
+	bool RightTriggerFlag;
+	bool LeftTriggerFlag;
+};
+
 class DirectXInput
 	:public Singleton<DirectXInput>
 {
@@ -101,12 +114,17 @@ public:
 	void UpdateInput();
 	bool IsKeyDown(int keyNum);
 	bool IsKey(int keyNum);
-	bool IsLeftClick();
-	bool IsRightClick();
-	float GetWhileValue();
+	bool IsMouseButtonDown(MouseButton button);
+	bool IsMouseButton(MouseButton button);
+	bool IsMouseButtonUp(MouseButton button);
+	float GetWheelValue();
+	bool IsActiveGamePad();
+	DirectX::SimpleMath::Vector2 GetMouseMove();
+	DirectX::SimpleMath::Vector2 GetCursorPos();
 
 	float GetGamePadValue(GamePad_ThubStick stick);
 	bool IsDownTrigger(GamePad_Triggers trigger);
+	bool IsUpTrigger(GamePad_Triggers trigger);
 	float IsDownTriggerValue(GamePad_Triggers trigger);
 	bool IsTrigger(GamePad_Triggers trigger);
 	bool isButtonDown(GamePad_Buttons button);
@@ -127,13 +145,16 @@ protected:
 private:
 	ComPtr<IDirectInputDevice8> m_Devkeyboard = nullptr;
 	ComPtr<IDirectInputDevice8> m_MouseDevice = nullptr;
-	ComPtr<IDirectInputDevice8> m_GamePadDevice = nullptr;
 	ComPtr<IDirectInput8> m_pDevice = nullptr;
 	bool m_PreviousKeyState[256];
 	bool m_CurrentKeyState[256];
 
 private:
 	XINPUT_STATE m_State;
+
+	TriggerState m_currentTriggerState;
+	TriggerState m_previousTriggerState;
+
 	std::vector<GamePad_VirtualButtons> m_Buttons;
 	std::vector < GamePad_Vibration* > m_Vibrations;
 	bool m_CurrentButtonState[14];

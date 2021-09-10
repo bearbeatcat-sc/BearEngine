@@ -15,7 +15,7 @@ class Flor
 	:public Actor
 {
 public:
-	Flor(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& scale, InkManager* pInkManager);
+	Flor(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& scale);
 	~Flor();
 
 private:

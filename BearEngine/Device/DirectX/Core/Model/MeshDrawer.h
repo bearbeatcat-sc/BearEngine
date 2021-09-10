@@ -42,9 +42,6 @@ public:
 	void Update();
 	void Draw();
 	void CubeMapDraw(int index);
-
-	// TODO:スマートな方法ではないので、後で何が考える必要がある。
-	void WallDraw();
 	
 	void DrawDebug();
 	void ShadowDraw();

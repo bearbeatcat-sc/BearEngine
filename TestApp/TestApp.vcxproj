@@ -125,7 +125,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libfbxsdk-md.lib;DirectX12_School.lib;Winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libfbxsdk-md.lib;BearEngine.lib;Winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -152,10 +152,7 @@
   <ItemGroup>
     <ClCompile Include="CameraAsistant.cpp" />
     <ClCompile Include="GameObjects\Flor.cpp" />
-    <ClCompile Include="GameObjects\InkBall.cpp" />
-    <ClCompile Include="GameObjects\InkManager.cpp" />
     <ClCompile Include="GameObjects\Plane.cpp" />
-    <ClCompile Include="GameObjects\Player.cpp" />
     <ClCompile Include="GameObjects\Sphere.cpp" />
     <ClCompile Include="GameObjects\Wall.cpp" />
     <ClCompile Include="main.cpp" />
@@ -164,10 +161,7 @@
   <ItemGroup>
     <ClInclude Include="CameraAsistant.h" />
     <ClInclude Include="GameObjects\Flor.h" />
-    <ClInclude Include="GameObjects\InkBall.h" />
-    <ClInclude Include="GameObjects\InkManager.h" />
     <ClInclude Include="GameObjects\Plane.h" />
-    <ClInclude Include="GameObjects\Player.h" />
     <ClInclude Include="GameObjects\Sphere.h" />
     <ClInclude Include="GameObjects\Wall.h" />
     <ClInclude Include="MainGame.h" />

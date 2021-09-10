@@ -35,7 +35,6 @@ public:
 		DrawParticleMode_Normal = 0,
 		DrawParticleMode_BillBoard = 1,
 		DrawParticleMode_BillBoard_Y = 2,
-		DrawParticleMode_FluidDepth = 3,
 	};
 
 	struct ParticleEmiiterData
@@ -49,33 +48,6 @@ public:
 		float BaseLifeTime;
 		float TimeScale;
 		int MaxParticleCount;
-	};
-
-	// 密度
-	struct FluidParticleDensity
-	{
-		float Density = 0.0f;
-		float offset0 = 0;
-		float offset1 = 0;
-		float offset2 = 0;
-	};
-
-	// 加速度
-	struct FluidParticleForces
-	{
-		XMFLOAT4 Acceleration = XMFLOAT4(0,0,0,0);
-		float Pressure = 0.0f;
-		float offset0 = 0;
-		float offset1 = 0;
-		float offset2 = 0;
-	};
-
-	// 壁のパラメータ
-	struct WallPalam
-	{
-		XMFLOAT4 position = XMFLOAT4(0, 0, 0, 0);
-		XMFLOAT4 scale = XMFLOAT4(0, 0, 0, 0);
-		float pressure = 0.0f;
 	};
 
 	struct ParticleData
@@ -106,22 +78,16 @@ public:
 
 	void SetParticleMode(DrawParticleMode mode);
 	void SetTexture(const std::string& textureName);
-	void SetWallParameters(std::vector<WallPalam> wallParams);
 
 	bool Init();
 	bool Init(const std::vector<XMFLOAT3>& vertices);
 	bool Init(const std::string& modelName);
-	bool Init(std::vector<WallPalam> wallParams);
 	
 	void Draw();
-
-	// TODO:後で独立させる。
-	void DrawWall();
 	
 	void Destroy();
 	void OnMeshParticleMode(bool flag,const std::string& meshName);
 	bool IsDestroyFlag();
-	void UpdateFluidParticle(std::shared_ptr<FluidParticleAction> action,ID3D12GraphicsCommandList* commandList);
 	void UpdateNormalParticle(std::shared_ptr<NormalParticleAction> action, ID3D12GraphicsCommandList* commandList);
 	const std::string& GetActionName();
 	int GetParticleCount();
@@ -156,27 +122,13 @@ private:
 	void UpdateParticle(std::shared_ptr<NormalParticleAction> action, ID3D12GraphicsCommandList* commandList);
 	void InitParticle(std::shared_ptr<ParticleAction> action, ID3D12GraphicsCommandList* commandList);
 
-	// Fluid
-	void UpdateForce(std::shared_ptr<FluidParticleAction> action, ID3D12GraphicsCommandList* commandList);
-	void UpdateIntegrate(std::shared_ptr<FluidParticleAction> action, ID3D12GraphicsCommandList* commandList);
-	void UpdatePressure(std::shared_ptr<FluidParticleAction> action, ID3D12GraphicsCommandList* commandList);
-	void UpdatePressureGradient(std::shared_ptr<FluidParticleAction> action, ID3D12GraphicsCommandList* commandList);
-	void UpdateCollison(std::shared_ptr<FluidParticleAction> action, ID3D12GraphicsCommandList* commandList);
-	void UpdateMoveParticle(std::shared_ptr<FluidParticleAction> action, ID3D12GraphicsCommandList* commandList);
-
 	bool DrawCall();
 	void UpdateConstantBuffer();
 	void UpdateEmitterBuffer();
 	void GenerateVertexBuff();
 	void GenerateConBuff();
 	void GenerateComputeBuffer();
-	void GenerateComputeBuffer(std::vector<WallPalam> wallParams);
-	
 	void GenerateCBParticleData();
-	void GenerateCBDensityData();
-	void GenerateCBForcesData();
-	void GenerateCBWallData();
-	void GenerateCBWallData(std::vector<WallPalam> wallParams);
 
 	void GenerateComputeHeap();
 	void GenerateTextureView();
@@ -196,21 +148,6 @@ private:
 	ComPtr<ID3D12Resource> m_UploadConstBuff0;
 	ComPtr<ID3D12Resource> m_UploadConstBuff1;
 
-	ComPtr<ID3D12Resource> m_FluidParticleDensityBuffer0;
-	ComPtr<ID3D12Resource> m_FluidParticleDensityBuffer1;
-	ComPtr<ID3D12Resource> m_UploadFluidParticleDensityBuffer0;
-	ComPtr<ID3D12Resource> m_UploadFluidParticleDensityBuffer1;
-
-	ComPtr<ID3D12Resource> m_FluidParticleForcesBuffer0;
-	ComPtr<ID3D12Resource> m_FluidParticleForcesBuffer1;
-	ComPtr<ID3D12Resource> m_UploadFluidParticleForcesBuffer0;
-	ComPtr<ID3D12Resource> m_UploadFluidParticleForcesBuffer1;
-
-	ComPtr<ID3D12Resource> m_WallPalamBuffer0;
-	ComPtr<ID3D12Resource> m_WallPalamBuffer1;
-	ComPtr<ID3D12Resource> m_UploadWallPalamBuffer0;
-	ComPtr<ID3D12Resource> m_UploadWallPalamBuffer1;
-
 	ComPtr<ID3D12Resource> m_UploadVerticesDataBuff;
 	ComPtr<ID3D12Resource> m_VerticesDataBuff;
 
@@ -225,28 +162,10 @@ private:
 		
 		SrvParticlePosVelo0 = 2,
 		SrvParticlePosVelo1 = 3,
-		
-		UavFluidParticleDensity0 = 4,
-		UavFluidParticleDensity1 = 5,
-		
-		SrvFluidParticleDensity0 = 6,
-		SrvFluidParticleDensity1 = 7,
 
-		UavFluidParticleForce0 = 8,
-		UavFluidParticleForce1 = 9,
-
-		SrvFluidParticleForce0 = 10,
-		SrvFluidParticleForce1 = 11,
-
-		UavFluidWallPalam0 = 12,
-		UavFluidWallPalam1 = 13,
-
-		SrvFluidWallPalam0 = 14,
-		SrvFluidWallPalam1 = 15,
-
-		SrvVerticesPosition = 16,
-		EmitterData = 17,
-		DescriptorCount = 18,
+		SrvVerticesPosition = 4,
+		EmitterData = 5,
+		DescriptorCount = 6,
 	};
 
 	//enum RootParameterIndex
@@ -295,10 +214,7 @@ private:
 	std::shared_ptr<MeshData> m_MeshData;
 
 	bool m_IsMeshParticleMode;
-	bool m_IsSetWallParameters;
-	std::vector<WallPalam> m_WallParams;
-	
-	int m_wallCount = 4000;
+
 
 };
 

@@ -3,6 +3,8 @@
 #include <assert.h>
 #include "../../Utility/Time.h"
 
+static DIMOUSESTATE currentMouseState;
+static DIMOUSESTATE previousMouseState;
 
 DirectXInput::DirectXInput()
 {
@@ -10,6 +12,9 @@ DirectXInput::DirectXInput()
 
 DirectXInput::~DirectXInput()
 {
+	m_MouseDevice->Unacquire();
+	m_Devkeyboard->Unacquire();
+
 	m_Buttons.clear();
 
 	for (auto vibration : m_Vibrations)
@@ -18,7 +23,7 @@ DirectXInput::~DirectXInput()
 	}
 
 	m_Vibrations.clear();
-	
+
 }
 
 bool DirectXInput::CreateKeyBoardDevice()
@@ -45,6 +50,17 @@ bool DirectXInput::CreateKeyBoardDevice()
 		assert(0);
 	}
 
+	if (FAILED(m_Devkeyboard->Acquire()))
+	{
+		return false;
+	}
+
+	if (FAILED(m_Devkeyboard->Poll()))
+	{
+		return false;
+	}
+
+
 	return true;
 }
 
@@ -65,6 +81,16 @@ bool DirectXInput::CreateMouseDevice()
 		DISCL_FOREGROUND | DISCL_NONEXCLUSIVE)))
 	{
 		assert(0);
+	}
+
+	if (FAILED(m_MouseDevice->Acquire()))
+	{
+		return false;
+	}
+
+	if (FAILED(m_MouseDevice->Poll()))
+	{
+		return false;
 	}
 
 	return true;
@@ -120,16 +146,11 @@ bool DirectXInput::InitDirectInput()
 bool DirectXInput::UpdateDirectInput()
 {
 
-	if (FAILED(m_Devkeyboard->Acquire()))
-	{
-		return false;
-	}
-
 	BYTE key[256] = {};
 
 	if (FAILED(m_Devkeyboard->GetDeviceState(sizeof(key), key)))
 	{
-		return false;
+		m_Devkeyboard->Acquire();
 	}
 
 	for (int i = 0; i < 256; ++i)
@@ -148,6 +169,12 @@ bool DirectXInput::UpdateDirectInput()
 		m_CurrentKeyState[i] = false;
 	}
 
+	previousMouseState = currentMouseState;
+	if (FAILED(m_MouseDevice->GetDeviceState(sizeof(DIMOUSESTATE), &currentMouseState)))
+	{
+		m_MouseDevice->Acquire();
+	}
+
 
 	return true;
 }
@@ -161,6 +188,25 @@ bool DirectXInput::UpdateXINPUT()
 		m_PreviousButtonState[i] = m_CurrentButtonState[i];
 	}
 
+	m_previousTriggerState = m_currentTriggerState;
+
+	if (m_State.Gamepad.bLeftTrigger > 1.0f)
+	{
+		m_currentTriggerState.LeftTriggerFlag = true;
+	}
+	else
+	{
+		m_currentTriggerState.LeftTriggerFlag = false;
+	}
+
+	if (m_State.Gamepad.bRightTrigger > 1.0f)
+	{
+		m_currentTriggerState.RightTriggerFlag = true;
+	}
+	else
+	{
+		m_currentTriggerState.RightTriggerFlag = false;
+	}
 
 	for (int i = 0; i < m_Buttons.size(); ++i)
 	{
@@ -193,23 +239,38 @@ bool DirectXInput::IsKey(int keyNum)
 	return m_CurrentKeyState[keyNum];
 }
 
-bool DirectXInput::IsLeftClick()
-{
-	return false;
+bool DirectXInput::IsMouseButtonDown(MouseButton button) {
+	return !(previousMouseState.rgbButtons[(int)button] & 0x80) &&
+		currentMouseState.rgbButtons[(int)button] & 0x80;
 }
 
-bool DirectXInput::IsRightClick()
-{
-	return false;
+bool DirectXInput::IsMouseButton(MouseButton button) {
+	return currentMouseState.rgbButtons[(int)button] & (0x80);
 }
 
-float DirectXInput::GetWhileValue()
+bool DirectXInput::IsMouseButtonUp(MouseButton button) {
+	return previousMouseState.rgbButtons[(int)button] & (0x80) &&
+		!(currentMouseState.rgbButtons[(int)button] & 0x80);
+}
+
+float DirectXInput::GetWheelValue() {
+	return (float)currentMouseState.lZ;
+}
+
+bool DirectXInput::IsActiveGamePad()
 {
-	DIMOUSESTATE dims;
-	HRESULT result = S_OK;
-	result = m_MouseDevice->Acquire();
-	result = m_MouseDevice->GetDeviceState(sizeof(DIMOUSESTATE), (LPVOID)&dims);
-	return dims.lZ;
+	return XInputGetState(0, &m_State) != ERROR_DEVICE_NOT_CONNECTED;
+}
+
+DirectX::SimpleMath::Vector2 DirectXInput::GetMouseMove() {
+	return DirectX::SimpleMath::Vector2((float)currentMouseState.lX, (float)currentMouseState.lY);
+}
+
+DirectX::SimpleMath::Vector2 DirectXInput::GetCursorPos() {
+	POINT p{};
+	::GetCursorPos(&p);
+	ScreenToClient(WindowApp::GetInstance().GetHWND(), &p);
+	return DirectX::SimpleMath::Vector2((float)p.x, (float)p.y);
 }
 
 float DirectXInput::GetGamePadValue(GamePad_ThubStick stick)
@@ -247,12 +308,28 @@ bool DirectXInput::IsDownTrigger(GamePad_Triggers trigger)
 	switch (trigger)
 	{
 	case GamePad_RightTrigger:
-		return m_State.Gamepad.bRightTrigger > 1.0f;
-		break;
+		return m_currentTriggerState.RightTriggerFlag
+			&& !m_previousTriggerState.RightTriggerFlag;
 
 	case GamePad_LeftTrigger:
-		return m_State.Gamepad.bLeftTrigger > 1.0f;
-		break;
+		return m_currentTriggerState.LeftTriggerFlag
+			&& !m_previousTriggerState.LeftTriggerFlag;
+	}
+
+	return false;
+}
+
+bool DirectXInput::IsUpTrigger(GamePad_Triggers trigger)
+{
+	switch (trigger)
+	{
+	case GamePad_RightTrigger:
+		return m_previousTriggerState.RightTriggerFlag
+			&& !m_currentTriggerState.RightTriggerFlag;
+
+	case GamePad_LeftTrigger:
+		return m_previousTriggerState.LeftTriggerFlag
+			&& !m_currentTriggerState.LeftTriggerFlag;
 	}
 
 	return false;
@@ -264,11 +341,9 @@ float DirectXInput::IsDownTriggerValue(GamePad_Triggers trigger)
 	{
 	case GamePad_RightTrigger:
 		return m_State.Gamepad.bRightTrigger;
-		break;
 
 	case GamePad_LeftTrigger:
 		return m_State.Gamepad.bLeftTrigger;
-		break;
 	}
 }
 
@@ -277,12 +352,10 @@ bool DirectXInput::IsTrigger(GamePad_Triggers trigger)
 	switch (trigger)
 	{
 	case GamePad_RightTrigger:
-		return m_State.Gamepad.bRightTrigger > 1.0f;
-		break;
+		return m_currentTriggerState.RightTriggerFlag;
 
 	case GamePad_LeftTrigger:
-		return m_State.Gamepad.bLeftTrigger > 1.0f;
-		break;
+		return m_currentTriggerState.LeftTriggerFlag;
 	}
 
 	return false;
@@ -315,7 +388,7 @@ float DirectXInput::GetVibration(int user)
 	return m_Vibrations[user]->GetPower();
 }
 
-void DirectXInput::OnVibration(int user, int leftPower, int rightPower,float time)
+void DirectXInput::OnVibration(int user, int leftPower, int rightPower, float time)
 {
 	if (m_Vibrations[user] == nullptr)
 	{
@@ -331,7 +404,7 @@ GamePad_Vibration::~GamePad_Vibration()
 }
 
 GamePad_Vibration::GamePad_Vibration()
-	:m_UserIndex(0),m_Timer(-1.0f),m_Time(0.0f)
+	:m_UserIndex(0), m_Timer(-1.0f), m_Time(0.0f)
 {
 }
 

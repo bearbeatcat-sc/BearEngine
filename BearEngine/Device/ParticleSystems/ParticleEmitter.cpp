@@ -9,7 +9,6 @@
 #include "..//TextureManager.h"
 #include "ParticleManager.h"
 #include "NormalParticleAction.h"
-#include "FluidParticleAction.h"
 #include "../DirectX/Core/Model/MeshManager.h"
 #include "../../imgui/imgui.h"
 
@@ -19,7 +18,7 @@ ParticleEmitter::ParticleEmitter(const std::string& effectName, const std::strin
 	m_IsVerticesMode(false), m_IsGenerted(false), m_ActionName(actionName),
 	m_Pos(SimpleMath::Vector4::Zero), m_Rotate(SimpleMath::Vector4::Zero), m_Color(SimpleMath::Color(1, 1, 1, 1)),
 	m_Scale(SimpleMath::Vector4::One), m_Velocity(SimpleMath::Vector4::Zero), m_DestroyFlag(false), m_BaseLifeTime(3.0f), m_TimeScale(1.0f)
-	, m_IsMeshParticleMode(false), m_IsDraw(true), m_IsSetWallParameters(false),m_ObjectCount(120000)
+	, m_IsMeshParticleMode(false), m_IsDraw(true),m_ObjectCount(120000)
 {
 	m_UavIndex = 0;
 }
@@ -30,7 +29,7 @@ ParticleEmitter::ParticleEmitter(const std::string& effectName, const std::strin
 	m_IsVerticesMode(false), m_IsGenerted(false), m_ActionName(actionName),
 	m_Pos(SimpleMath::Vector4::Zero), m_Rotate(SimpleMath::Vector4::Zero), m_Color(SimpleMath::Color(1, 1, 1, 1)),
 	m_Scale(SimpleMath::Vector4::One), m_Velocity(SimpleMath::Vector4::Zero), m_DestroyFlag(false), m_BaseLifeTime(3.0f), m_TimeScale(1.0f),
-	m_UseMeshName(modelName), m_IsMeshParticleMode(false), m_IsDraw(true), m_IsSetWallParameters(false), m_ObjectCount(120000)
+	m_UseMeshName(modelName), m_IsMeshParticleMode(false), m_IsDraw(true), m_ObjectCount(120000)
 {
 	m_UavIndex = 0;
 
@@ -52,11 +51,6 @@ void ParticleEmitter::SetTexture(const std::string& textureName)
 	m_TextureName = textureName;
 }
 
-void ParticleEmitter::SetWallParameters(std::vector<WallPalam> wallParams)
-{
-	m_WallParams = wallParams;
-	m_IsSetWallParameters = true;
-}
 
 
 bool ParticleEmitter::Init()
@@ -64,11 +58,6 @@ bool ParticleEmitter::Init()
 	if (m_IsMeshEmitter)
 	{
 		return Init(m_UseMeshName);
-	}
-
-	if(m_IsSetWallParameters)
-	{
-		return Init(m_WallParams);
 	}
 
 	if (m_IsMeshParticleMode)
@@ -135,55 +124,12 @@ bool ParticleEmitter::Init(const std::string& modelName)
 	return true;
 }
 
-// 流体計算を使用したパーティクルのときのみ
-bool ParticleEmitter::Init(std::vector<WallPalam> wallParams)
-{
-	m_Camera = CameraManager::GetInstance().GetMainCamera();
-
-	GenerateVertexBuff();
-	GenerateConBuff();
-	GenerateTextureView();
-
-	GenerateComputeHeap();
-	GenerateComputeBuffer(wallParams);
-
-	return true;
-}
 
 void ParticleEmitter::Draw()
 {
 	DrawCall();
 }
 
-void ParticleEmitter::DrawWall()
-{
-	UpdateConstantBuffer();
-
-	auto descriptorSize = DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-	ID3D12GraphicsCommandList* tempCommand = DirectXGraphics::GetInstance().GetCommandList();
-
-	//auto heap = m_BasicDescHeap.Get();
-	ID3D12DescriptorHeap* ppHeaps[] = { m_Heap.Get() };
-
-	// 壁のパラメータをセットする。
-	int srvIndex = SrvFluidWallPalam0;
-
-	tempCommand->IASetVertexBuffers(0, 1, &m_vbView);
-	tempCommand->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
-	
-	// 行列のセット
-	tempCommand->SetGraphicsRootConstantBufferView(0, m_ConstantBuffer->getBuffer()->GetGPUVirtualAddress());
-	// テクスチャのセット
-	tempCommand->SetGraphicsRootDescriptorTable(2, m_pHandle->m_GPUDescHandle);
-	// コンピュートシェーダーのディスクリプタ
-	tempCommand->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-
-	CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), srvIndex, descriptorSize);
-	tempCommand->SetGraphicsRootDescriptorTable(FluidParticleAction::RootParam_SRV, srvHandle);
-
-	tempCommand->DrawInstanced(m_wallCount, 1, 0, 0);
-}
 
 
 void ParticleEmitter::Destroy()
@@ -259,16 +205,16 @@ void ParticleEmitter::UpdateParticle(std::shared_ptr<NormalParticleAction> actio
 	CD3DX12_GPU_DESCRIPTOR_HANDLE uavHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), uavIndex, descriptorSize);
 	CD3DX12_GPU_DESCRIPTOR_HANDLE cbvHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), EmitterData, descriptorSize);
 
-	commandList->SetComputeRootConstantBufferView(FluidParticleAction::RootParam_ParticleUpdateParam, action->GetBuffer()->GetGPUVirtualAddress());
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_SRV, srvHandle);
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_UAV, uavHandle);
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_EmiiterDataParam, cbvHandle);
+	commandList->SetComputeRootConstantBufferView(NormalParticleAction::RootParam_ParticleUpdateParam, action->GetBuffer()->GetGPUVirtualAddress());
+	commandList->SetComputeRootDescriptorTable(NormalParticleAction::RootParam_SRV, srvHandle);
+	commandList->SetComputeRootDescriptorTable(NormalParticleAction::RootParam_UAV, uavHandle);
+	commandList->SetComputeRootDescriptorTable(NormalParticleAction::RootParam_EmiiterDataParam, cbvHandle);
 
 	// 頂点モードならセットする（もしかしたらコスト高いかも）
 	if (m_IsVerticesMode)
 	{
 		CD3DX12_GPU_DESCRIPTOR_HANDLE srvVerticeDataHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), SrvVerticesPosition, descriptorSize);
-		commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_VerticesPosition, srvVerticeDataHandle);
+		commandList->SetComputeRootDescriptorTable(NormalParticleAction::RootParam_VerticesPosition, srvVerticeDataHandle);
 	}
 
 
@@ -281,18 +227,6 @@ void ParticleEmitter::UpdateParticle(std::shared_ptr<NormalParticleAction> actio
 	//m_UavIndex = 1 - m_UavIndex;
 }
 
-void ParticleEmitter::UpdateFluidParticle(std::shared_ptr<FluidParticleAction> action,
-	ID3D12GraphicsCommandList* commandList)
-{	
-	InitParticle(action, commandList);
-	UpdateForce(action, commandList);
-	UpdateMoveParticle(action, commandList);
-	//UpdateCollison(action, commandList);
-	UpdatePressure(action, commandList);
-	UpdatePressureGradient(action, commandList);
-	UpdateIntegrate(action, commandList);
-
-}
 
 void ParticleEmitter::UpdateNormalParticle(std::shared_ptr<NormalParticleAction> action,
 	ID3D12GraphicsCommandList* commandList)
@@ -316,10 +250,7 @@ void ParticleEmitter::InitParticle(std::shared_ptr<ParticleAction> action, ID3D1
 
 	// ここにリソースが入ってくる！
 	ID3D12Resource* pUavResoruce = nullptr;
-	ID3D12Resource* pUav_WallResource = nullptr;
 
-	// 壁パラメータのSRVとUAVのセット
-	pressuerWallUAVIndex = UavFluidWallPalam0;
 
 	// インデックスによって、セットするディスクリプターを変更
 	if (m_UavIndex == 0)
@@ -337,7 +268,6 @@ void ParticleEmitter::InitParticle(std::shared_ptr<ParticleAction> action, ID3D1
 		pUavResoruce = m_ParticleDataBuff0.Get();
 	}
 
-	pUav_WallResource = m_WallPalamBuffer0.Get();
 
 	// 多分、読み書き可にする
 	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
@@ -346,11 +276,6 @@ void ParticleEmitter::InitParticle(std::shared_ptr<ParticleAction> action, ID3D1
 		D3D12_RESOURCE_STATE_UNORDERED_ACCESS
 	));
 
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-		pUav_WallResource,
-		D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
-		D3D12_RESOURCE_STATE_UNORDERED_ACCESS
-	));
 
 	auto pso = action->GetInitPSO();
 	commandList->SetPipelineState(pso.pso.Get());
@@ -363,32 +288,15 @@ void ParticleEmitter::InitParticle(std::shared_ptr<ParticleAction> action, ID3D1
 
 	CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), srvIndex, descriptorSize);
 	CD3DX12_GPU_DESCRIPTOR_HANDLE uavHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), uavIndex, descriptorSize);
-	CD3DX12_GPU_DESCRIPTOR_HANDLE uavWallHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), pressuerWallUAVIndex, descriptorSize);
 	CD3DX12_GPU_DESCRIPTOR_HANDLE cbvHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), EmitterData, descriptorSize);
 
-	commandList->SetComputeRootConstantBufferView(FluidParticleAction::RootParam_ParticleUpdateParam, action->GetBuffer()->GetGPUVirtualAddress());
-	//commandList->SetComputeRootConstantBufferView(RootParam_EmiiterDataParam, m_EmmiterParamsBuffer->GetGPUVirtualAddress());
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_SRV, srvHandle);
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_UAV, uavHandle);
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_WallPalamUAV, uavWallHandle);
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_EmiiterDataParam, cbvHandle);
-
-	// 頂点モードならセットする（もしかしたらコスト高いかも）
-	//if (m_IsVerticesMode)
-	//{
-	//	CD3DX12_GPU_DESCRIPTOR_HANDLE srvVerticeDataHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), SrvVerticesPosition, descriptorSize);
-	//	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_VerticesPosition, srvVerticeDataHandle);
-	//}
-
-
+	commandList->SetComputeRootConstantBufferView(NormalParticleAction::RootParam_ParticleUpdateParam, action->GetBuffer()->GetGPUVirtualAddress());
+	commandList->SetComputeRootDescriptorTable(NormalParticleAction::RootParam_SRV, srvHandle);
+	commandList->SetComputeRootDescriptorTable(NormalParticleAction::RootParam_UAV, uavHandle);
+	commandList->SetComputeRootDescriptorTable(NormalParticleAction::RootParam_EmiiterDataParam, cbvHandle);
 	commandList->Dispatch(m_ObjectCount / 256, 1, 1);
 
-
-
-
-
 	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(pUavResoruce, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(pUav_WallResource, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
 
 	// リソースのインデックス切り替え
 	m_UavIndex = 1 - m_UavIndex;
@@ -508,195 +416,6 @@ const std::string& ParticleEmitter::GetEffectName()
 	return m_EffectName;
 }
 
-void ParticleEmitter::UpdateCollison(std::shared_ptr<FluidParticleAction> action,
-	ID3D12GraphicsCommandList* commandList)
-{
-	if (!m_IsUpdate)return;
-	if (m_DestroyFlag)return;
-	if (m_DummyFlag)
-	{
-		UpdateEmitterBuffer();
-		m_DummyFlag = false;
-	}
-
-	auto descriptorSize = DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-
-	int particleDataSRVIndex;
-	int particleDataUAVIndex;
-	int fourceDataSRVIndex;
-	int fourceDataUAVIndex;
-
-	int densityDataSRVIndex;
-	int forceDataSRVIndex;
-
-
-	// ここにリソースが入ってくる！
-	ID3D12Resource* pParticleDataResource = nullptr;
-
-	// 1フレームごとに読み込むSRVも異なる気がする
-	densityDataSRVIndex = SrvFluidParticleDensity0;
-	fourceDataSRVIndex = SrvFluidParticleForce0;
-	fourceDataUAVIndex = UavFluidParticleForce0;
-
-	// インデックスによって、セットするディスクリプターを変更
-	if (m_UavIndex == 0)
-	{
-		particleDataSRVIndex = SrvParticlePosVelo0;
-		particleDataUAVIndex = UavParticlePosVelo0;
-
-		pParticleDataResource = m_ParticleDataBuff0.Get();
-	}
-	else
-	{
-		particleDataSRVIndex = SrvParticlePosVelo1;
-		particleDataUAVIndex = UavParticlePosVelo0;
-
-		pParticleDataResource = m_ParticleDataBuff1.Get();
-	}
-
-
-	// 読み書き可にする
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-		pParticleDataResource,
-		D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
-		D3D12_RESOURCE_STATE_UNORDERED_ACCESS
-	));
-
-	auto pso = action->GetCollsionPSO();
-	commandList->SetPipelineState(pso.pso.Get());
-	commandList->SetComputeRootSignature(pso.rootSignature.Get());
-
-	ID3D12DescriptorHeap* ppHaaps[] = { m_Heap.Get() };
-	commandList->SetDescriptorHeaps(_countof(ppHaaps), ppHaaps);
-
-
-
-	CD3DX12_GPU_DESCRIPTOR_HANDLE particleDataSRVHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), particleDataSRVIndex, descriptorSize);
-	CD3DX12_GPU_DESCRIPTOR_HANDLE particleDataUAVHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), particleDataUAVIndex, descriptorSize);
-
-	CD3DX12_GPU_DESCRIPTOR_HANDLE densityDataSRVHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), densityDataSRVIndex, descriptorSize);
-	CD3DX12_GPU_DESCRIPTOR_HANDLE forceSRVHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), fourceDataSRVIndex, descriptorSize);
-	CD3DX12_GPU_DESCRIPTOR_HANDLE forceUAVHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), fourceDataUAVIndex, descriptorSize);
-
-	CD3DX12_GPU_DESCRIPTOR_HANDLE cbvHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), EmitterData, descriptorSize);
-
-	commandList->SetComputeRootConstantBufferView(FluidParticleAction::RootParam_ParticleUpdateParam, action->GetBuffer()->GetGPUVirtualAddress());
-
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_SRV, particleDataSRVHandle);
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_UAV, particleDataUAVHandle);
-
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_ForcesSRV, forceSRVHandle);
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_ForcesUAV, forceUAVHandle);
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_DensitySRV, densityDataSRVHandle);
-
-
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_EmiiterDataParam, cbvHandle);
-
-
-	commandList->Dispatch(m_ObjectCount / 256, 1, 1);
-
-	// Densityの更新が完了
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(pParticleDataResource, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
-
-}
-
-void ParticleEmitter::UpdateMoveParticle(std::shared_ptr<FluidParticleAction> action,
-	ID3D12GraphicsCommandList* commandList)
-{
-	if (!m_IsUpdate)return;
-	if (m_DestroyFlag)return;
-	if (m_DummyFlag)
-	{
-		UpdateEmitterBuffer();
-		m_DummyFlag = false;
-	}
-
-	auto descriptorSize = DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-
-	int particleDataSRVIndex;
-	int particleDataUAVIndex;
-	int forceDataSRVIndex;
-	int forceDataUAVIndex;
-
-
-	// ここにリソースが入ってくる！
-	ID3D12Resource* pParticleDataResource = nullptr;
-	ID3D12Resource* pParticleForceDataResource = nullptr;
-
-
-	// インデックスによって、セットするディスクリプターを変更
-	if (m_UavIndex == 0)
-	{
-		particleDataSRVIndex = SrvParticlePosVelo0;
-		forceDataSRVIndex = SrvFluidParticleForce1;
-		
-		forceDataUAVIndex = UavFluidParticleForce0;
-		particleDataUAVIndex = UavParticlePosVelo1;
-		pParticleDataResource = m_ParticleDataBuff1.Get();
-		pParticleForceDataResource = m_FluidParticleForcesBuffer0.Get();
-	}
-	else
-	{
-		particleDataSRVIndex = SrvParticlePosVelo1;
-		forceDataSRVIndex = SrvFluidParticleForce0;
-
-		forceDataUAVIndex = UavFluidParticleForce1;
-		particleDataUAVIndex = UavParticlePosVelo0;
-		pParticleDataResource = m_ParticleDataBuff0.Get();
-		pParticleForceDataResource = m_FluidParticleForcesBuffer1.Get();
-	}
-
-
-	// 読み書き可にする
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-		pParticleDataResource,
-		D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
-		D3D12_RESOURCE_STATE_UNORDERED_ACCESS
-	));
-
-	// 読み書き可にする
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-		pParticleForceDataResource,
-		D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
-		D3D12_RESOURCE_STATE_UNORDERED_ACCESS
-	));
-
-	auto pso = action->GetMoveParticlePSO();
-	commandList->SetPipelineState(pso.pso.Get());
-	commandList->SetComputeRootSignature(pso.rootSignature.Get());
-
-	ID3D12DescriptorHeap* ppHaaps[] = { m_Heap.Get() };
-	commandList->SetDescriptorHeaps(_countof(ppHaaps), ppHaaps);
-
-	CD3DX12_GPU_DESCRIPTOR_HANDLE particleDataSRVHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), particleDataSRVIndex, descriptorSize);
-	CD3DX12_GPU_DESCRIPTOR_HANDLE particleDataUAVHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), particleDataUAVIndex, descriptorSize);
-
-	CD3DX12_GPU_DESCRIPTOR_HANDLE forceSRVHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), forceDataSRVIndex, descriptorSize);
-	CD3DX12_GPU_DESCRIPTOR_HANDLE forceUAVHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), forceDataUAVIndex, descriptorSize);
-
-	CD3DX12_GPU_DESCRIPTOR_HANDLE cbvHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), EmitterData, descriptorSize);
-
-	commandList->SetComputeRootConstantBufferView(FluidParticleAction::RootParam_ParticleUpdateParam, action->GetBuffer()->GetGPUVirtualAddress());
-
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_SRV, particleDataSRVHandle);
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_UAV, particleDataUAVHandle);
-
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_ForcesSRV, forceSRVHandle);
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_ForcesUAV, forceUAVHandle);
-
-
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_EmiiterDataParam, cbvHandle);
-
-
-	commandList->Dispatch(m_ObjectCount / 256, 1, 1);
-
-	// Densityの更新が完了
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(pParticleDataResource, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(pParticleForceDataResource, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
-
-}
 
 bool ParticleEmitter::DrawCall()
 {
@@ -743,7 +462,7 @@ bool ParticleEmitter::DrawCall()
 	tempCommand->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
 	CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), srvIndex, descriptorSize);
-	tempCommand->SetGraphicsRootDescriptorTable(FluidParticleAction::RootParam_SRV, srvHandle);
+	tempCommand->SetGraphicsRootDescriptorTable(NormalParticleAction::RootParam_SRV, srvHandle);
 
 	if (m_IsMeshEmitter)
 	{
@@ -784,12 +503,6 @@ void ParticleEmitter::UpdateConstantBuffer()
 	case DrawParticleMode_BillBoard_Y:
 		break;
 
-	case  DrawParticleMode_FluidDepth:
-		billmat = m_Camera->GetBillBoardMat();
-		mat = vpMat;
-		//billmat = m_Camera->GetProjectMat();
-
-		break;
 	}
 
 
@@ -872,18 +585,8 @@ void ParticleEmitter::GenerateConBuff()
 void ParticleEmitter::GenerateComputeBuffer()
 {
 	GenerateCBParticleData();
-	GenerateCBDensityData();
-	GenerateCBForcesData();
-	GenerateCBWallData();
 }
 
-void ParticleEmitter::GenerateComputeBuffer(std::vector<WallPalam> wallParams)
-{
-	GenerateCBParticleData();
-	GenerateCBDensityData();
-	GenerateCBForcesData();
-	GenerateCBWallData(wallParams);
-}
 
 void ParticleEmitter::GenerateCBParticleData()
 {
@@ -1026,428 +729,6 @@ void ParticleEmitter::GenerateCBParticleData()
 	particleDatas.shrink_to_fit();
 }
 
-void ParticleEmitter::GenerateCBDensityData()
-{
-	std::vector<FluidParticleDensity> particleDatas;
-	particleDatas.resize(m_ObjectCount);
-
-	// コンピュートシェーダー用のバッファの生成
-	auto dataSize = (sizeof(FluidParticleDensity) * m_ObjectCount + 0xff) & ~0xff;
-	D3D12_HEAP_PROPERTIES defaultHeapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-	auto uploadHeapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-
-	D3D12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(dataSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
-	auto uploadBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(dataSize);
-
-	// 転送用と定数バッファを2つずつ作成する
-	DirectXDevice::GetInstance().GetDevice()->CreateCommittedResource(
-		&defaultHeapProp,
-		D3D12_HEAP_FLAG_NONE,
-		&bufferDesc,
-		D3D12_RESOURCE_STATE_COPY_DEST,
-		nullptr,
-		IID_PPV_ARGS(&m_FluidParticleDensityBuffer0)
-	);
-
-
-	DirectXDevice::GetInstance().GetDevice()->CreateCommittedResource(
-		&uploadHeapProp,
-		D3D12_HEAP_FLAG_NONE,
-		&uploadBufferDesc,
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&m_UploadFluidParticleDensityBuffer0)
-	);
-
-	DirectXDevice::GetInstance().GetDevice()->CreateCommittedResource(
-		&defaultHeapProp,
-		D3D12_HEAP_FLAG_NONE,
-		&bufferDesc,
-		D3D12_RESOURCE_STATE_COPY_DEST,
-		nullptr,
-		IID_PPV_ARGS(&m_FluidParticleDensityBuffer1)
-	);
-
-
-	DirectXDevice::GetInstance().GetDevice()->CreateCommittedResource(
-		&uploadHeapProp,
-		D3D12_HEAP_FLAG_NONE,
-		&uploadBufferDesc,
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&m_UploadFluidParticleDensityBuffer1)
-	);
-
-
-
-	D3D12_SUBRESOURCE_DATA particleData = {};
-	particleData.pData = reinterpret_cast<UINT8*>(&particleDatas[0]);
-	particleData.RowPitch = dataSize;
-	particleData.SlicePitch = particleData.RowPitch;
-
-	auto commandList = DirectXGraphics::GetInstance().GetCommandList();
-	// リソースの転送
-	UpdateSubresources<1>(commandList, m_FluidParticleDensityBuffer0.Get(), m_UploadFluidParticleDensityBuffer0.Get(), 0, 0, 1, &particleData);
-	UpdateSubresources<1>(commandList, m_FluidParticleDensityBuffer1.Get(), m_UploadFluidParticleDensityBuffer1.Get(), 0, 0, 1, &particleData);
-
-	// リソースをコピー状態から、ピクセルシェーダー以外のシェーダーで扱うに変更
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_FluidParticleDensityBuffer0.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_FluidParticleDensityBuffer1.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
-
-	// シェーダーリソースビューの生成
-	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-	srvDesc.Buffer.FirstElement = 0;
-	srvDesc.Buffer.NumElements = m_ObjectCount;
-	srvDesc.Buffer.StructureByteStride = sizeof(FluidParticleDensity);
-	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-
-	// SRVを生成
-	auto descriptorSize = DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle0(m_Heap->GetCPUDescriptorHandleForHeapStart(), SrvFluidParticleDensity0, descriptorSize);
-	CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle1(m_Heap->GetCPUDescriptorHandleForHeapStart(), SrvFluidParticleDensity1, descriptorSize);
-	DirectXDevice::GetInstance().GetDevice()->CreateShaderResourceView(m_FluidParticleDensityBuffer0.Get(), &srvDesc, srvHandle0);
-	DirectXDevice::GetInstance().GetDevice()->CreateShaderResourceView(m_FluidParticleDensityBuffer1.Get(), &srvDesc, srvHandle1);
-
-
-	// UAV（読み書き可のやつ）
-	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-	uavDesc.Format = DXGI_FORMAT_UNKNOWN;
-	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-	uavDesc.Buffer.FirstElement = 0;
-	uavDesc.Buffer.NumElements = m_ObjectCount; // 要素数
-	uavDesc.Buffer.StructureByteStride = sizeof(FluidParticleDensity);
-	uavDesc.Buffer.CounterOffsetInBytes = 0;
-	uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
-
-	CD3DX12_CPU_DESCRIPTOR_HANDLE uavHandle0(m_Heap->GetCPUDescriptorHandleForHeapStart(), UavFluidParticleDensity0, descriptorSize);
-	CD3DX12_CPU_DESCRIPTOR_HANDLE uavHandle1(m_Heap->GetCPUDescriptorHandleForHeapStart(), UavFluidParticleDensity1, descriptorSize);
-	DirectXDevice::GetInstance().GetDevice()->CreateUnorderedAccessView(m_FluidParticleDensityBuffer0.Get(), nullptr, &uavDesc, uavHandle0);
-	DirectXDevice::GetInstance().GetDevice()->CreateUnorderedAccessView(m_FluidParticleDensityBuffer1.Get(), nullptr, &uavDesc, uavHandle1);
-
-	particleDatas.clear();
-	particleDatas.shrink_to_fit();
-
-}
-
-void ParticleEmitter::GenerateCBForcesData()
-{
-	std::vector<FluidParticleForces> particleDatas;
-	particleDatas.resize(m_ObjectCount);
-
-	// コンピュートシェーダー用のバッファの生成
-	auto dataSize = (sizeof(FluidParticleForces) * m_ObjectCount + 0xff) & ~0xff;
-	D3D12_HEAP_PROPERTIES defaultHeapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-	auto uploadHeapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-
-	D3D12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(dataSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
-	auto uploadBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(dataSize);
-
-	// 転送用と定数バッファを2つずつ作成する
-	DirectXDevice::GetInstance().GetDevice()->CreateCommittedResource(
-		&defaultHeapProp,
-		D3D12_HEAP_FLAG_NONE,
-		&bufferDesc,
-		D3D12_RESOURCE_STATE_COPY_DEST,
-		nullptr,
-		IID_PPV_ARGS(&m_FluidParticleForcesBuffer0)
-	);
-
-
-
-	DirectXDevice::GetInstance().GetDevice()->CreateCommittedResource(
-		&uploadHeapProp,
-		D3D12_HEAP_FLAG_NONE,
-		&uploadBufferDesc,
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&m_UploadFluidParticleForcesBuffer0)
-	);
-
-	DirectXDevice::GetInstance().GetDevice()->CreateCommittedResource(
-		&defaultHeapProp,
-		D3D12_HEAP_FLAG_NONE,
-		&bufferDesc,
-		D3D12_RESOURCE_STATE_COPY_DEST,
-		nullptr,
-		IID_PPV_ARGS(&m_FluidParticleForcesBuffer1)
-	);
-
-
-
-	DirectXDevice::GetInstance().GetDevice()->CreateCommittedResource(
-		&uploadHeapProp,
-		D3D12_HEAP_FLAG_NONE,
-		&uploadBufferDesc,
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&m_UploadFluidParticleForcesBuffer1)
-	);
-
-
-
-	D3D12_SUBRESOURCE_DATA particleData = {};
-	particleData.pData = reinterpret_cast<UINT8*>(&particleDatas[0]);
-	particleData.RowPitch = dataSize;
-	particleData.SlicePitch = particleData.RowPitch;
-
-	auto commandList = DirectXGraphics::GetInstance().GetCommandList();
-	// リソースの転送
-	UpdateSubresources<1>(commandList, m_FluidParticleForcesBuffer0.Get(), m_UploadFluidParticleForcesBuffer0.Get(), 0, 0, 1, &particleData);
-	UpdateSubresources<1>(commandList, m_FluidParticleForcesBuffer1.Get(), m_UploadFluidParticleForcesBuffer1.Get(), 0, 0, 1, &particleData);
-
-	// リソースをコピー状態から、ピクセルシェーダー以外のシェーダーで扱うに変更
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_FluidParticleForcesBuffer0.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_FluidParticleForcesBuffer1.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
-
-	// シェーダーリソースビューの生成
-	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-	srvDesc.Buffer.FirstElement = 0;
-	srvDesc.Buffer.NumElements = m_ObjectCount;
-	srvDesc.Buffer.StructureByteStride = sizeof(FluidParticleForces);
-	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-
-	// SRVを生成
-	auto descriptorSize = DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle0(m_Heap->GetCPUDescriptorHandleForHeapStart(), SrvFluidParticleForce0, descriptorSize);
-	CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle1(m_Heap->GetCPUDescriptorHandleForHeapStart(), SrvFluidParticleForce1, descriptorSize);
-	DirectXDevice::GetInstance().GetDevice()->CreateShaderResourceView(m_FluidParticleForcesBuffer0.Get(), &srvDesc, srvHandle0);
-	DirectXDevice::GetInstance().GetDevice()->CreateShaderResourceView(m_FluidParticleForcesBuffer1.Get(), &srvDesc, srvHandle1);
-
-
-	// UAV（読み書き可のやつ）
-	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-	uavDesc.Format = DXGI_FORMAT_UNKNOWN;
-	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-	uavDesc.Buffer.FirstElement = 0;
-	uavDesc.Buffer.NumElements = m_ObjectCount; // 要素数
-	uavDesc.Buffer.StructureByteStride = sizeof(FluidParticleForces);
-	uavDesc.Buffer.CounterOffsetInBytes = 0;
-	uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
-
-	CD3DX12_CPU_DESCRIPTOR_HANDLE uavHandle0(m_Heap->GetCPUDescriptorHandleForHeapStart(), UavFluidParticleForce0, descriptorSize);
-	CD3DX12_CPU_DESCRIPTOR_HANDLE uavHandle1(m_Heap->GetCPUDescriptorHandleForHeapStart(), UavFluidParticleForce1, descriptorSize);
-	DirectXDevice::GetInstance().GetDevice()->CreateUnorderedAccessView(m_FluidParticleForcesBuffer0.Get(), nullptr, &uavDesc, uavHandle0);
-	DirectXDevice::GetInstance().GetDevice()->CreateUnorderedAccessView(m_FluidParticleForcesBuffer1.Get(), nullptr, &uavDesc, uavHandle1);
-
-	particleDatas.clear();
-	particleDatas.shrink_to_fit();
-
-}
-
-void ParticleEmitter::GenerateCBWallData()
-{
-	std::vector<WallPalam> particleDatas;
-	particleDatas.resize(m_wallCount);
-
-	// コンピュートシェーダー用のバッファの生成
-	auto dataSize = (sizeof(WallPalam) * m_wallCount + 0xff) & ~0xff;
-	D3D12_HEAP_PROPERTIES defaultHeapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-	auto uploadHeapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-
-	D3D12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(dataSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
-	auto uploadBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(dataSize);
-
-	// 転送用と定数バッファを2つずつ作成する
-	DirectXDevice::GetInstance().GetDevice()->CreateCommittedResource(
-		&defaultHeapProp,
-		D3D12_HEAP_FLAG_NONE,
-		&bufferDesc,
-		D3D12_RESOURCE_STATE_COPY_DEST,
-		nullptr,
-		IID_PPV_ARGS(&m_WallPalamBuffer0)
-	);
-
-	DirectXDevice::GetInstance().GetDevice()->CreateCommittedResource(
-		&uploadHeapProp,
-		D3D12_HEAP_FLAG_NONE,
-		&uploadBufferDesc,
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&m_UploadWallPalamBuffer0)
-	);
-
-	DirectXDevice::GetInstance().GetDevice()->CreateCommittedResource(
-		&defaultHeapProp,
-		D3D12_HEAP_FLAG_NONE,
-		&bufferDesc,
-		D3D12_RESOURCE_STATE_COPY_DEST,
-		nullptr,
-		IID_PPV_ARGS(&m_WallPalamBuffer1)
-	);
-
-	DirectXDevice::GetInstance().GetDevice()->CreateCommittedResource(
-		&uploadHeapProp,
-		D3D12_HEAP_FLAG_NONE,
-		&uploadBufferDesc,
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&m_UploadWallPalamBuffer1)
-	);
-
-
-
-	D3D12_SUBRESOURCE_DATA particleData = {};
-	particleData.pData = reinterpret_cast<UINT8*>(&particleDatas[0]);
-	particleData.RowPitch = dataSize;
-	particleData.SlicePitch = particleData.RowPitch;
-
-	auto commandList = DirectXGraphics::GetInstance().GetCommandList();
-	// リソースの転送
-	UpdateSubresources<1>(commandList, m_WallPalamBuffer0.Get(), m_UploadWallPalamBuffer0.Get(), 0, 0, 1, &particleData);
-	UpdateSubresources<1>(commandList, m_WallPalamBuffer1.Get(), m_UploadWallPalamBuffer1.Get(), 0, 0, 1, &particleData);
-
-	// リソースをコピー状態から、ピクセルシェーダー以外のシェーダーで扱うに変更
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_WallPalamBuffer0.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_WallPalamBuffer1.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
-
-	// シェーダーリソースビューの生成
-	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-	srvDesc.Buffer.FirstElement = 0;
-	srvDesc.Buffer.NumElements = m_wallCount;
-	srvDesc.Buffer.StructureByteStride = sizeof(WallPalam);
-	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-
-	// SRVを生成
-	auto descriptorSize = DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle0(m_Heap->GetCPUDescriptorHandleForHeapStart(), SrvFluidWallPalam0, descriptorSize);
-	CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle1(m_Heap->GetCPUDescriptorHandleForHeapStart(), SrvFluidWallPalam1, descriptorSize);
-	DirectXDevice::GetInstance().GetDevice()->CreateShaderResourceView(m_WallPalamBuffer0.Get(), &srvDesc, srvHandle0);
-	DirectXDevice::GetInstance().GetDevice()->CreateShaderResourceView(m_WallPalamBuffer1.Get(), &srvDesc, srvHandle1);
-
-
-	// UAV（読み書き可のやつ）
-	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-	uavDesc.Format = DXGI_FORMAT_UNKNOWN;
-	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-	uavDesc.Buffer.FirstElement = 0;
-	uavDesc.Buffer.NumElements = m_wallCount; // 要素数
-	uavDesc.Buffer.StructureByteStride = sizeof(WallPalam);
-	uavDesc.Buffer.CounterOffsetInBytes = 0;
-	uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
-
-	CD3DX12_CPU_DESCRIPTOR_HANDLE uavHandle0(m_Heap->GetCPUDescriptorHandleForHeapStart(), UavFluidWallPalam0, descriptorSize);
-	CD3DX12_CPU_DESCRIPTOR_HANDLE uavHandle1(m_Heap->GetCPUDescriptorHandleForHeapStart(), UavFluidWallPalam1, descriptorSize);
-	
-	DirectXDevice::GetInstance().GetDevice()->CreateUnorderedAccessView(m_WallPalamBuffer0.Get(), nullptr, &uavDesc, uavHandle0);
-	DirectXDevice::GetInstance().GetDevice()->CreateUnorderedAccessView(m_WallPalamBuffer1.Get(), nullptr, &uavDesc, uavHandle1);
-
-	particleDatas.clear();
-	particleDatas.shrink_to_fit();
-
-}
-
-void ParticleEmitter::GenerateCBWallData(std::vector<WallPalam> wallParams)
-{
-	//std::vector<WallPalam> particleDatas;
-	//particleDatas.resize(m_wallCount);
-
-	m_wallCount = wallParams.size();
-
-	// コンピュートシェーダー用のバッファの生成
-	auto dataSize = (sizeof(WallPalam) * m_wallCount + 0xff) & ~0xff;
-	D3D12_HEAP_PROPERTIES defaultHeapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-	auto uploadHeapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-
-	D3D12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(dataSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
-	auto uploadBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(dataSize);
-
-	// 転送用と定数バッファを2つずつ作成する
-	DirectXDevice::GetInstance().GetDevice()->CreateCommittedResource(
-		&defaultHeapProp,
-		D3D12_HEAP_FLAG_NONE,
-		&bufferDesc,
-		D3D12_RESOURCE_STATE_COPY_DEST,
-		nullptr,
-		IID_PPV_ARGS(&m_WallPalamBuffer0)
-	);
-
-
-
-	DirectXDevice::GetInstance().GetDevice()->CreateCommittedResource(
-		&uploadHeapProp,
-		D3D12_HEAP_FLAG_NONE,
-		&uploadBufferDesc,
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&m_UploadWallPalamBuffer0)
-	);
-
-	DirectXDevice::GetInstance().GetDevice()->CreateCommittedResource(
-		&defaultHeapProp,
-		D3D12_HEAP_FLAG_NONE,
-		&bufferDesc,
-		D3D12_RESOURCE_STATE_COPY_DEST,
-		nullptr,
-		IID_PPV_ARGS(&m_WallPalamBuffer1)
-	);
-
-	DirectXDevice::GetInstance().GetDevice()->CreateCommittedResource(
-		&uploadHeapProp,
-		D3D12_HEAP_FLAG_NONE,
-		&uploadBufferDesc,
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&m_UploadWallPalamBuffer1)
-	);
-
-
-
-	D3D12_SUBRESOURCE_DATA particleData = {};
-	particleData.pData = reinterpret_cast<UINT8*>(&wallParams[0]);
-	particleData.RowPitch = dataSize;
-	particleData.SlicePitch = particleData.RowPitch;
-
-	auto commandList = DirectXGraphics::GetInstance().GetCommandList();
-	// リソースの転送
-	UpdateSubresources<1>(commandList, m_WallPalamBuffer0.Get(), m_UploadWallPalamBuffer0.Get(), 0, 0, 1, &particleData);
-	UpdateSubresources<1>(commandList, m_WallPalamBuffer1.Get(), m_UploadWallPalamBuffer1.Get(), 0, 0, 1, &particleData);
-
-	// リソースをコピー状態から、ピクセルシェーダー以外のシェーダーで扱うに変更
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_WallPalamBuffer0.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_WallPalamBuffer1.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
-
-	// シェーダーリソースビューの生成
-	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-	srvDesc.Buffer.FirstElement = 0;
-	srvDesc.Buffer.NumElements = m_wallCount;
-	srvDesc.Buffer.StructureByteStride = sizeof(WallPalam);
-	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-
-	// SRVを生成
-	auto descriptorSize = DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle0(m_Heap->GetCPUDescriptorHandleForHeapStart(), SrvFluidWallPalam0, descriptorSize);
-	CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle1(m_Heap->GetCPUDescriptorHandleForHeapStart(), SrvFluidWallPalam1, descriptorSize);
-	DirectXDevice::GetInstance().GetDevice()->CreateShaderResourceView(m_WallPalamBuffer0.Get(), &srvDesc, srvHandle0);
-	DirectXDevice::GetInstance().GetDevice()->CreateShaderResourceView(m_WallPalamBuffer1.Get(), &srvDesc, srvHandle1);
-
-
-	// UAV（読み書き可のやつ）
-	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-	uavDesc.Format = DXGI_FORMAT_UNKNOWN;
-	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-	uavDesc.Buffer.FirstElement = 0;
-	uavDesc.Buffer.NumElements = m_wallCount; // 要素数
-	uavDesc.Buffer.StructureByteStride = sizeof(WallPalam);
-	uavDesc.Buffer.CounterOffsetInBytes = 0;
-	uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
-
-	CD3DX12_CPU_DESCRIPTOR_HANDLE uavHandle0(m_Heap->GetCPUDescriptorHandleForHeapStart(), UavFluidWallPalam0, descriptorSize);
-	CD3DX12_CPU_DESCRIPTOR_HANDLE uavHandle1(m_Heap->GetCPUDescriptorHandleForHeapStart(), UavFluidWallPalam1, descriptorSize);
-	DirectXDevice::GetInstance().GetDevice()->CreateUnorderedAccessView(m_WallPalamBuffer0.Get(), nullptr, &uavDesc, uavHandle0);
-	DirectXDevice::GetInstance().GetDevice()->CreateUnorderedAccessView(m_WallPalamBuffer1.Get(), nullptr, &uavDesc, uavHandle1);
-}
 
 void ParticleEmitter::GenerateComputeHeap()
 {
@@ -1485,346 +766,6 @@ void ParticleEmitter::GenerateTexture()
 ParticleEmitter::DrawParticleMode ParticleEmitter::GetDrawParticleMode()
 {
 	return m_DrawPrticleMode;
-}
-
-void ParticleEmitter::UpdateForce(std::shared_ptr<FluidParticleAction> action, ID3D12GraphicsCommandList* commandList)
-{
-	if (!m_IsUpdate)return;
-	if (m_DestroyFlag)return;
-	if (m_DummyFlag)
-	{
-		UpdateEmitterBuffer();
-		m_DummyFlag = false;
-	}
-
-	auto descriptorSize = DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-
-	int particleDataSRVIndex;
-	
-	int fourceDataSRVIndex;
-	int fourceDataUAVIndex;
-
-	int pressuerWallSRVIndex;
-
-
-
-	// ここにリソースが入ってくる！
-	ID3D12Resource* pForceDataResource = nullptr;
-
-	// 壁パラメータのSRVとUAVのセット
-
-	// インデックスによって、セットするディスクリプターを変更
-	if (m_UavIndex == 0)
-	{
-		particleDataSRVIndex = SrvParticlePosVelo0;
-		pressuerWallSRVIndex = SrvFluidWallPalam0;
-		fourceDataSRVIndex = SrvFluidParticleForce0;
-
-		pForceDataResource = m_FluidParticleForcesBuffer1.Get();
-		fourceDataUAVIndex = UavFluidParticleForce1;
-	}
-	else
-	{
-		particleDataSRVIndex = SrvParticlePosVelo1;
-		pressuerWallSRVIndex = SrvFluidWallPalam1;
-		fourceDataSRVIndex = SrvFluidParticleForce1;
-
-		pForceDataResource = m_FluidParticleForcesBuffer0.Get();
-		fourceDataUAVIndex = UavFluidParticleForce0;
-
-	}
-
-
-	// 読み書き可にする
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-		pForceDataResource,
-		D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
-		D3D12_RESOURCE_STATE_UNORDERED_ACCESS
-	));
-
-
-
-	auto pso = action->GetForcePSO();
-	commandList->SetPipelineState(pso.pso.Get());
-	commandList->SetComputeRootSignature(pso.rootSignature.Get());
-
-	ID3D12DescriptorHeap* ppHaaps[] = { m_Heap.Get() };
-	commandList->SetDescriptorHeaps(_countof(ppHaaps), ppHaaps);
-
-
-
-	CD3DX12_GPU_DESCRIPTOR_HANDLE particleDataSRVHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), particleDataSRVIndex, descriptorSize);
-	CD3DX12_GPU_DESCRIPTOR_HANDLE wallParamDataSRVHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), pressuerWallSRVIndex, descriptorSize);
-
-
-	CD3DX12_GPU_DESCRIPTOR_HANDLE forceSRVHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), fourceDataSRVIndex, descriptorSize);
-	CD3DX12_GPU_DESCRIPTOR_HANDLE forceUAVHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), fourceDataUAVIndex, descriptorSize);
-
-	CD3DX12_GPU_DESCRIPTOR_HANDLE cbvHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), EmitterData, descriptorSize);
-
-	commandList->SetComputeRootConstantBufferView(FluidParticleAction::RootParam_ParticleUpdateParam, action->GetBuffer()->GetGPUVirtualAddress());
-
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_SRV, particleDataSRVHandle);
-
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_WallPalamSRV, wallParamDataSRVHandle);
-
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_ForcesSRV, forceSRVHandle);
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_ForcesUAV, forceUAVHandle);
-
-
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_EmiiterDataParam, cbvHandle);
-
-
-	commandList->Dispatch(m_ObjectCount / 256, 1, 1);
-
-	// 壁パラメータの更新が完了
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(pForceDataResource, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
-
-}
-
-void ParticleEmitter::UpdateIntegrate(std::shared_ptr<FluidParticleAction> action,
-	ID3D12GraphicsCommandList* commandList)
-{
-	if (!m_IsUpdate)return;
-	if (m_DestroyFlag)return;
-	if (m_DummyFlag)
-	{
-		UpdateEmitterBuffer();
-		m_DummyFlag = false;
-	}
-
-	auto descriptorSize = DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-
-	int particleDataSRVIndex;
-	int particleDataUAVIndex;
-	int forceDataSRVIndex;
-
-
-	// ここにリソースが入ってくる！
-	ID3D12Resource* pParticleDataResource = nullptr;
-
-	// インデックスによって、セットするディスクリプターを変更
-	if (m_UavIndex == 0)
-	{
-		particleDataSRVIndex = SrvParticlePosVelo1;		
-		forceDataSRVIndex = SrvFluidParticleForce0;
-		
-		particleDataUAVIndex = UavParticlePosVelo0;
-		pParticleDataResource = m_ParticleDataBuff0.Get();
-	}
-	else
-	{
-		particleDataSRVIndex = SrvParticlePosVelo0;
-		forceDataSRVIndex = SrvFluidParticleForce1;
-
-		particleDataUAVIndex = UavParticlePosVelo1;
-		pParticleDataResource = m_ParticleDataBuff1.Get();
-	}
-
-
-	// 読み書き可にする
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-		pParticleDataResource,
-		D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
-		D3D12_RESOURCE_STATE_UNORDERED_ACCESS
-	));
-
-	auto pso = action->GetIntegratePSO();
-	commandList->SetPipelineState(pso.pso.Get());
-	commandList->SetComputeRootSignature(pso.rootSignature.Get());
-
-	ID3D12DescriptorHeap* ppHaaps[] = { m_Heap.Get() };
-	commandList->SetDescriptorHeaps(_countof(ppHaaps), ppHaaps);
-
-
-
-	CD3DX12_GPU_DESCRIPTOR_HANDLE particleDataSRVHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), particleDataSRVIndex, descriptorSize);
-	CD3DX12_GPU_DESCRIPTOR_HANDLE particleDataUAVHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), particleDataUAVIndex, descriptorSize);
-
-	CD3DX12_GPU_DESCRIPTOR_HANDLE forceSRVHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), forceDataSRVIndex, descriptorSize);
-
-	CD3DX12_GPU_DESCRIPTOR_HANDLE cbvHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), EmitterData, descriptorSize);
-
-	commandList->SetComputeRootConstantBufferView(FluidParticleAction::RootParam_ParticleUpdateParam, action->GetBuffer()->GetGPUVirtualAddress());
-
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_SRV, particleDataSRVHandle);
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_UAV, particleDataUAVHandle);
-
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_ForcesSRV, forceSRVHandle);
-
-
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_EmiiterDataParam, cbvHandle);
-
-
-	commandList->Dispatch(m_ObjectCount / 256, 1, 1);
-
-	// Densityの更新が完了
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(pParticleDataResource, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
-
-}
-
-void ParticleEmitter::UpdatePressure(std::shared_ptr<FluidParticleAction> action,
-	ID3D12GraphicsCommandList* commandList)
-{
-	if (!m_IsUpdate)return;
-	if (m_DestroyFlag)return;
-	if (m_DummyFlag)
-	{
-		UpdateEmitterBuffer();
-		m_DummyFlag = false;
-	}
-
-	auto descriptorSize = DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-
-	int particleDataSRVIndex;
-	int wallDataSRVIndex;
-
-	int forceDataUAVIndex;
-
-	// ここにリソースが入ってくる！
-	ID3D12Resource* pParticleForceResource = nullptr;
-
-	// インデックスによって、セットするディスクリプターを変更
-	if (m_UavIndex == 0)
-	{
-		particleDataSRVIndex = SrvParticlePosVelo1;
-		wallDataSRVIndex = SrvFluidWallPalam0;
-		
-		forceDataUAVIndex = UavFluidParticleForce1;
-		pParticleForceResource = m_ParticleDataBuff1.Get();
-	}
-	else
-	{
-		particleDataSRVIndex = SrvParticlePosVelo0;
-		wallDataSRVIndex = SrvFluidWallPalam1;
-
-		forceDataUAVIndex = UavFluidParticleForce0;
-		pParticleForceResource = m_ParticleDataBuff0.Get();
-	}
-
-
-	// 読み書き可にする
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-		pParticleForceResource,
-		D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
-		D3D12_RESOURCE_STATE_UNORDERED_ACCESS
-	));
-
-	auto pso = action->GetPressurePSO();
-	commandList->SetPipelineState(pso.pso.Get());
-	commandList->SetComputeRootSignature(pso.rootSignature.Get());
-
-	ID3D12DescriptorHeap* ppHaaps[] = { m_Heap.Get() };
-	commandList->SetDescriptorHeaps(_countof(ppHaaps), ppHaaps);
-
-
-
-	CD3DX12_GPU_DESCRIPTOR_HANDLE particleDataSRVHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), particleDataSRVIndex, descriptorSize);
-	CD3DX12_GPU_DESCRIPTOR_HANDLE forceUAVHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), forceDataUAVIndex, descriptorSize);
-	CD3DX12_GPU_DESCRIPTOR_HANDLE wallDataSRV(m_Heap->GetGPUDescriptorHandleForHeapStart(), wallDataSRVIndex, descriptorSize);
-
-	CD3DX12_GPU_DESCRIPTOR_HANDLE cbvHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), EmitterData, descriptorSize);
-
-	commandList->SetComputeRootConstantBufferView(FluidParticleAction::RootParam_ParticleUpdateParam, action->GetBuffer()->GetGPUVirtualAddress());
-
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_SRV, particleDataSRVHandle);
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_ForcesUAV, forceUAVHandle);
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_WallPalamSRV, wallDataSRV);
-
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_EmiiterDataParam, cbvHandle);
-
-
-	commandList->Dispatch(m_ObjectCount / 256, 1, 1);
-
-	// Forceの更新が完了
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(pParticleForceResource, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
-
-}
-
-void ParticleEmitter::UpdatePressureGradient(std::shared_ptr<FluidParticleAction> action,
-	ID3D12GraphicsCommandList* commandList)
-{
-	if (!m_IsUpdate)return;
-	if (m_DestroyFlag)return;
-	if (m_DummyFlag)
-	{
-		UpdateEmitterBuffer();
-		m_DummyFlag = false;
-	}
-
-	auto descriptorSize = DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-	int particleDataSRVIndex;
-	int wallDataSRVIndex;
-
-	int forceDataUAVIndex;
-	int forceDataSRVIndex;
-
-	// ここにリソースが入ってくる！
-	ID3D12Resource* pParticleForceResource = nullptr;
-
-	// インデックスによって、セットするディスクリプターを変更
-	if (m_UavIndex == 0)
-	{
-		particleDataSRVIndex = SrvParticlePosVelo1;
-		wallDataSRVIndex = SrvFluidWallPalam1;
-		forceDataSRVIndex = SrvFluidParticleForce1;
-		
-		forceDataUAVIndex = UavFluidParticleForce0;
-		pParticleForceResource = m_ParticleDataBuff0.Get();
-	}
-	else
-	{
-		particleDataSRVIndex = SrvParticlePosVelo0;
-		wallDataSRVIndex = SrvFluidWallPalam0;
-		forceDataSRVIndex = SrvFluidParticleForce0;
-
-		forceDataUAVIndex = UavFluidParticleForce1;
-		pParticleForceResource = m_ParticleDataBuff1.Get();
-	}
-
-
-	// 読み書き可にする
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-		pParticleForceResource,
-		D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
-		D3D12_RESOURCE_STATE_UNORDERED_ACCESS
-	));
-
-	auto pso = action->GetPressureGradientPSO();
-	commandList->SetPipelineState(pso.pso.Get());
-	commandList->SetComputeRootSignature(pso.rootSignature.Get());
-
-	ID3D12DescriptorHeap* ppHaaps[] = { m_Heap.Get() };
-	commandList->SetDescriptorHeaps(_countof(ppHaaps), ppHaaps);
-
-
-	CD3DX12_GPU_DESCRIPTOR_HANDLE particleDataSRVHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), particleDataSRVIndex, descriptorSize);
-	CD3DX12_GPU_DESCRIPTOR_HANDLE forceUAVHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), forceDataUAVIndex, descriptorSize);
-	CD3DX12_GPU_DESCRIPTOR_HANDLE forceSRVHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), forceDataSRVIndex, descriptorSize);
-	CD3DX12_GPU_DESCRIPTOR_HANDLE wallDataSRV(m_Heap->GetGPUDescriptorHandleForHeapStart(), wallDataSRVIndex, descriptorSize);
-
-	CD3DX12_GPU_DESCRIPTOR_HANDLE cbvHandle(m_Heap->GetGPUDescriptorHandleForHeapStart(), EmitterData, descriptorSize);
-
-	commandList->SetComputeRootConstantBufferView(FluidParticleAction::RootParam_ParticleUpdateParam, action->GetBuffer()->GetGPUVirtualAddress());
-
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_SRV, particleDataSRVHandle);
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_ForcesUAV, forceUAVHandle);
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_ForcesSRV, forceSRVHandle);
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_WallPalamSRV, wallDataSRV);
-
-	commandList->SetComputeRootDescriptorTable(FluidParticleAction::RootParam_EmiiterDataParam, cbvHandle);
-
-
-	commandList->Dispatch(m_ObjectCount / 256, 1, 1);
-
-
-	// Densityの更新が完了
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(pParticleForceResource, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
-
 }
 
 void ParticleEmitter::GenerateTextureView()
