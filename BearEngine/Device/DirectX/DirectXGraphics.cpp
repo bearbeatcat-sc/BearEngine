@@ -420,7 +420,7 @@ void DirectXGraphics::SetClearColor(const DirectX::SimpleMath::Color& color)
 	m_ClearColor[3] = color.A();
 }
 
-ID3D12GraphicsCommandList* DirectXGraphics::GetCommandList()
+ID3D12GraphicsCommandList5* DirectXGraphics::GetCommandList()
 {
 	return m_CommandList.Get();
 }
@@ -698,7 +698,7 @@ HRESULT DirectXGraphics::CreateCommandAloocator()
 	HRESULT result = S_OK;
 
 	result = DirectXDevice::GetInstance().GetDevice()->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
-		IID_PPV_ARGS(&m_CommandAllocator));
+	                                                                          IID_PPV_ARGS(&m_CommandAllocator));
 
 	return result;
 }
@@ -714,7 +714,7 @@ HRESULT DirectXGraphics::CreateCommandQueue()
 	cmdQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 
 	result = DirectXDevice::GetInstance().GetDevice()->CreateCommandQueue(&cmdQueueDesc,
-		IID_PPV_ARGS(&m_CommandQueue));
+	                                                                      IID_PPV_ARGS(&m_CommandQueue));
 
 	return result;
 }
@@ -724,7 +724,7 @@ HRESULT DirectXGraphics::CreateCommandList()
 	HRESULT result = S_OK;
 
 	result = DirectXDevice::GetInstance().GetDevice()->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT,
-		m_CommandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_CommandList));
+	                                                                     m_CommandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_CommandList));
 
 	return result;
 }

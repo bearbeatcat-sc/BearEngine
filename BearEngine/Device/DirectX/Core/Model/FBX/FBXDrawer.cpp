@@ -137,7 +137,7 @@ bool FBXDrawer::initPSO()
 
 
 
-	// PSO�̍쐬
+	// PSO�̍쐬
 	D3D12_BLEND_DESC blendDesc = {};
 	blendDesc.AlphaToCoverageEnable = false;
 	blendDesc.IndependentBlendEnable = false;

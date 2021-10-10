@@ -24,6 +24,7 @@ public:
 	WNDCLASSEX GetWndClassEx();
 	float GetAspect();
 	const std::string FileOpen();
+	void MsgBox(const std::string&& msg, const std::string& caption);
 
 protected:
 	WindowApp();
@@ -31,11 +32,11 @@ protected:
 
 
 private:
-	HWND m_Hwnd;
-	WNDCLASSEX m_w;
-	WindowSize windowSize;
-	Game* m_Game;
-	BearEngine* m_pBearEngine;
+	HWND hwnd_;
+	WNDCLASSEX w_;
+	WindowSize window_size_;
+	Game* game_;
+	BearEngine* bear_engine_;
 
 };
 

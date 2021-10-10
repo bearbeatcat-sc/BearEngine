@@ -59,7 +59,7 @@ public:
 	ID3D12DescriptorHeap* GetDSVHeap();
 	ID3D12DescriptorHeap* GetRTVHeap();
 
-	ID3D12GraphicsCommandList* GetCommandList();
+	ID3D12GraphicsCommandList5* GetCommandList();
 	IDXGISwapChain4* GetSwapChain();
 
 	HRESULT SetDefaultScissorRect(const D3D12_RECT& rect);
@@ -114,7 +114,7 @@ private:
 	ComPtr<ID3D12Fence> m_Fence;
 	ComPtr<ID3D12DescriptorHeap> m_RtvHeaps;
 	ComPtr<ID3D12DescriptorHeap> m_DsvHeaps;
-	ComPtr<ID3D12GraphicsCommandList> m_CommandList;
+	ComPtr<ID3D12GraphicsCommandList5> m_CommandList;
 	ComPtr<ID3D12CommandAllocator> m_CommandAllocator;
 	ComPtr<ID3D12DescriptorHeap> m_ImGUIHeaps;
 	ComPtr<IDXGISwapChain4> m_Swapchain;

@@ -228,6 +228,7 @@
     <ClCompile Include="Device\DirectX\DirectXGraphics.cpp" />
     <ClCompile Include="Device\DirectX\DirectXInput.cpp" />
     <ClCompile Include="Device\DirectX\FontSystem.cpp" />
+    <ClCompile Include="Device\DXRPipeLine.cpp" />
     <ClCompile Include="Device\ParticleSystems\NormalParticleAction.cpp" />
     <ClCompile Include="Device\ParticleSystems\ParticleActionManager.cpp" />
     <ClCompile Include="Device\ParticleSystems\ParticleManager.cpp" />
@@ -324,6 +325,7 @@
     <ClInclude Include="Device\DirectX\DirectXGraphics.h" />
     <ClInclude Include="Device\DirectX\DirectXInput.h" />
     <ClInclude Include="Device\DirectX\FontSystem.h" />
+    <ClInclude Include="Device\DXRPipeLine.h" />
     <ClInclude Include="Device\ParticleSystems\NormalParticleAction.h" />
     <ClInclude Include="Device\ParticleSystems\ParticleActionManager.h" />
     <ClInclude Include="Device\ParticleSystems\ParticleManager.h" />

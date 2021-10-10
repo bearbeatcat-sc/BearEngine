@@ -5,14 +5,6 @@
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
 
-DirectXDevice::DirectXDevice()
-{
-}
-
-DirectXDevice::~DirectXDevice()
-{
-
-}
 
 HRESULT DirectXDevice::InitDirectX()
 {
@@ -26,21 +18,21 @@ HRESULT DirectXDevice::InitDirectX()
 	return result;
 }
 
-ID3D12Device* DirectXDevice::GetDevice()
+ID3D12Device5* DirectXDevice::GetDevice()
 {
-	return m_Device.Get();
+	return device_.Get();
 }
 
 IDXGIFactory6* DirectXDevice::GetDxgiFactory()
 {
-	return m_DXGIFactory.Get();
+	return dxgi_factory_.Get();
 }
 
 ComPtr<ID3D12Resource1> DirectXDevice::CreateResource(const CD3DX12_RESOURCE_DESC& desc, D3D12_RESOURCE_STATES resourceStates, const D3D12_CLEAR_VALUE* clearValue, D3D12_HEAP_TYPE heapType)
 {
 	ComPtr<ID3D12Resource1> ret;
 
-	m_Device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(heapType),
+	device_->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(heapType),
 		D3D12_HEAP_FLAG_NONE,
 		&desc,
 		resourceStates,
@@ -73,7 +65,7 @@ void DirectXDevice::DeviceRemovedHandler()
 {
 	ComPtr<ID3D12DeviceRemovedExtendedData> pDred;
 
-	if (SUCCEEDED(m_Device->QueryInterface(IID_PPV_ARGS(&pDred))))
+	if (SUCCEEDED(device_->QueryInterface(IID_PPV_ARGS(&pDred))))
 	{
 		D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT DredAutoBredcrumbOutput;
 		D3D12_DRED_PAGE_FAULT_OUTPUT DredPageFaultOutput;
@@ -100,7 +92,7 @@ HRESULT DirectXDevice::CreateDevice()
 
 	for (int i = 0; i < _countof(levels); i++)
 	{
-		result = D3D12CreateDevice(nullptr, levels[i], IID_PPV_ARGS(&m_Device));
+		result = D3D12CreateDevice(nullptr, levels[i], IID_PPV_ARGS(&device_));
 
 		if (result == S_OK)
 		{
@@ -108,7 +100,7 @@ HRESULT DirectXDevice::CreateDevice()
 			break;
 		}
 	}
-
+	
 	return result;
 }
 
@@ -116,7 +108,7 @@ HRESULT DirectXDevice::CreateDxgiFactory()
 {
 	HRESULT result = S_OK;
 
-	result = CreateDXGIFactory(IID_PPV_ARGS(&m_DXGIFactory));
+	result = CreateDXGIFactory(IID_PPV_ARGS(&dxgi_factory_));
 
 	return result;
 }
@@ -127,9 +119,9 @@ void DirectXDevice::FindAdapter()
 {
 	std::vector<ComPtr<IDXGIAdapter>> adapters;
 
-	for (int i = 0; m_DXGIFactory->EnumAdapters(i, &m_Adapter) != DXGI_ERROR_NOT_FOUND; i++)
+	for (int i = 0; dxgi_factory_->EnumAdapters(i, &adapter_) != DXGI_ERROR_NOT_FOUND; i++)
 	{
-		adapters.push_back(m_Adapter.Get());
+		adapters.push_back(adapter_.Get());
 	}
 
 	for (int i = 0; i < adapters.size(); i++)
@@ -141,8 +133,20 @@ void DirectXDevice::FindAdapter()
 
 		if (strDesc.find(L"Microsoft") == std::wstring::npos)
 		{
-			m_Adapter = adapters[i];
+			adapter_ = adapters[i];
 			break;
 		}
 	}
+}
+
+// DXR‚É‘Î‰ž‚µ‚Ä‚¢‚é‚©H
+bool DirectXDevice::CheckSupportedDXR()
+{
+	D3D12_FEATURE_DATA_D3D12_OPTIONS5 features5;
+	HRESULT hr = device_->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &features5, sizeof(D3D12_FEATURE_DATA_D3D12_OPTIONS5));
+
+	if (SUCCEEDED(hr) && features5.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED)
+		return true;
+
+	return false;
 }

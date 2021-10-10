@@ -29,24 +29,24 @@ LRESULT WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 HRESULT WindowApp::Run(Game* game)
 {
-	m_Game = game;
+	game_ = game;
 	OutputDebugStringA("Hello,DirectX!!\n");
 
-	windowSize = { m_Game->windowSize_X,m_Game->windowSize_Y };
+	window_size_ = { game_->windowSize_X,game_->windowSize_Y };
 
-	m_w.cbSize = sizeof(WNDCLASSEX);
-	m_w.lpfnWndProc = (WNDPROC)WindowProc;
-	m_w.lpszClassName = m_Game->m_AppName;
-	m_w.hInstance = GetModuleHandle(nullptr);
-	m_w.hCursor = LoadCursor(NULL, IDC_ARROW);
+	w_.cbSize = sizeof(WNDCLASSEX);
+	w_.lpfnWndProc = (WNDPROC)WindowProc;
+	w_.lpszClassName = game_->m_AppName;
+	w_.hInstance = GetModuleHandle(nullptr);
+	w_.hCursor = LoadCursor(NULL, IDC_ARROW);
 
-	RegisterClassEx(&m_w);
-	RECT wrc = { 0,0,windowSize.window_Width,windowSize.window_Height };
+	RegisterClassEx(&w_);
+	RECT wrc = { 0,0,window_size_.window_Width,window_size_.window_Height };
 	AdjustWindowRect(&wrc, WS_OVERLAPPEDWINDOW, false);
 
-	m_Hwnd = CreateWindow(
-		m_w.lpszClassName,
-		m_Game->m_AppName,
+	hwnd_ = CreateWindow(
+		w_.lpszClassName,
+		game_->m_AppName,
 		WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
@@ -54,14 +54,14 @@ HRESULT WindowApp::Run(Game* game)
 		wrc.bottom - wrc.top,
 		nullptr,
 		nullptr,
-		m_w.hInstance,
+		w_.hInstance,
 		nullptr
 	);
 
-	ShowWindow(m_Hwnd, SW_SHOW);
+	ShowWindow(hwnd_, SW_SHOW);
 
-	m_pBearEngine = new BearEngine();
-	m_pBearEngine->InitEngine();
+	bear_engine_ = new BearEngine();
+	bear_engine_->InitEngine();
 
 	if (ImGui::CreateContext() == nullptr)
 	{
@@ -69,7 +69,7 @@ HRESULT WindowApp::Run(Game* game)
 		return false;
 	}
 
-	ImGui_ImplWin32_Init(m_Hwnd);
+	ImGui_ImplWin32_Init(hwnd_);
 
 	bool result = ImGui_ImplDX12_Init(DirectXDevice::GetInstance().GetDevice(),
 		3,
@@ -80,7 +80,7 @@ HRESULT WindowApp::Run(Game* game)
 
 
 
-	m_Game->Init();
+	game_->Init();
 
 	Time time;
 
@@ -101,44 +101,44 @@ HRESULT WindowApp::Run(Game* game)
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
 
-		m_pBearEngine->EngineUpdate();
-		m_pBearEngine->EngineDrawBegin();
-		m_pBearEngine->EngineDraw();
-		m_Game->Update();
-		m_pBearEngine->EngineDrawEnd();
+		bear_engine_->EngineUpdate();
+		bear_engine_->EngineDrawBegin();
+		bear_engine_->EngineDraw();
+		game_->Update();
+		bear_engine_->EngineDrawEnd();
 
 		if (msg.message == WM_QUIT)
 		{
-			m_Game->Destroy();
+			game_->Destroy();
 			break;
 		}
 	}
 
 	ImGui_ImplDX12_Shutdown();
 	ImGui::DestroyContext();
-	UnregisterClass(m_w.lpszClassName, m_w.hInstance);
+	UnregisterClass(w_.lpszClassName, w_.hInstance);
 
 	return S_OK;
 }
 
 HWND WindowApp::GetHWND()
 {
-	return m_Hwnd;
+	return hwnd_;
 }
 
 WindowSize WindowApp::GetWindowSize()
 {
-	return windowSize;
+	return window_size_;
 }
 
 WNDCLASSEX WindowApp::GetWndClassEx()
 {
-	return m_w;
+	return w_;
 }
 
 float WindowApp::GetAspect()
 {
-	return static_cast<float>(windowSize.window_Height) / static_cast<float>(windowSize.window_Width);
+	return static_cast<float>(window_size_.window_Height) / static_cast<float>(window_size_.window_Width);
 }
 
 const std::string WindowApp::FileOpen()
@@ -190,6 +190,10 @@ const std::string WindowApp::FileOpen()
 	return filePath;
 }
 
+void WindowApp::MsgBox(const std::string&& msg,const std::string& caption)
+{
+	MessageBoxA(hwnd_, msg.c_str(), caption.c_str(), MB_OK);
+}
 
 
 WindowApp::WindowApp()
@@ -201,6 +205,6 @@ WindowApp::WindowApp()
 
 WindowApp::~WindowApp()
 {
-	delete m_Game;
-	delete m_pBearEngine;
+	delete game_;
+	delete bear_engine_;
 }
