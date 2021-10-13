@@ -208,6 +208,8 @@ void RenderingPipeLine::DrawBegin()
 {
 	DrawPostEffect();
 	DirectXGraphics::GetInstance().Begin();
+
+	DXRPipeLine::GetInstance().Render(m_result_bloom_resource.Get());
 }
 
 void RenderingPipeLine::Draw()
@@ -405,7 +407,7 @@ void RenderingPipeLine::EffectBloom()
 
 	// 最終的なBloomのリザルトを描画
 	m_pCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_result_bloom_resource.Get(),
-		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+		D3D12_RESOURCE_STATE_COPY_DEST,
 		D3D12_RESOURCE_STATE_RENDER_TARGET));
 
 	m_pCommandList->OMSetRenderTargets(1, &bloomBufferPointer, false, nullptr);
@@ -870,11 +872,12 @@ HRESULT RenderingPipeLine::CreateRenderResource()
 			&claeValue,
 			IID_PPV_ARGS(m_OutputRenderResource.ReleaseAndGetAddressOf()));
 
+	// 現状、最終結果のリソースをDXRようにコピー状態に
 	result = DirectXDevice::GetInstance().GetDevice()
 		->CreateCommittedResource(&heapProp,
 			D3D12_HEAP_FLAG_NONE,
 			&resDesc,
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+			D3D12_RESOURCE_STATE_COPY_DEST,
 			&claeValue,
 			IID_PPV_ARGS(m_result_bloom_resource.ReleaseAndGetAddressOf()));
 

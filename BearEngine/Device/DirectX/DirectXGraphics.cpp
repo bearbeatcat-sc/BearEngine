@@ -430,6 +430,19 @@ IDXGISwapChain4* DirectXGraphics::GetSwapChain()
 	return m_Swapchain.Get();
 }
 
+void DirectXGraphics::ResourceBarrier(ID3D12Resource* pResource, D3D12_RESOURCE_STATES stateBefore,
+	D3D12_RESOURCE_STATES stateAfter)
+{
+	D3D12_RESOURCE_BARRIER barrier = {};
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrier.Transition.pResource = pResource;
+	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrier.Transition.StateBefore = stateBefore;
+	barrier.Transition.StateAfter = stateAfter;
+
+	m_CommandList->ResourceBarrier(1, &barrier);
+}
+
 bool DirectXGraphics::WaitForPreviousFrame()
 {
 	if (m_Fence->GetCompletedValue() != m_FenceVal)

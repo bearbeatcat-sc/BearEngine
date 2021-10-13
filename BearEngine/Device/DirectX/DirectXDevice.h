@@ -26,6 +26,8 @@ public:
 	void EnableDebugLayer();
 	void DeviceRemovedHandler();
 	bool CheckSupportedDXR();
+	ComPtr<ID3D12RootSignature> CreateRootSignature(const D3D12_ROOT_SIGNATURE_DESC& desc);
+	ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(uint32_t count, D3D12_DESCRIPTOR_HEAP_TYPE type, bool shaderVisible);
 
 protected:
 	DirectXDevice() = default;

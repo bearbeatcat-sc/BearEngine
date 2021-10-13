@@ -29,24 +29,4 @@ public:
 
 private:
 	CameraAsistant* m_CameraAsistant;
-
-	int m_partcile_count;
-	float m_particle_size;
-	DirectX::SimpleMath::Vector3 m_generate_position;
-	DirectX::SimpleMath::Vector3 m_add_velocity;
-	DirectX::SimpleMath::Vector3 m_generate_range;
-	DirectX::SimpleMath::Vector3 m_velocity;
-
-	DirectX::SimpleMath::Vector3 mSpeherePosition;
-	Sphere* mSpehere;
-
-	const int total_particle_count = 20000;
-	int mCurrentParticleCount;
-
-	std::shared_ptr<ParticleEmitter> m_GPUParticleEmitter;	
-	std::list<std::shared_ptr<ParticleEmitter>> m_particles;
-
-
-	std::shared_ptr<Timer> mParticleTimer;
-	const float mParticleTime = 0.01f;
 };

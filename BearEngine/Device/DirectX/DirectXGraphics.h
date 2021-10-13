@@ -62,6 +62,8 @@ public:
 	ID3D12GraphicsCommandList5* GetCommandList();
 	IDXGISwapChain4* GetSwapChain();
 
+	void ResourceBarrier(ID3D12Resource* pResource, D3D12_RESOURCE_STATES stateBefore, D3D12_RESOURCE_STATES stateAfter);
+
 	HRESULT SetDefaultScissorRect(const D3D12_RECT& rect);
 	HRESULT SetDefaultViewPort(const D3D12_VIEWPORT& view);
 

@@ -1,4 +1,6 @@
-#include "DirectXDevice.h"
+﻿#include "DirectXDevice.h"
+
+#include <dxcapi.h>
 #include <string>
 #include "../WindowApp.h"
 
@@ -139,7 +141,7 @@ void DirectXDevice::FindAdapter()
 	}
 }
 
-// DXR�ɑΉ����Ă��邩�H
+// DXR�ɑΉ����Ă��邩�H
 bool DirectXDevice::CheckSupportedDXR()
 {
 	D3D12_FEATURE_DATA_D3D12_OPTIONS5 features5;
@@ -149,4 +151,43 @@ bool DirectXDevice::CheckSupportedDXR()
 		return true;
 
 	return false;
+}
+
+ComPtr<ID3D12RootSignature> DirectXDevice::CreateRootSignature(const D3D12_ROOT_SIGNATURE_DESC& desc)
+{
+	ComPtr<ID3DBlob> pSigBlob;
+	ComPtr<ID3DBlob> pErrorBlob;
+
+	HRESULT hr = D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION_1, 
+		pSigBlob.GetAddressOf(), pErrorBlob.GetAddressOf());
+
+	if(FAILED(hr))
+	{
+		// TODO:後でエラー文の処理
+		return nullptr;
+	}
+	
+
+	ComPtr<ID3D12RootSignature> pRootSig;
+	device_->CreateRootSignature(
+		0,
+		pSigBlob.Get()->GetBufferPointer(),
+		pSigBlob.Get()->GetBufferSize(),
+		IID_PPV_ARGS(pRootSig.ReleaseAndGetAddressOf()));
+
+	return pRootSig;
+}
+
+ComPtr<ID3D12DescriptorHeap> DirectXDevice::CreateDescriptorHeap(uint32_t count, D3D12_DESCRIPTOR_HEAP_TYPE type,
+	bool shaderVisible)
+{
+	D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+	desc.NumDescriptors = count;
+	desc.Type = type;
+	desc.Flags = shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	ComPtr<ID3D12DescriptorHeap> pHeap;
+	device_->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&pHeap));
+
+	return pHeap;
 }
