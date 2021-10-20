@@ -164,6 +164,16 @@ ID3D12Resource* Mesh::GetWhiteTextureBuff()
 	return m_MeshDatas->GetWhiteTextureBuff();
 }
 
+std::shared_ptr<Buffer> Mesh::GetIndexBuffer()
+{
+	return m_MeshDatas->GetIndexBuffer();
+}
+
+std::shared_ptr<Buffer> Mesh::GetVertexBuffer()
+{
+	return m_MeshDatas->GetVertexBuffer();
+}
+
 MeshDrawer::CPU_GPU_Handles* Mesh::GetConstantDescHandle()
 {
 	return m_ConstantDescHandle;
@@ -202,6 +212,11 @@ const MeshData::MeshAABB Mesh::GetMeshAABB()
 	retAABB.m_Center = temp_center;
 
 	return retAABB;
+}
+
+const int Mesh::GetIndexCount()
+{
+	return m_MeshDatas->m_indexCount;
 }
 
 bool Mesh::GenerateConstantBuffer()

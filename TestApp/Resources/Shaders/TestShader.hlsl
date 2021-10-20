@@ -18,6 +18,10 @@ struct Payload
     float3 color;
 };
 
+struct MyAttribute
+{
+    float2 barys;
+};
 
 
 [shader("raygeneration")]
@@ -58,15 +62,14 @@ void miss(inout Payload payload)
 }
 
 [shader("closesthit")]
-void chs(inout Payload payload, in BuiltInTriangleIntersectionAttributes attribs)
+void chs(inout Payload payload, in MyAttribute attribs)
 {
-    float3 barycentrics = float3(1.0 - attribs.barycentrics.x - attribs.barycentrics.y, attribs.barycentrics.x, attribs.barycentrics.y);
+    float3 col = 0;
 
-    const float3 A = float3(1, 0, 0);
-    const float3 B = float3(0, 1, 0);
-    const float3 C = float3(0, 0, 1);
-
-    payload.color = A * barycentrics.x + B * barycentrics.y + C * barycentrics.z;
+    col.xy = attribs.barys;
+    col.z = 1.0 - col.x - col.y;
+	
+    payload.color = col;
 	
     //payload.color = float3(0.4, 0.6, 0.2);
 

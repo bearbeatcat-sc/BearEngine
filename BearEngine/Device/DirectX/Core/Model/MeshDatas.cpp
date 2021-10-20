@@ -221,6 +221,16 @@ const MeshData::MeshAABB& MeshData::GetMeshAABB()
 	return m_MeshAABB;
 }
 
+std::shared_ptr<Buffer> MeshData::GetVertexBuffer()
+{
+	return m_VertexBuffer;
+}
+
+std::shared_ptr<Buffer> MeshData::GetIndexBuffer()
+{
+	return m_IndexBuffer;
+}
+
 
 bool MeshData::GenerateMaterialBuffer()
 {

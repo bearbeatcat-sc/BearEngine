@@ -87,6 +87,9 @@ public:
 	const std::vector<XMFLOAT3>& GetPositions();
 	const MeshAABB& GetMeshAABB();
 
+	std::shared_ptr<Buffer> GetVertexBuffer();
+	std::shared_ptr<Buffer> GetIndexBuffer();
+
 	D3D12_VERTEX_BUFFER_VIEW m_vbView;
 	D3D12_INDEX_BUFFER_VIEW m_ibView;
 	size_t m_indexCount;

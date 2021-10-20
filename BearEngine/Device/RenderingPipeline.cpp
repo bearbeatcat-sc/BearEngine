@@ -19,7 +19,7 @@
 #include "SkyBox.h"
 #include <array>
 
-#include "DXRPipeLine.h"
+#include "Raytracing/DXRPipeLine.h"
 #include "DirectX/Core/Buffer.h"
 #include "DirectX/Core/EffectManager.h"
 #include "DirectX/Core/ParticleSpriteEffect.h"

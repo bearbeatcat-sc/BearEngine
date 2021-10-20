@@ -5,9 +5,11 @@
 #include <fstream>
 #include <sstream>
 
-#include "WindowApp.h"
-#include "DirectX/DirectXDevice.h"
-#include "DirectX/DirectXGraphics.h"
+#include "../WindowApp.h"
+#include "../DirectX/DirectXDevice.h"
+#include "../DirectX/DirectXGraphics.h"
+#include "Device/DirectX/Core/Model/Mesh.h"
+#include "Device/DirectX/Core/Model/MeshDatas.h"
 
 #pragma comment(lib, "dxcompiler")
 
@@ -114,30 +116,10 @@ void DXRPipeLine::Render(ID3D12Resource* pRenderResource)
 		D3D12_RESOURCE_STATE_UNORDERED_ACCESS
 	);
 
-	D3D12_DISPATCH_RAYS_DESC rayTraceDesc = {};
-	rayTraceDesc.Width = _WindowSize.window_Width;
-	rayTraceDesc.Height = _WindowSize.window_Height;
-	rayTraceDesc.Depth = 1;
-
-
-	// シェーダーの設定？
-	rayTraceDesc.RayGenerationShaderRecord.StartAddress = _shaderTable->GetGPUVirtualAddress() + 0 * _shaderTableEntrySize;
-	rayTraceDesc.RayGenerationShaderRecord.SizeInBytes = _shaderTableEntrySize;
-
-	size_t missOffSet = 1 * _shaderTableEntrySize;
-	rayTraceDesc.MissShaderTable.StartAddress = _shaderTable->GetGPUVirtualAddress() + missOffSet;
-	rayTraceDesc.MissShaderTable.StrideInBytes = _shaderTableEntrySize;
-	rayTraceDesc.MissShaderTable.SizeInBytes = _shaderTableEntrySize;
-
-	size_t hitOffset = 2 * _shaderTableEntrySize;
-	rayTraceDesc.HitGroupTable.StartAddress = _shaderTable->GetGPUVirtualAddress() + hitOffset;
-	rayTraceDesc.HitGroupTable.StrideInBytes = _shaderTableEntrySize;
-	rayTraceDesc.HitGroupTable.SizeInBytes = _shaderTableEntrySize;
-
 
 	commandList->SetComputeRootSignature(_EmptyRootSig.Get());
 	commandList->SetPipelineState1(_PipelineState.Get());
-	commandList->DispatchRays(&rayTraceDesc);
+	commandList->DispatchRays(&_dispathRaysDesc);
 
 	
 	DirectXGraphics::GetInstance().ResourceBarrier(
@@ -158,6 +140,33 @@ void DXRPipeLine::Render(ID3D12Resource* pRenderResource)
 	);
 		
 }
+
+void DXRPipeLine::CreateInstance(const std::shared_ptr<Mesh> mesh)
+{
+	auto instance = std::make_shared<DXRInstance>();
+
+	auto vertexBuffer = mesh->GetVertexBuffer()->getBuffer();
+	auto indexBuffer = mesh->GetIndexBuffer()->getBuffer();
+
+	D3D12_RAYTRACING_GEOMETRY_DESC desc;
+	desc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
+	desc.Triangles.Transform3x4 = 0;
+	desc.Triangles.VertexBuffer.StartAddress = vertexBuffer->GetGPUVirtualAddress();
+	desc.Triangles.VertexFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	desc.Triangles.VertexCount = static_cast<UINT>(vertexBuffer->GetDesc().Width) / sizeof(MeshData::Vertex);
+	desc.Triangles.VertexBuffer.StrideInBytes = sizeof(MeshData::Vertex);
+	desc.Triangles.IndexBuffer = indexBuffer->GetGPUVirtualAddress();
+	desc.Triangles.IndexCount = static_cast<UINT>(indexBuffer->GetDesc().Width) / sizeof(int);
+	desc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
+
+	instance->_geometryDesc = desc;
+	instance->_vertexBuffer = mesh->GetVertexBuffer();
+	instance->_indexBuffer = mesh->GetIndexBuffer();
+
+	_instances.push_back(instance);
+
+}
+
 
 ComPtr<ID3D12Resource> DXRPipeLine::CreateTriangleVB()
 {
@@ -207,6 +216,7 @@ AccelerationStructureBuffers DXRPipeLine::CreateButtomLevelAS(ID3D12Resource* pV
 	inputs.pGeometryDescs = &geomDesc;
 	inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
 
+	// 必要なメモリ量を求める
 	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = {};
 	DirectXDevice::GetInstance().GetDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
 
@@ -237,6 +247,53 @@ AccelerationStructureBuffers DXRPipeLine::CreateButtomLevelAS(ID3D12Resource* pV
 	DirectXGraphics::GetInstance().GetCommandList()->ResourceBarrier(1, &uavBarrier);
 
 	return buffers;
+}
+
+void DXRPipeLine::CreateButtomLevelAS()
+{
+	for(auto& instance : _instances)
+	{
+		// 加速構造に入力する情報？
+		// 加速構造を作成するための情報かも
+		D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
+		inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+		inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
+		inputs.NumDescs = 1;
+		inputs.pGeometryDescs = &instance->_geometryDesc;
+		inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+
+		// 必要なメモリ量を求める
+		D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = {};
+		DirectXDevice::GetInstance().GetDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
+
+		D3D12_HEAP_PROPERTIES defaultHeapProps = {
+			D3D12_HEAP_TYPE_DEFAULT,
+			D3D12_CPU_PAGE_PROPERTY_UNKNOWN,
+			D3D12_MEMORY_POOL_UNKNOWN,
+			0,
+			0
+		};
+
+		// ASBufferの作成
+		AccelerationStructureBuffers buffers;
+		buffers.pScratch = CreateBuffer(info.ScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, defaultHeapProps);
+		buffers.pResult = CreateBuffer(info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, defaultHeapProps);
+
+		D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC asDesc = {};
+		asDesc.Inputs = inputs;
+		asDesc.DestAccelerationStructureData = buffers.pResult->GetGPUVirtualAddress();
+		asDesc.ScratchAccelerationStructureData = buffers.pScratch->GetGPUVirtualAddress();
+
+		DirectXGraphics::GetInstance().GetCommandList()->BuildRaytracingAccelerationStructure(&asDesc, 0, nullptr);
+
+		D3D12_RESOURCE_BARRIER uavBarrier = {};
+		uavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+		uavBarrier.UAV.pResource = buffers.pResult.Get();
+
+		DirectXGraphics::GetInstance().GetCommandList()->ResourceBarrier(1, &uavBarrier);
+
+		_BottomLevelASResources.push_back(buffers);
+	}
 }
 
 ComPtr<ID3D12Resource> DXRPipeLine::CreateBuffer(uint64_t size, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES initState, const D3D12_HEAP_PROPERTIES& heapProps)
@@ -338,6 +395,88 @@ AccelerationStructureBuffers DXRPipeLine::CreateTopLevelAS(ID3D12Resource* pBott
 	return buffers;
 }
 
+AccelerationStructureBuffers DXRPipeLine::CreateTopLevelAS()
+{
+	uint64_t tlasSize;
+
+	const int instanceCount = _instances.size();
+	
+	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
+	inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+	inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
+	inputs.NumDescs = instanceCount;
+	inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+
+	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info;
+	DirectXDevice::GetInstance().GetDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
+
+	D3D12_HEAP_PROPERTIES defaultHeapProps = {
+	D3D12_HEAP_TYPE_DEFAULT,
+	D3D12_CPU_PAGE_PROPERTY_UNKNOWN,
+	D3D12_MEMORY_POOL_UNKNOWN,
+	0,
+	0
+	};
+
+	D3D12_HEAP_PROPERTIES uploadHeapProps = {
+	D3D12_HEAP_TYPE_UPLOAD,
+	D3D12_CPU_PAGE_PROPERTY_UNKNOWN,
+	D3D12_MEMORY_POOL_UNKNOWN,
+	0,
+	0
+	};
+
+	AccelerationStructureBuffers buffers;
+	buffers.pScratch = CreateBuffer(info.ScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, defaultHeapProps);
+	buffers.pResult = CreateBuffer(info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, defaultHeapProps);
+	tlasSize = info.ResultDataMaxSizeInBytes;
+
+	buffers.pInstanceDesc = CreateBuffer(sizeof(D3D12_RAYTRACING_INSTANCE_DESC),
+		D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, uploadHeapProps);
+
+	
+	D3D12_RAYTRACING_INSTANCE_DESC* p_instance_desc;
+	buffers.pInstanceDesc->Map(0, nullptr, (void**)&p_instance_desc);
+	ZeroMemory(p_instance_desc, sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * instanceCount);
+
+	for(int i = 0; i < instanceCount; i++)
+	{
+		p_instance_desc[i].InstanceID = i;
+		p_instance_desc[i].InstanceContributionToHitGroupIndex = static_cast<UINT>(0);
+		p_instance_desc[i].Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+
+		SimpleMath::Matrix m;
+		memcpy(p_instance_desc->Transform, &m, sizeof(p_instance_desc->Transform));
+
+		p_instance_desc->AccelerationStructure = _BottomLevelASResources[i].pResult->GetGPUVirtualAddress();
+		p_instance_desc->InstanceMask = 0xFF;
+	}
+	
+
+
+	buffers.pInstanceDesc->Unmap(0, nullptr);
+
+
+	// TLASの作成
+	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC asDesc = {};
+	asDesc.Inputs = inputs;
+	asDesc.Inputs.InstanceDescs = buffers.pInstanceDesc->GetGPUVirtualAddress();
+	asDesc.DestAccelerationStructureData = buffers.pResult->GetGPUVirtualAddress();
+	asDesc.ScratchAccelerationStructureData = buffers.pScratch->GetGPUVirtualAddress();
+
+
+	DirectXGraphics::GetInstance().GetCommandList()->BuildRaytracingAccelerationStructure(&asDesc, 0, nullptr);
+
+	D3D12_RESOURCE_BARRIER uavBarrier = {};
+	uavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+	uavBarrier.UAV.pResource = buffers.pResult.Get();
+
+	DirectXGraphics::GetInstance().GetCommandList()->ResourceBarrier(1, &uavBarrier);
+
+
+	return buffers;
+}
+
 void DXRPipeLine::CreateAccelerationStructures()
 {
 	_vertex_buffer = CreateTriangleVB();
@@ -354,12 +493,14 @@ RootSignatureDesc DXRPipeLine::CreateRayGenRtooDesc()
 	RootSignatureDesc desc;
 	desc.range.resize(2);
 
+	// AS
 	desc.range[0].BaseShaderRegister = 0;
 	desc.range[0].NumDescriptors = 1;
 	desc.range[0].RegisterSpace = 0;
 	desc.range[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
 	desc.range[0].OffsetInDescriptorsFromTableStart = 0;
 
+	// レンダリング先のテクスチャ
 	desc.range[1].BaseShaderRegister = 0;
 	desc.range[1].NumDescriptors = 1;
 	desc.range[1].RegisterSpace = 0;
@@ -406,6 +547,7 @@ void DXRPipeLine::CreatePipeleineState(const wchar_t* shaderPath)
 	DXilLibrary dxillibrary = CreateDxliLibrary(shaderPath);
 	subobjects[index++] = dxillibrary.stateSubobject;
 
+	// ヒットグループ
 	HitProgram hitProgram(nullptr, closeHitShader, hitGroup);
 	subobjects[index++] = hitProgram.subObject;
 
@@ -488,22 +630,49 @@ void DXRPipeLine::CreateShaderTable()
 		uploadHeapProps);
 
 	// データコピー
-	uint8_t* pData;
-	_shaderTable->Map(0, nullptr, (void**)&pData);
 
 	ComPtr<ID3D12StateObjectProperties> pRtsoProps;
 	_PipelineState->QueryInterface(IID_PPV_ARGS(&pRtsoProps));
-
-	memcpy(pData, pRtsoProps->GetShaderIdentifier(kRayGenShader),D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
-	uint64_t heapStart = _SrvUavHeap->GetGPUDescriptorHandleForHeapStart().ptr;
-	*(uint64_t*)(pData + D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES) = heapStart;
 	
-	memcpy(pData + _shaderTableEntrySize, pRtsoProps->GetShaderIdentifier(kMissShader), D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+	uint8_t* pData;
+	_shaderTable->Map(0, nullptr, (void**)&pData);
 
+	// RayGeneration用のシェーダーレコードを書き込み
+	memcpy(pData, pRtsoProps->GetShaderIdentifier(kRayGenShader),D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+
+	// MissShader用のシェーダーレコードを書き込み
+	uint8_t* pMissEntry = pData + _shaderTableEntrySize ;
+	memcpy(pMissEntry, pRtsoProps->GetShaderIdentifier(kMissShader), D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+
+	// HitGroup用のシェーダーレコードを書き込み
 	uint8_t* pHitEntry = pData + _shaderTableEntrySize * 2;
 	memcpy(pHitEntry, pRtsoProps->GetShaderIdentifier(kHitGroup), D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
 
-	_shaderTable->Unmap(0, nullptr);	
+	_shaderTable->Unmap(0, nullptr);
+
+	// Dispatch用の設定
+	_dispathRaysDesc = {};
+	_dispathRaysDesc.Width = _WindowSize.window_Width;
+	_dispathRaysDesc.Height = _WindowSize.window_Height;
+	_dispathRaysDesc.Depth = 1;
+
+
+	// シェーダーの設定？
+
+	auto startAddress = _shaderTable->GetGPUVirtualAddress();
+	
+	_dispathRaysDesc.RayGenerationShaderRecord.StartAddress = startAddress;
+	_dispathRaysDesc.RayGenerationShaderRecord.SizeInBytes = _shaderTableEntrySize;
+
+	size_t missOffSet = 1 * _shaderTableEntrySize;
+	_dispathRaysDesc.MissShaderTable.StartAddress = startAddress + missOffSet;
+	_dispathRaysDesc.MissShaderTable.StrideInBytes = _shaderTableEntrySize;
+	_dispathRaysDesc.MissShaderTable.SizeInBytes = _shaderTableEntrySize;
+
+	size_t hitOffset = 2 * _shaderTableEntrySize;
+	_dispathRaysDesc.HitGroupTable.StartAddress = startAddress + hitOffset;
+	_dispathRaysDesc.HitGroupTable.StrideInBytes = _shaderTableEntrySize;
+	_dispathRaysDesc.HitGroupTable.SizeInBytes = _shaderTableEntrySize;
 	
 }
 

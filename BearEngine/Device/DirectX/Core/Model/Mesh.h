@@ -49,11 +49,15 @@ public:
 	std::unordered_map<std::string, MeshData::MaterialData>& GetMaterialDatas();
 	ID3D12Resource* GetWhiteTextureBuff();
 
+	std::shared_ptr<Buffer> GetIndexBuffer();
+	std::shared_ptr<Buffer> GetVertexBuffer();
+	
 	MeshDrawer::CPU_GPU_Handles* GetConstantDescHandle();
 	MeshDrawer::CPU_GPU_Handles* GetMatDescHandle();
 	void SetConstantDescHandle(MeshDrawer::CPU_GPU_Handles* handle);
 	void SetMatDescHandle(MeshDrawer::CPU_GPU_Handles* handle);
 	const MeshData::MeshAABB GetMeshAABB();
+	const int GetIndexCount();
 
 protected:
 	bool GenerateConstantBuffer();

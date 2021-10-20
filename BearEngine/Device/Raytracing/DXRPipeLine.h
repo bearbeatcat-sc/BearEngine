@@ -5,11 +5,15 @@
 #include <wrl/client.h>
 #include <SimpleMath.h>
 
-#include "Singleton.h"
-#include "DirectX/DirectXDevice.h"
-#include "WindowApp.h"
+#include "DXRInstance.h"
+#include "../Singleton.h"
+#include "../DirectX/DirectXDevice.h"
+#include "Device/WindowApp.h"
+#include "Device/DirectX/Core/Model/MeshDatas.h"
 
 using namespace Microsoft::WRL;
+
+class Mesh;
 
 // アライメント用
 #define align_to(_alignment, _val) (((_val + _alignment - 1) / _alignment) * _alignment)
@@ -29,6 +33,7 @@ struct RootSignatureDesc
 	std::vector<D3D12_ROOT_PARAMETER> rootParams;
 };
 
+// ヒットグループを内包している
 struct HitProgram
 {
 	HitProgram(const wchar_t* ahsExport, const  wchar_t* chsExport, const  wchar_t* name)
@@ -99,6 +104,7 @@ struct PipeLineConfig
 {
 	PipeLineConfig(uint32_t maxTraceRecursionDepth)
 	{
+		// 再帰呼び出しの回数
 		config.MaxTraceRecursionDepth = maxTraceRecursionDepth;
 
 		subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_PIPELINE_CONFIG;
@@ -177,14 +183,17 @@ public:
 	~DXRPipeLine() = default;
 	bool InitPipeLine();
 	void Render(ID3D12Resource* pRenderResource);
+	void CreateInstance(const std::shared_ptr<Mesh> mesh);
 
 private:
 	ComPtr<ID3D12Resource> CreateTriangleVB();
 
 	// ジオメトリレベルで加速構造を作成する
 	AccelerationStructureBuffers CreateButtomLevelAS(ID3D12Resource* pVB);
+	void CreateButtomLevelAS();
 	ComPtr<ID3D12Resource> CreateBuffer(uint64_t size, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES initState, const D3D12_HEAP_PROPERTIES& heapProps);
 	AccelerationStructureBuffers CreateTopLevelAS(ID3D12Resource* pBottomLevelAS, uint64_t& tlasSize);
+	AccelerationStructureBuffers CreateTopLevelAS();
 
 	void CreateAccelerationStructures();
 	RootSignatureDesc CreateRayGenRtooDesc();
@@ -192,6 +201,8 @@ private:
 	void CreatePipeleineState(const wchar_t* shaderPath);
 	void CreateShaderTable();
 	void CreateShaderResource();
+	void CreateCameraBuffer();
+	void UpdateCameraBuffer();
 
 	WindowSize _WindowSize;
 
@@ -210,4 +221,9 @@ private:
 	ComPtr<ID3D12Resource> _OutPutResource;
 	ComPtr<ID3D12DescriptorHeap> _SrvUavHeap;
 	const uint32_t kSrvUavHeapSize = 2;
+
+	std::vector<std::shared_ptr<DXRInstance>> _instances;
+	std::vector<AccelerationStructureBuffers> _BottomLevelASResources;
+
+	D3D12_DISPATCH_RAYS_DESC _dispathRaysDesc;
 };
