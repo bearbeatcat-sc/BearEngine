@@ -20,6 +20,7 @@ class MeshManager
 public:
 	friend class Singleton<MeshManager>;
 
+	bool Init();
 	bool loadMesh(const std::string& filePath, const std::string& fileName, const std::string& modelName);
 	std::shared_ptr<Mesh> GetMesh(const std::string& modelname, const std::string& effectName);
 	//bool LoadPrimitive(MeshData::ModelData model, std::string modelName);
@@ -28,6 +29,7 @@ public:
 	std::shared_ptr<Mesh> GetTriangleMesh(const SimpleMath::Vector3* points, const std::string& effectName);	
 	std::shared_ptr<Mesh> GetPlaneMesh(const std::string& effectName);
 	const std::shared_ptr<MeshData> GetMeshData(const std::string& modelname);
+	ID3D12DescriptorHeap* GetDescriptrHeap();
 
 protected:
 
@@ -37,6 +39,8 @@ protected:
 	void SmoothNormal(MeshData::ModelData& meshData);
 	std::shared_ptr<MeshData> FindSpehere(int tesselation);
 	void CreateCubeMeshData();
+	void CreateDescriptorHeap();
+
 
 	MeshManager();
 	~MeshManager();

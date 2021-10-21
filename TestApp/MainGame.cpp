@@ -50,10 +50,10 @@ void MainGame::Init()
 	ShaderManager::GetInstance().LoadShader(L"BasicResources/MeshEmitterVertexShader.hlsl", "vs_5_0", "MeshEmitterGPUParticleVertexShader");
 	ShaderManager::GetInstance().LoadShader(L"BasicResources/MeshEmitterPixelShader.hlsl", "ps_5_0", "MeshEmitterGPUParticlePixelShader");
 
-	MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "sphere.obj", "Sphere");
-	MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "SpaceShip.obj", "SpaceShip");
-	MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "blenderMonkey.obj", "blenderMonkey");
-	MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "TLEX.obj", "TLEX");
+	//MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "sphere.obj", "Sphere");
+	//MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "SpaceShip.obj", "SpaceShip");
+	//MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "blenderMonkey.obj", "blenderMonkey");
+	//MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "TLEX.obj", "TLEX");
 
 
 	auto particleMeshEffect = std::shared_ptr<ParticleMeshEffect>(new ParticleMeshEffect());

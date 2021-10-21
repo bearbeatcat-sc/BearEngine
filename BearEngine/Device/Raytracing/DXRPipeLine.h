@@ -2,10 +2,10 @@
 
 #include <d3d12.h>
 #include <dxcapi.h>
+#include <map>
 #include <wrl/client.h>
 #include <SimpleMath.h>
 
-#include "DXRInstance.h"
 #include "../Singleton.h"
 #include "../DirectX/DirectXDevice.h"
 #include "Device/WindowApp.h"
@@ -14,9 +14,12 @@
 using namespace Microsoft::WRL;
 
 class Mesh;
+class DXRMesh;
 
 // アライメント用
 #define align_to(_alignment, _val) (((_val + _alignment - 1) / _alignment) * _alignment)
+
+
 
 struct AccelerationStructureBuffers
 {
@@ -87,7 +90,7 @@ struct GlobalRootSignature
 
 struct ShaderConfig
 {
-	ShaderConfig(uint32_t maxAttributeSizeInBytes,uint32_t maxPayloadSizeInBytes)
+	ShaderConfig(uint32_t maxAttributeSizeInBytes, uint32_t maxPayloadSizeInBytes)
 	{
 		shaderConfig.MaxAttributeSizeInBytes = maxAttributeSizeInBytes;
 		shaderConfig.MaxPayloadSizeInBytes = maxPayloadSizeInBytes;
@@ -95,7 +98,7 @@ struct ShaderConfig
 		subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_SHADER_CONFIG;
 		subobject.pDesc = &shaderConfig;
 	}
-	
+
 	D3D12_RAYTRACING_SHADER_CONFIG shaderConfig = {};
 	D3D12_STATE_SUBOBJECT subobject = {};
 };
@@ -117,7 +120,7 @@ struct PipeLineConfig
 
 struct ExportAssocication
 {
-	ExportAssocication(const WCHAR* exportNames[] ,uint32_t exportCount,const D3D12_STATE_SUBOBJECT* pSubobjectToAssociate)
+	ExportAssocication(const WCHAR* exportNames[], uint32_t exportCount, const D3D12_STATE_SUBOBJECT* pSubobjectToAssociate)
 	{
 		association.NumExports = exportCount;
 		association.pExports = exportNames;
@@ -126,7 +129,7 @@ struct ExportAssocication
 		subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION;
 		subobject.pDesc = &association;
 	}
-	
+
 	D3D12_STATE_SUBOBJECT subobject = {};
 	D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION association = {};
 };
@@ -179,11 +182,14 @@ class DXRPipeLine
 public:
 	friend class Singleton<DXRPipeLine>;
 
-	DXRPipeLine() = default;
+	DXRPipeLine();
 	~DXRPipeLine() = default;
+
 	bool InitPipeLine();
+	bool Init();
+	void AddMesh(std::shared_ptr<DXRMesh> mesh);
 	void Render(ID3D12Resource* pRenderResource);
-	void CreateInstance(const std::shared_ptr<Mesh> mesh);
+	void CreateResourceView(std::shared_ptr<MeshData> mesh);
 
 private:
 	ComPtr<ID3D12Resource> CreateTriangleVB();
@@ -196,13 +202,22 @@ private:
 	AccelerationStructureBuffers CreateTopLevelAS();
 
 	void CreateAccelerationStructures();
-	RootSignatureDesc CreateRayGenRtooDesc();
+	void CreateLocalRootSignature();
+	ComPtr<ID3D12RootSignature> CreateRayGenRootDesc();
+	ComPtr<ID3D12RootSignature> CreateClosestHitRootDesc();
 	DXilLibrary CreateDxliLibrary(const wchar_t* shaderPath);
 	void CreatePipeleineState(const wchar_t* shaderPath);
 	void CreateShaderTable();
 	void CreateShaderResource();
-	void CreateCameraBuffer();
-	void UpdateCameraBuffer();
+	void CreateGlobalRootSignature();
+	void CreateSceneCB();
+	void CreateDescriptorHeaps();
+	UINT WriteShaderIdentifer(void* dst, const void* shaderId);
+	UINT WriteGPUDescriptor(void* dst, const D3D12_GPU_DESCRIPTOR_HANDLE handle);
+	uint8_t* WriteMeshShaderRecord(uint8_t* dst, const std::shared_ptr<DXRMesh> mesh, UINT recordSize);
+	D3D12_RAYTRACING_GEOMETRY_DESC GetGeomtryDesc(std::shared_ptr<DXRMesh> mesh);
+
+	void SceneCBUpdate();
 
 	WindowSize _WindowSize;
 
@@ -212,7 +227,7 @@ private:
 	ComPtr<ID3D12Resource> _vertex_buffer;
 	ComPtr<ID3D12Resource> _TopLevelASResource;
 	ComPtr<ID3D12Resource> _BottomLevelASResource;
-	
+
 	uint64_t _tlasSize;
 
 	ComPtr<ID3D12StateObject> _PipelineState;
@@ -222,8 +237,48 @@ private:
 	ComPtr<ID3D12DescriptorHeap> _SrvUavHeap;
 	const uint32_t kSrvUavHeapSize = 2;
 
-	std::vector<std::shared_ptr<DXRInstance>> _instances;
+	struct SceneParam
+	{
+		XMMATRIX mtxView;       // ビュー行列.
+		XMMATRIX mtxProj;       // プロジェクション行列.
+		XMMATRIX mtxViewInv;    // ビュー逆行列.
+		XMMATRIX mtxProjInv;    // プロジェクション逆行列.
+		XMVECTOR lightDirection; // 平行光源の向き.
+		XMVECTOR lightColor;    // 平行光源色.
+		XMVECTOR ambientColor;  // 環境光.
+	};
+	SceneParam m_sceneParam;
+	ComPtr<ID3D12Resource> _SceneCB;
+
+	std::vector<std::shared_ptr<DXRMesh>> _meshs;
 	std::vector<AccelerationStructureBuffers> _BottomLevelASResources;
 
 	D3D12_DISPATCH_RAYS_DESC _dispathRaysDesc;
+
+	const D3D12_HEAP_PROPERTIES defaultHeapProps = {
+	D3D12_HEAP_TYPE_DEFAULT,
+	D3D12_CPU_PAGE_PROPERTY_UNKNOWN,
+	D3D12_MEMORY_POOL_UNKNOWN,
+	0,
+	0
+	};
+
+	const D3D12_HEAP_PROPERTIES uploadHeapProps = {
+	D3D12_HEAP_TYPE_UPLOAD,
+	D3D12_CPU_PAGE_PROPERTY_UNKNOWN,
+	D3D12_MEMORY_POOL_UNKNOWN,
+	0,
+	0
+	};
+
+
+
+	ComPtr<ID3D12RootSignature> _globalRootSignature;
+	ComPtr<ID3D12RootSignature> _closesHitLocalRootSignature;
+	ComPtr<ID3D12RootSignature> _rayGenerationLocalRootSignature;
+
+	const UINT _SRVResourceCount = 2;
+	const UINT _MaxMeshCount = 1024;
+	UINT _RegistMeshCount = 0;
+	UINT _IncSize;
 };

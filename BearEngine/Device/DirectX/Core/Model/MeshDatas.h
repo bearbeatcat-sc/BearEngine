@@ -67,7 +67,7 @@ public:
 	struct ModelData
 	{
 		std::vector<Vertex> vertices;
-		std::vector<unsigned short> m_Indices;
+		std::vector<UINT> m_Indices;
 		std::vector<XMFLOAT2> texCords;
 		std::unordered_map<std::string, MeshData::MaterialData> m_MaterialDatas;
 
@@ -76,7 +76,7 @@ public:
 
 	MeshData();
 	~MeshData();
-	bool GenerateMesh(std::vector<Vertex>& positions, std::vector<unsigned short>& _indices, std::unordered_map<std::string, MaterialData>& matData);
+	bool GenerateMesh(std::vector<Vertex>& positions, std::vector<UINT>& _indices, std::unordered_map<std::string, MaterialData>& matData);
 	ComPtr<ID3D12Resource> CreateWhiteTexture();
 	std::unordered_map<std::string, std::shared_ptr<Buffer>>& GetMaterialBuffer();
 	std::unordered_map<std::string, ComPtr<ID3D12Resource>>& GetTextureBuff();
@@ -93,6 +93,13 @@ public:
 	D3D12_VERTEX_BUFFER_VIEW m_vbView;
 	D3D12_INDEX_BUFFER_VIEW m_ibView;
 	size_t m_indexCount;
+	size_t m_VertexCount;
+	
+	D3D12_GPU_DESCRIPTOR_HANDLE m_vb_h_gpu_descriptor_handle;
+	D3D12_CPU_DESCRIPTOR_HANDLE m_vb_h_cpu_descriptor_handle;
+
+	D3D12_GPU_DESCRIPTOR_HANDLE m_ib_h_gpu_descriptor_handle;
+	D3D12_CPU_DESCRIPTOR_HANDLE m_ib_h_cpu_descriptor_handle;
 
 private:
 	bool GenerateMaterialBuffer();
@@ -110,7 +117,7 @@ private:
 
 
 	std::unordered_map<std::string, std::shared_ptr<Buffer>> m_MaterialBuffers;
-	std::unordered_map<std::string,MaterialData> m_MaterialDatas;
+	std::unordered_map<std::string, MaterialData> m_MaterialDatas;
 	std::vector<MaterialData> m_DrawMaterialDatas;
 	std::unordered_map<std::string, ComPtr<ID3D12Resource>> m_Textures;
 

@@ -27,12 +27,13 @@ MeshData::~MeshData()
 	m_Textures.clear();
 }
 
-bool MeshData::GenerateMesh(std::vector<Vertex>& positions, std::vector<unsigned short>& _indices, std::unordered_map<std::string, MaterialData>& matData)
+bool MeshData::GenerateMesh(std::vector<Vertex>& positions, std::vector<UINT>& _indices, std::unordered_map<std::string, MaterialData>& matData)
 {
 #pragma region Vertex
 	m_Positions.resize(positions.size());
 	size_t positionSize = m_Positions.size();
 
+	m_VertexCount = positionSize;
 
 	// 頂点情報だけをコピー
 	for (int i = 0; i < positionSize; ++i)
@@ -84,11 +85,11 @@ bool MeshData::GenerateMesh(std::vector<Vertex>& positions, std::vector<unsigned
 
 	// indexを設定
 	m_IndexBuffer = std::make_shared<Buffer>();
-	size = sizeof(int) * m_indexCount;
+	size = sizeof(UINT) * m_indexCount;
 	m_IndexBuffer->init(D3D12_HEAP_TYPE_UPLOAD, size, D3D12_RESOURCE_STATE_GENERIC_READ);
 	auto indexBuff = m_IndexBuffer->getBuffer();
 
-	unsigned short* indexMap = nullptr;
+	UINT* indexMap = nullptr;
 
 	indexBuff->Map(0, nullptr, (void**)&indexMap);
 

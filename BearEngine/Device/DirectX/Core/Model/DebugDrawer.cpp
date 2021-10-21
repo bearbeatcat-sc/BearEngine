@@ -115,7 +115,7 @@ bool DebugDrawer::GenerateVertexBuffer(std::vector<XMFLOAT3>& vertices)
 	return true;
 }
 
-bool DebugDrawer::GenerateIndexBuffer(const std::vector<unsigned short>& indices)
+bool DebugDrawer::GenerateIndexBuffer(const std::vector<UINT>& indices)
 {
 	m_IndexCount = indices.size();
 
@@ -145,7 +145,7 @@ bool DebugDrawer::GenerateIndexBuffer(const std::vector<unsigned short>& indices
 void DebugDrawer::GenerateCubeData()
 {
 	std::vector<XMFLOAT3> vertices;
-	std::vector<unsigned short> indicies;
+	std::vector<UINT> indicies;
 
 	GeometryGenerator::GenerateCubeDatas(vertices, indicies, DirectX::SimpleMath::Vector3(1, 1, 1));
 

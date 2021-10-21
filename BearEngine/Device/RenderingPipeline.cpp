@@ -24,6 +24,8 @@
 #include "DirectX/Core/EffectManager.h"
 #include "DirectX/Core/ParticleSpriteEffect.h"
 #include "DirectX/Core/SpriteEffect.h"
+#include "DirectX/Core/Model/MeshManager.h"
+#include "Raytracing/DXRMesh.h"
 
 // シャドウマップ（深度バッファ）の解像度
 constexpr uint32_t shadow_difinition = 1024;
@@ -114,10 +116,21 @@ HRESULT RenderingPipeLine::Init()
 	DebugDrawer::GetInstance().Init(L"BasicResources/SimpleVertexShader.hlsl", L"BasicResources/SimplePixelShader.hlsl");
 #endif
 	SpriteDrawer::GetInstance().Init();
+	DXRPipeLine::GetInstance().Init();
+	MeshManager::GetInstance().Init();
 	MeshDrawer::GetInstance().Init();
 
+	MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "TLEX.obj", "TLEX");
+
+	
+	auto meshData = MeshManager::GetInstance().GetMeshData("TLEX");
+
+	auto mesh = std::make_shared<DXRMesh>(L"HitGroup",1,meshData);
+	auto mtx = SimpleMath::Matrix::CreateScale(2.0f, 2.0f, 2.0f) * SimpleMath::Matrix::CreateTranslation(-3.0f, 1.0f, 0.0f);
+	mesh->SetMatrix(mtx);
 
 	// 今はとりあえずここに
+	DXRPipeLine::GetInstance().AddMesh(mesh);
 	DXRPipeLine::GetInstance().InitPipeLine();
 	
 	m_pCommandList = DirectXGraphics::GetInstance().GetCommandList();

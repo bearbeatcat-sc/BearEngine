@@ -21,11 +21,11 @@ public:
 	static void GenerateSpehereMesh(MeshData::ModelData& modelData, float diametro, size_t tessellation);
 	static void GenerateSquareMesh(MeshData::ModelData& modelData);
 	static void GenerateTriangleMesh(MeshData::ModelData& modelData, const DirectX::SimpleMath::Vector3* points);
-	static void GenerateCubeDatas(std::vector<XMFLOAT3>& positions, std::vector<unsigned short>& indices, DirectX::SimpleMath::Vector3 size);
+	static void GenerateCubeDatas(std::vector<XMFLOAT3>& positions, std::vector<UINT>& indices, DirectX::SimpleMath::Vector3 size);
 
 private:
-	static void ReverseWinding(std::vector<unsigned short>& indicies, std::vector<MeshData::Vertex>& vertcies);
-	static void ReverseWinding(std::vector<unsigned short>& indicies);
+	static void ReverseWinding(std::vector<UINT>& indicies, std::vector<MeshData::Vertex>& vertcies);
+	static void ReverseWinding(std::vector<UINT>& indicies);
 
 };
 

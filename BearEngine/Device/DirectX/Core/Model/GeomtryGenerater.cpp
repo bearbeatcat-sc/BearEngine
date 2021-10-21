@@ -4,7 +4,7 @@ void GeometryGenerator::GenerateCubeMesh(MeshData::ModelData& modelData,DirectX:
 {
 	//Mesh* mesh = new Mesh();
 	std::vector<MeshData::Vertex> vertices;
-	std::vector<unsigned short> indices;
+	std::vector<UINT> indices;
 	std::unordered_map<std::string, MeshData::MaterialData> m_Mats;
 	std::string curretMatName = "Mat01";
 	std::vector<XMFLOAT2> _uvs;
@@ -126,7 +126,7 @@ void GeometryGenerator::GenerateCubeMesh(MeshData::ModelData& modelData,DirectX:
 void GeometryGenerator::GenerateCubeMeshDatas(MeshData::ModelData& modelData,DirectX::SimpleMath::Vector3 size)
 {
 	std::vector<MeshData::Vertex> vertices;
-	std::vector<unsigned short> indices;
+	std::vector<UINT> indices;
 	std::unordered_map<std::string, MeshData::MaterialData> m_Mats;
 	std::string curretMatName = "Mat01";
 	std::vector<XMFLOAT2> _uvs;
@@ -245,7 +245,7 @@ void GeometryGenerator::GenerateSpehereMesh(MeshData::ModelData& modelData,float
 {
 	//MeshData* mesh = new Mesh();
 	std::vector<MeshData::Vertex> vertices;
-	std::vector<unsigned short> indices;
+	std::vector<UINT> indices;
 	std::unordered_map<std::string, MeshData::MaterialData> m_Mats;
 	std::string curretMatName = "Mat01";
 	std::vector<XMFLOAT2> _uvs;
@@ -350,7 +350,7 @@ void GeometryGenerator::GenerateSpehereMesh(MeshData::ModelData& modelData,float
 void GeometryGenerator::GenerateSquareMesh(MeshData::ModelData& modelData)
 {
 	std::vector<MeshData::Vertex> vertices;
-	std::vector<unsigned short> indices;
+	std::vector<UINT> indices;
 	std::unordered_map<std::string, MeshData::MaterialData> m_Mats;
 	std::string curretMatName = "Mat01";
 	std::vector<XMFLOAT2> _uvs;
@@ -396,7 +396,7 @@ void GeometryGenerator::GenerateSquareMesh(MeshData::ModelData& modelData)
 void GeometryGenerator::GenerateTriangleMesh(MeshData::ModelData& modelData, const DirectX::SimpleMath::Vector3* points)
 {
 	std::vector<MeshData::Vertex> vertices;
-	std::vector<unsigned short> indices;
+	std::vector<UINT> indices;
 	std::unordered_map<std::string, MeshData::MaterialData> m_Mats;
 	std::string curretMatName = "Mat01";
 	std::vector<XMFLOAT2> _uvs;
@@ -428,7 +428,7 @@ void GeometryGenerator::GenerateTriangleMesh(MeshData::ModelData& modelData, con
 	modelData.texCords = _uvs;
 }
 
-void GeometryGenerator::GenerateCubeDatas(std::vector<XMFLOAT3>& positions, std::vector<unsigned short>& indices, DirectX::SimpleMath::Vector3 size)
+void GeometryGenerator::GenerateCubeDatas(std::vector<XMFLOAT3>& positions, std::vector<UINT>& indices, DirectX::SimpleMath::Vector3 size)
 {
 	constexpr  int faceCount = 6;
 
@@ -492,7 +492,7 @@ void GeometryGenerator::GenerateCubeDatas(std::vector<XMFLOAT3>& positions, std:
 	return;
 }
 
-void GeometryGenerator::ReverseWinding(std::vector<unsigned short>& indicies, std::vector<MeshData::Vertex>& vertcies)
+void GeometryGenerator::ReverseWinding(std::vector<UINT>& indicies, std::vector<MeshData::Vertex>& vertcies)
 {
 	for (auto it = indicies.begin(); it != indicies.end(); it += 3)
 	{
@@ -505,7 +505,7 @@ void GeometryGenerator::ReverseWinding(std::vector<unsigned short>& indicies, st
 	}
 }
 
-void GeometryGenerator::ReverseWinding(std::vector<unsigned short>& indicies)
+void GeometryGenerator::ReverseWinding(std::vector<UINT>& indicies)
 {
 	for (auto it = indicies.begin(); it != indicies.end(); it += 3)
 	{

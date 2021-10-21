@@ -2,14 +2,14 @@
 #include "OBJ/ObjLoader.h"
 #include "PMD/PMDLoader.h"
 #include "GeomtryGenerater.h"
+#include "Device/DirectX/DirectXDevice.h"
+#include "Device/DirectX/Core/Buffer.h"
+#include "Device/Raytracing/DXRPipeLine.h"
 
 MeshManager::MeshManager()
 {
-	m_ModelDatas.clear();
 
 
-	// キューブメッシュ用のデータを生成
-	CreateCubeMeshData();
 }
 
 MeshManager::~MeshManager()
@@ -17,6 +17,16 @@ MeshManager::~MeshManager()
 	m_ModelDatas.clear();
 }
 
+
+bool MeshManager::Init()
+{
+	m_ModelDatas.clear();
+
+	// キューブメッシュ用のデータを生成
+	CreateCubeMeshData();
+
+	return true;
+}
 
 bool MeshManager::loadMesh(const std::string& filePath, const std::string& fileName, const std::string& modelName)
 {
@@ -128,6 +138,8 @@ bool MeshManager::LoadObj(const std::string& filePath, const std::string& fileNa
 
 	data->GenerateMesh(model.vertices, model.m_Indices, model.m_MaterialDatas);
 	m_ModelDatas.emplace(modelName, data);
+	DXRPipeLine::GetInstance().CreateResourceView(data);
+	
 	return true;
 }
 
@@ -164,7 +176,12 @@ void MeshManager::CreateCubeMeshData()
 	GeometryGenerator::GenerateCubeMesh(model, SimpleMath::Vector3(1.0f, 1.0f, 1.0f));
 	m_CubeModelData = std::make_shared<MeshData>();
 	m_CubeModelData->GenerateMesh(model.vertices, model.m_Indices, model.m_MaterialDatas);
+
+	m_ModelDatas.emplace("CubeModelData", m_CubeModelData);
+
+	DXRPipeLine::GetInstance().CreateResourceView(m_CubeModelData);
 }
+
 
 
 //bool MeshManager::LoadPrimitive(MeshData::ModelData model, std::string modelName)

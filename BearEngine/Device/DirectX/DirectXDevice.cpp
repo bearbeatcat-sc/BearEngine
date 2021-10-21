@@ -158,12 +158,21 @@ ComPtr<ID3D12RootSignature> DirectXDevice::CreateRootSignature(const D3D12_ROOT_
 	ComPtr<ID3DBlob> pSigBlob;
 	ComPtr<ID3DBlob> pErrorBlob;
 
-	HRESULT hr = D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION_1, 
+	HRESULT hr = D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION_1_0, 
 		pSigBlob.GetAddressOf(), pErrorBlob.GetAddressOf());
 
 	if(FAILED(hr))
 	{
 		// TODO:後でエラー文の処理
+		std::vector<char> infoLog(pErrorBlob->GetBufferSize() + 1);
+		memcpy(infoLog.data(), pErrorBlob->GetBufferPointer(), pErrorBlob->GetBufferSize());
+		infoLog[pErrorBlob->GetBufferSize()] = 0;
+
+		std::string errorMsg = "ルートシグネチャの生成に失敗\n";
+		errorMsg.append(infoLog.data());
+
+		MessageBoxA(nullptr, errorMsg.c_str(), "ERROR", MB_OK);
+		throw std::logic_error("ルートシグネチャの生成に失敗");
 		return nullptr;
 	}
 	

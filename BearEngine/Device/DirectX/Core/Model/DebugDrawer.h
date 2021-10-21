@@ -36,7 +36,7 @@ public:
 
 private:
 	bool GenerateVertexBuffer(std::vector<XMFLOAT3>& vertices);
-	bool GenerateIndexBuffer(const std::vector<unsigned short>& indices);
+	bool GenerateIndexBuffer(const std::vector<UINT>& indices);
 	void GenerateCubeData();
 	bool GenerateConstantView();
 	bool InitConstantHeaps();

@@ -1,6 +1,43 @@
 
+struct Payload
+{
+    float3 color;
+};
+
+struct MyAttribute
+{
+    float2 barys;
+};
+
+struct Vertex
+{
+    float3 pos;
+    float3 normal;
+    float3 uv;
+};
+
+struct SceneCB
+{
+    matrix mtxView;
+    matrix mtxProj;
+    matrix mtxViewInv;
+    matrix mtxProjInv;
+    float4 lightDirection;
+    float4 lightColor;
+    float4 ambientColor;
+};
+
+// GlobalRootSignature
 RaytracingAccelerationStructure gRtScene : register(t0);
+ConstantBuffer<SceneCB> gSceneParam : register(b0);
+
+// Local  RayGen
 RWTexture2D<float4> gOutput : register(u0);
+
+// Local HitGroup
+StructuredBuffer<uint> indexBuffer : register(t0,space1);
+StructuredBuffer<Vertex> vertexBuffer : register(t1,space1);
+
 
 float3 linearToSrgb(float3 c)
 {
@@ -13,40 +50,68 @@ float3 linearToSrgb(float3 c)
     return srgb;
 }
 
-struct Payload
+inline float3 CalcBarycentrics(float2 barys)
 {
-    float3 color;
-};
+    return float3(
+        1.0 - barys.x - barys.y,
+        barys.x,
+        barys.y);
+}
 
-struct MyAttribute
+Vertex GetHitVertex(MyAttribute attrib)
 {
-    float2 barys;
-};
+    Vertex v = (Vertex) 0;
+    float3 barycentrics = CalcBarycentrics(attrib.barys);
+    uint vertexId = PrimitiveIndex() * 3; //Triangle List
 
+    float weights[3] =
+    {
+        barycentrics.x, barycentrics.y, barycentrics.z
+    };
+
+    for (int i = 0; i < 3; ++i)
+    {
+        uint index = indexBuffer[vertexId + i];
+
+    	// Weight？？
+        float w = weights[i];
+        v.pos += vertexBuffer[index].pos * w;
+        v.normal += vertexBuffer[index].normal * w;
+    }
+
+    v.normal = normalize(v.normal);
+    return v;
+	
+}
 
 [shader("raygeneration")]
 void rayGen()
 {
 	// ここらへん要、勉強
-    uint3 lanchIndex = DispatchRaysIndex();
-    uint3 lanchDim = DispatchRaysDimensions();
+    uint2 lanchIndex = DispatchRaysIndex().xy;
+    float2 dims = float2(DispatchRaysDimensions().xy);
 
 
-    float2 crd = float2(lanchIndex.xy);
-    float2 dims = float2(lanchDim.xy);
-
-    float2 d = ((crd / dims) * 2.0f - 1.0f);
+    float2 d = (lanchIndex.xy + 0.5) / dims.xy * 2.0 - 1.0;
     float aspectRatio = dims.x / dims.y;
 
-    RayDesc ray;
-    ray.Origin = float3(0, 0, -2);
-    ray.Direction = normalize(float3(d.x * aspectRatio, -d.y, 1));
+	
+    matrix mtxViewInv = gSceneParam.mtxViewInv;
+    matrix mtxProjInv = gSceneParam.mtxProjInv;
 
-    ray.TMin = 0;
-    ray.TMax = 1000;
+    RayDesc rayDesc;
+    rayDesc.Origin = mul(mtxViewInv, float4(0, 0, 0, 1)).xyz;
+
+    float4 target = mul(mtxProjInv, float4(d.x, -d.y, 1, 1));
+    rayDesc.Direction = mul(mtxViewInv, float4(target.xyz, 0)).xyz;
+
+    rayDesc.TMin = 0;
+    rayDesc.TMax = 100000;
 
     Payload payload;
-    TraceRay(gRtScene, 0, 0xff, 0, 0, 0,ray, payload);
+    payload.color = float3(0, 0, 0.5);
+	
+    TraceRay(gRtScene, RAY_FLAG_NONE, 0xff, 0, 1, 0, rayDesc, payload);
 
     float3 col = linearToSrgb(payload.color);
 	
@@ -64,13 +129,18 @@ void miss(inout Payload payload)
 [shader("closesthit")]
 void chs(inout Payload payload, in MyAttribute attribs)
 {
-    float3 col = 0;
+    Vertex vtx = GetHitVertex(attribs);
 
-    col.xy = attribs.barys;
-    col.z = 1.0 - col.x - col.y;
-	
-    payload.color = col;
-	
-    //payload.color = float3(0.4, 0.6, 0.2);
+    float3 lightDir = -normalize(gSceneParam.lightDirection.xyz);
 
+    float nl = saturate(dot(vtx.normal, lightDir));
+
+    float3 lightColor = gSceneParam.lightColor.xyz;
+    float3 ambientColor = gSceneParam.ambientColor.xyz;
+    float3 color = 0;
+
+    color += lightColor * nl;
+    color += ambientColor;
+
+    payload.color = color;
 }
