@@ -5,13 +5,16 @@
 #include <fstream>
 #include <sstream>
 
-#include "DXRMesh.h"
+#include "DXRInstance.h"
+#include "DXRMeshData.h"
 #include "../WindowApp.h"
 #include "../DirectX/DirectXDevice.h"
 #include "../DirectX/DirectXGraphics.h"
 #include "Device/DirectX/Core/Model/Mesh.h"
 #include "Device/DirectX/Core/Model/MeshDatas.h"
 #include "Device/DirectX/Core/Model/MeshManager.h"
+#include "Device/Lights/DirectionalLight.h"
+#include "Device/Lights/LightManager.h"
 #include "Utility/Camera.h"
 #include "Utility/CameraManager.h"
 
@@ -21,9 +24,9 @@
 // ヘルパー関数的なやつ
 ComPtr<IDxcBlob> CompileLibrary(const WCHAR* filename, const WCHAR* targetString)
 {
-	static IDxcCompiler* p_dxc_compiler = nullptr;
-	static IDxcLibrary* p_dxc_library = nullptr;
-	static IDxcIncludeHandler* p_dxc_include_handler = nullptr;
+	static ComPtr<IDxcCompiler> p_dxc_compiler = nullptr;
+	static ComPtr<IDxcLibrary> p_dxc_library = nullptr;
+	static ComPtr<IDxcIncludeHandler> p_dxc_include_handler = nullptr;
 
 	HRESULT hr;
 
@@ -45,14 +48,14 @@ ComPtr<IDxcBlob> CompileLibrary(const WCHAR* filename, const WCHAR* targetString
 	std::string sShader = strStream.str();
 
 	// Blobの作成
-	IDxcBlobEncoding* p_blob_encoding;
+	ComPtr<IDxcBlobEncoding> p_blob_encoding;
 	p_dxc_library->CreateBlobWithEncodingFromPinned(
 		(LPBYTE)sShader.c_str(), (uint32_t)sShader.size(), 0, &p_blob_encoding);
 
 	// コンパイル
-	IDxcOperationResult* p_result;
-	p_dxc_compiler->Compile(p_blob_encoding, filename, L"", L"lib_6_3",
-		nullptr, 0, nullptr, 0, p_dxc_include_handler, &p_result);
+	ComPtr<IDxcOperationResult> p_result;
+	p_dxc_compiler->Compile(p_blob_encoding.Get(), filename, L"", L"lib_6_3",
+		nullptr, 0, nullptr, 0, p_dxc_include_handler.Get(), &p_result);
 
 
 	HRESULT resultcode;
@@ -61,7 +64,7 @@ ComPtr<IDxcBlob> CompileLibrary(const WCHAR* filename, const WCHAR* targetString
 	// エラーの解析
 	if (FAILED(resultcode))
 	{
-		IDxcBlobEncoding* p_error;
+		ComPtr<IDxcBlobEncoding> p_error;
 		hr = p_result->GetErrorBuffer(&p_error);
 
 		if (FAILED(hr))
@@ -92,6 +95,8 @@ ComPtr<IDxcBlob> CompileLibrary(const WCHAR* filename, const WCHAR* targetString
 
 DXRPipeLine::DXRPipeLine()
 {
+	_meshDatas.clear();
+	_instances.clear();
 }
 
 bool DXRPipeLine::InitPipeLine()
@@ -120,9 +125,83 @@ bool DXRPipeLine::Init()
 	return true;
 }
 
-void DXRPipeLine::AddMesh(std::shared_ptr<DXRMesh> mesh)
+std::shared_ptr<DXRInstance> DXRPipeLine::AddInstance(const std::string& meshDataName, const int hitGroupIndex)
 {
-	_meshs.push_back(mesh);
+
+	if(_meshDatas.count(meshDataName) == 0)
+	{
+		throw std::runtime_error("Not Regist Data.");
+	}
+
+	auto meshData = _meshDatas.find(meshDataName);
+	auto instance = std::make_shared<DXRInstance>(hitGroupIndex, meshData->second);
+	
+	_instances.push_back(instance);
+
+	// 後でTLASの構築するかも
+
+	return instance;
+}
+
+void DXRPipeLine::AddMeshData(std::shared_ptr<MeshData> pMeshData,const std::wstring& hitGroupName,const std::string& meshDataName)
+{
+	auto dxrMesh = std::make_shared<DXRMeshData>(hitGroupName);
+	
+	dxrMesh->m_ibView = pMeshData->m_ib_h_gpu_descriptor_handle;
+	dxrMesh->m_vbView = pMeshData->m_vb_h_gpu_descriptor_handle;
+
+	CreateBLAS(dxrMesh, pMeshData);
+
+	_meshDatas.emplace(meshDataName,dxrMesh);
+}
+
+
+void DXRPipeLine::CreateBLAS(std::shared_ptr<DXRMeshData> pDXRMeshData, std::shared_ptr<MeshData> pMeshData)
+{
+
+	auto geomtryDesc = GetGeomtryDesc(pMeshData);
+
+	// 加速構造に入力する情報？
+	// 加速構造を作成するための情報かも
+	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
+	inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+	inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
+	inputs.NumDescs = 1;
+	inputs.pGeometryDescs = &geomtryDesc;
+	inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+
+
+	// 必要なメモリ量を求める
+	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = {};
+	DirectXDevice::GetInstance().GetDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
+
+	D3D12_HEAP_PROPERTIES defaultHeapProps = {
+		D3D12_HEAP_TYPE_DEFAULT,
+		D3D12_CPU_PAGE_PROPERTY_UNKNOWN,
+		D3D12_MEMORY_POOL_UNKNOWN,
+		0,
+		0
+	};
+
+	// ASBufferの作成
+	AccelerationStructureBuffers buffers;
+	buffers.pScratch = CreateBuffer(info.ScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, defaultHeapProps);
+	buffers.pResult = CreateBuffer(info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, defaultHeapProps);
+
+	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC asDesc = {};
+	asDesc.Inputs = inputs;
+	asDesc.DestAccelerationStructureData = buffers.pResult->GetGPUVirtualAddress();
+	asDesc.ScratchAccelerationStructureData = buffers.pScratch->GetGPUVirtualAddress();
+
+	DirectXGraphics::GetInstance().GetCommandList()->BuildRaytracingAccelerationStructure(&asDesc, 0, nullptr);
+
+	D3D12_RESOURCE_BARRIER uavBarrier = {};
+	uavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+	uavBarrier.UAV.pResource = buffers.pResult.Get();
+
+	DirectXGraphics::GetInstance().GetCommandList()->ResourceBarrier(1, &uavBarrier);
+
+	pDXRMeshData->_blas = buffers.pResult;
 }
 
 void DXRPipeLine::Render(ID3D12Resource* pRenderResource)
@@ -152,13 +231,13 @@ void DXRPipeLine::Render(ID3D12Resource* pRenderResource)
 	commandList->SetComputeRootConstantBufferView(1, _SceneCB->GetGPUVirtualAddress());
 
 	commandList->DispatchRays(&_dispathRaysDesc);
-	
+
 	DirectXGraphics::GetInstance().ResourceBarrier(
 		_OutPutResource.Get(),
 		D3D12_RESOURCE_STATE_COPY_SOURCE,
 		D3D12_RESOURCE_STATE_UNORDERED_ACCESS
 	);
-	
+
 	DirectXGraphics::GetInstance().ResourceBarrier(
 		_OutPutResource.Get(),
 		D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
@@ -178,131 +257,6 @@ void DXRPipeLine::Render(ID3D12Resource* pRenderResource)
 
 }
 
-ComPtr<ID3D12Resource> DXRPipeLine::CreateTriangleVB()
-{
-	const SimpleMath::Vector3 vertices[] =
-	{
-		SimpleMath::Vector3(0,1,0),
-		SimpleMath::Vector3(0.866f,-0.5f,0),
-		SimpleMath::Vector3(-0.866f,-0.5f,0)
-	};
-
-	D3D12_HEAP_PROPERTIES uploadHeapProps = {
-	D3D12_HEAP_TYPE_UPLOAD,
-	D3D12_CPU_PAGE_PROPERTY_UNKNOWN,
-	D3D12_MEMORY_POOL_UNKNOWN,
-	0,
-	0
-	};
-
-	ComPtr<ID3D12Resource> p_buffer = CreateBuffer(sizeof(vertices), D3D12_RESOURCE_FLAG_NONE,
-		D3D12_RESOURCE_STATE_GENERIC_READ, uploadHeapProps);
-
-	uint8_t* pData;
-	p_buffer->Map(0, nullptr, (void**)&pData);
-	memcpy(pData, vertices, sizeof(vertices));
-	p_buffer->Unmap(0, nullptr);
-
-	return p_buffer;
-}
-
-AccelerationStructureBuffers DXRPipeLine::CreateButtomLevelAS(ID3D12Resource* pVB)
-{
-	// ジオメトリ情報を定義？
-	D3D12_RAYTRACING_GEOMETRY_DESC geomDesc = {};
-	geomDesc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
-	geomDesc.Triangles.VertexBuffer.StartAddress = pVB->GetGPUVirtualAddress();
-	geomDesc.Triangles.VertexBuffer.StrideInBytes = sizeof(DirectX::SimpleMath::Vector3);
-	geomDesc.Triangles.VertexCount = 3;
-	geomDesc.Triangles.VertexFormat = DXGI_FORMAT_R32G32B32_FLOAT;
-	geomDesc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
-
-	// 加速構造に入力する情報？
-	// 加速構造を作成するための情報かも
-	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
-	inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
-	inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
-	inputs.NumDescs = 1;
-	inputs.pGeometryDescs = &geomDesc;
-	inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
-
-	// 必要なメモリ量を求める
-	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = {};
-	DirectXDevice::GetInstance().GetDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
-
-	// ASBufferの作成
-	AccelerationStructureBuffers buffers;
-	buffers.pScratch = CreateBuffer(info.ScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, defaultHeapProps);
-	buffers.pResult = CreateBuffer(info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, defaultHeapProps);
-
-	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC asDesc = {};
-	asDesc.Inputs = inputs;
-	asDesc.DestAccelerationStructureData = buffers.pResult->GetGPUVirtualAddress();
-	asDesc.ScratchAccelerationStructureData = buffers.pScratch->GetGPUVirtualAddress();
-
-	DirectXGraphics::GetInstance().GetCommandList()->BuildRaytracingAccelerationStructure(&asDesc, 0, nullptr);
-
-	D3D12_RESOURCE_BARRIER uavBarrier = {};
-	uavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-	uavBarrier.UAV.pResource = buffers.pResult.Get();
-
-	DirectXGraphics::GetInstance().GetCommandList()->ResourceBarrier(1, &uavBarrier);
-
-	return buffers;
-}
-
-void DXRPipeLine::CreateButtomLevelAS()
-{
-	for (auto& mesh : _meshs)
-	{
-		auto geomtryDesc = GetGeomtryDesc(mesh);
-
-		// 加速構造に入力する情報？
-		// 加速構造を作成するための情報かも
-		D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
-		inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
-		inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
-		inputs.NumDescs = 1;
-		inputs.pGeometryDescs = &geomtryDesc;
-		inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
-
-
-		// 必要なメモリ量を求める
-		D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = {};
-		DirectXDevice::GetInstance().GetDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
-
-		D3D12_HEAP_PROPERTIES defaultHeapProps = {
-			D3D12_HEAP_TYPE_DEFAULT,
-			D3D12_CPU_PAGE_PROPERTY_UNKNOWN,
-			D3D12_MEMORY_POOL_UNKNOWN,
-			0,
-			0
-		};
-
-		// ASBufferの作成
-		AccelerationStructureBuffers buffers;
-		buffers.pScratch = CreateBuffer(info.ScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, defaultHeapProps);
-		buffers.pResult = CreateBuffer(info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, defaultHeapProps);
-
-		D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC asDesc = {};
-		asDesc.Inputs = inputs;
-		asDesc.DestAccelerationStructureData = buffers.pResult->GetGPUVirtualAddress();
-		asDesc.ScratchAccelerationStructureData = buffers.pScratch->GetGPUVirtualAddress();
-
-		DirectXGraphics::GetInstance().GetCommandList()->BuildRaytracingAccelerationStructure(&asDesc, 0, nullptr);
-
-		D3D12_RESOURCE_BARRIER uavBarrier = {};
-		uavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-		uavBarrier.UAV.pResource = buffers.pResult.Get();
-
-		DirectXGraphics::GetInstance().GetCommandList()->ResourceBarrier(1, &uavBarrier);
-
-		_BottomLevelASResources.push_back(buffers);
-
-		mesh->_blas = buffers.pResult;
-		mesh->CreateRaytracingInstanceDesc();
-	}
-}
 
 ComPtr<ID3D12Resource> DXRPipeLine::CreateBuffer(uint64_t size, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES initState, const D3D12_HEAP_PROPERTIES& heapProps)
 {
@@ -332,66 +286,11 @@ ComPtr<ID3D12Resource> DXRPipeLine::CreateBuffer(uint64_t size, D3D12_RESOURCE_F
 	return pBuffer;
 }
 
-AccelerationStructureBuffers DXRPipeLine::CreateTopLevelAS(ID3D12Resource* pBottomLevelAS, uint64_t& tlasSize)
-{
-	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
-	inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
-	inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
-	inputs.NumDescs = 1;
-	inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
-
-	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info;
-	DirectXDevice::GetInstance().GetDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
-
-	AccelerationStructureBuffers buffers;
-	buffers.pScratch = CreateBuffer(info.ScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, defaultHeapProps);
-	buffers.pResult = CreateBuffer(info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, defaultHeapProps);
-	tlasSize = info.ResultDataMaxSizeInBytes;
-
-	buffers.pInstanceDesc = CreateBuffer(sizeof(D3D12_RAYTRACING_INSTANCE_DESC),
-		D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, uploadHeapProps);
-
-	D3D12_RAYTRACING_INSTANCE_DESC* p_instance_desc;
-	buffers.pInstanceDesc->Map(0, nullptr, (void**)&p_instance_desc);
-
-	p_instance_desc->InstanceID = 0;
-	p_instance_desc->InstanceContributionToHitGroupIndex = 0;
-	p_instance_desc->Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-
-	SimpleMath::Matrix m;
-	memcpy(p_instance_desc->Transform, &m, sizeof(p_instance_desc->Transform));
-
-	p_instance_desc->AccelerationStructure = pBottomLevelAS->GetGPUVirtualAddress();
-	p_instance_desc->InstanceMask = 0xFF;
-
-	buffers.pInstanceDesc->Unmap(0, nullptr);
-
-
-	// TLASの作成
-	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC asDesc = {};
-	asDesc.Inputs = inputs;
-	asDesc.Inputs.InstanceDescs = buffers.pInstanceDesc->GetGPUVirtualAddress();
-	asDesc.DestAccelerationStructureData = buffers.pResult->GetGPUVirtualAddress();
-	asDesc.ScratchAccelerationStructureData = buffers.pScratch->GetGPUVirtualAddress();
-
-
-	DirectXGraphics::GetInstance().GetCommandList()->BuildRaytracingAccelerationStructure(&asDesc, 0, nullptr);
-
-	D3D12_RESOURCE_BARRIER uavBarrier = {};
-	uavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-	uavBarrier.UAV.pResource = buffers.pResult.Get();
-
-	DirectXGraphics::GetInstance().GetCommandList()->ResourceBarrier(1, &uavBarrier);
-
-
-	return buffers;
-}
-
 AccelerationStructureBuffers DXRPipeLine::CreateTopLevelAS()
 {
 	uint64_t tlasSize;
 
-	const int instanceCount = _meshs.size();
+	const int instanceCount = _instances.size();
 
 	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
 	inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
@@ -419,7 +318,7 @@ AccelerationStructureBuffers DXRPipeLine::CreateTopLevelAS()
 
 	for (int i = 0; i < instanceCount; i++)
 	{
-		p_instance_desc[i] = _meshs[i]->_raytracingInstanceDesc;
+		p_instance_desc[i] = _instances[i]->_raytracingInstanceDesc;
 		p_instance_desc[i].InstanceID = i;
 		//p_instance_desc[i].InstanceContributionToHitGroupIndex = static_cast<UINT>(0);
 		//p_instance_desc[i].Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
@@ -459,8 +358,6 @@ AccelerationStructureBuffers DXRPipeLine::CreateTopLevelAS()
 void DXRPipeLine::CreateAccelerationStructures()
 {
 	//_vertex_buffer = CreateTriangleVB();
-
-	CreateButtomLevelAS();
 	AccelerationStructureBuffers top_level_buffers = CreateTopLevelAS();
 
 	//_BottomLevelASResource = bottom_level_buffers.pResult;
@@ -469,8 +366,8 @@ void DXRPipeLine::CreateAccelerationStructures()
 
 void DXRPipeLine::CreateLocalRootSignature()
 {
-	 _closesHitLocalRootSignature = CreateClosestHitRootDesc();
-	 _rayGenerationLocalRootSignature = CreateRayGenRootDesc();
+	_closesHitLocalRootSignature = CreateClosestHitRootDesc();
+	_rayGenerationLocalRootSignature = CreateRayGenRootDesc();
 }
 
 ComPtr<ID3D12RootSignature> DXRPipeLine::CreateRayGenRootDesc()
@@ -526,7 +423,7 @@ ComPtr<ID3D12RootSignature> DXRPipeLine::CreateClosestHitRootDesc()
 	rootSigDesc.pParameters = rootParams.data();
 	rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
 
-	return DirectXDevice::GetInstance().CreateRootSignature(rootSigDesc);	
+	return DirectXDevice::GetInstance().CreateRootSignature(rootSigDesc);
 }
 
 DXilLibrary DXRPipeLine::CreateDxliLibrary(const wchar_t* shaderPath)
@@ -594,7 +491,7 @@ void DXRPipeLine::CreatePipeleineState(const wchar_t* shaderPath)
 
 	// シェーダーの設定
 	auto shaderConfig = subObjects.CreateSubobject<CD3DX12_RAYTRACING_SHADER_CONFIG_SUBOBJECT>();
-	shaderConfig->Config(sizeof(float) * 3, sizeof(float) * 2);
+	shaderConfig->Config(sizeof(XMFLOAT3), sizeof(XMFLOAT2));
 
 	auto pipelineConfig = subObjects.CreateSubobject<CD3DX12_RAYTRACING_PIPELINE_CONFIG_SUBOBJECT>();
 
@@ -605,65 +502,6 @@ void DXRPipeLine::CreatePipeleineState(const wchar_t* shaderPath)
 	auto device = DirectXDevice::GetInstance().GetDevice();
 	device->CreateStateObject(
 		subObjects, IID_PPV_ARGS(_PipelineState.ReleaseAndGetAddressOf()));
-
-	//std::array<D3D12_STATE_SUBOBJECT, 10> subobjects;
-	//uint32_t index = 0;
-
-	//DXilLibrary dxillibrary = CreateDxliLibrary(shaderPath);
-	//subobjects[index++] = dxillibrary.stateSubobject;
-
-	//// ヒットグループ
-	//HitProgram hitProgram(nullptr, closeHitShader, hitGroup);
-	//subobjects[index++] = hitProgram.subObject;
-
-	//// レイ生成シェーダー
-	//LocalRootSignature local_root_signature(CreateRayGenRootDesc().desc);
-	//subobjects[index] = local_root_signature.subObject;
-
-	//uint32_t rgsRootIndex = index++;
-	//ExportAssocication rgsRootAssociation(&rayGenShader, 1, &(subobjects[rgsRootIndex]));
-	//subobjects[index++] = rgsRootAssociation.subobject;
-
-	//// ヒットミスシェーダー
-	//D3D12_ROOT_SIGNATURE_DESC emptyDesc = {};
-	//emptyDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
-	//LocalRootSignature hitMissRootSignature(CreateClosestHitRootDesc().desc);
-	//subobjects[index] = hitMissRootSignature.subObject;
-
-	//uint32_t hitMissRootIndex = index++;
-	//const WCHAR* missHitExportName[] = { missShader,closeHitShader };
-	//ExportAssocication missHitRootAssociation(missHitExportName, 2, &(subobjects[hitMissRootIndex]));
-	//subobjects[index++] = missHitRootAssociation.subobject;
-
-
-	//// ペイロードの要素数？
-	//ShaderConfig shaderConfig(sizeof(float) * 2, sizeof(float) * 3);
-	//subobjects[index] = shaderConfig.subobject;
-
-
-	//uint32_t shaderConfigIndex = index++;
-	//const WCHAR* shaderExports[] = { missShader,closeHitShader,rayGenShader };
-	//ExportAssocication configAssocication(shaderExports, 3, &(subobjects[shaderConfigIndex]));
-	//subobjects[index++] = configAssocication.subobject;
-
-
-	//// パイプラインのコンフィグを生成
-	//PipeLineConfig config((uint32_t)1);
-	//subobjects[index++] = config.subobject;
-
-	//// GlobalRootSignatureを生成
-	//GlobalRootSignature root({});
-	//_EmptyRootSig = root.pRootSig;
-	//subobjects[index++] = root.subObject;
-
-
-	//D3D12_STATE_OBJECT_DESC desc;
-	//desc.NumSubobjects = index;
-	//desc.pSubobjects = subobjects.data();
-	//desc.Type = D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE;
-
-	//DirectXDevice::GetInstance().GetDevice()->CreateStateObject(
-	//	&desc, IID_PPV_ARGS(&_PipelineState));
 
 }
 
@@ -698,9 +536,9 @@ void DXRPipeLine::CreateShaderTable()
 	missRecordSize = align_to(ShaderRecordAlignment, missRecordSize);
 
 	// 使用するシェーダの個数が影響する
-	UINT hitGroupCount = _meshs.size();
+	UINT hitGroupCount = _meshDatas.size();
 	UINT rayGenSize = 1 * rayGenRecordSize;
-	UINT missSize = 1 * rayGenRecordSize;
+	UINT missSize = 1 * missRecordSize;
 	UINT hitGroupSize = hitGroupCount * hitGroupRecordSize;
 
 	auto tableAlign = D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
@@ -748,11 +586,12 @@ void DXRPipeLine::CreateShaderTable()
 	auto hitGroupStart = pStart + rayGenRegion + missRegion;
 	{
 		uint8_t* p = hitGroupStart;
-		
-		// メッシュの数分だけ
-		for (auto mesh : _meshs)
+
+		// 登録したジオメトリデータの数だけ
+		// インスタンス数ではない？
+		for (auto mesh : _meshDatas)
 		{
-			p = WriteMeshShaderRecord(p, mesh, hitGroupRecordSize);
+			p = WriteMeshShaderRecord(p, mesh.second, hitGroupRecordSize);
 		}
 
 	}
@@ -795,7 +634,7 @@ void DXRPipeLine::CreateShaderResource()
 	_WindowSize = WindowApp::GetInstance().GetWindowSize();
 
 
-	
+
 	// アウトプット用のリソース？
 
 	D3D12_RESOURCE_DESC resDesc = {};
@@ -841,8 +680,6 @@ void DXRPipeLine::CreateResourceView(std::shared_ptr<MeshData> mesh)
 
 	_IncSize = DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(
 		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	
-	_RegistMeshCount++;
 
 	int index = _RegistMeshCount;
 	auto cpu_start = _SrvUavHeap->GetCPUDescriptorHandleForHeapStart();
@@ -856,15 +693,13 @@ void DXRPipeLine::CreateResourceView(std::shared_ptr<MeshData> mesh)
 
 	auto vb_cpuHandle = cpu_start;
 	auto vb_gpuHandle = gpu_start;
-	
+
 	cpu_start.ptr += _IncSize;
 	gpu_start.ptr += _IncSize;
 
-	
-	
 	auto ib_cpuHandle = cpu_start;
 	auto ib_gpuHandle = gpu_start;
-	
+
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
 	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
@@ -887,10 +722,13 @@ void DXRPipeLine::CreateResourceView(std::shared_ptr<MeshData> mesh)
 		&srvDesc,
 		ib_cpuHandle);
 
-	mesh->m_vb_h_gpu_descriptor_handle = vb_gpuHandle;
 	mesh->m_vb_h_cpu_descriptor_handle = vb_cpuHandle;
 	mesh->m_ib_h_cpu_descriptor_handle = ib_cpuHandle;
+
+	mesh->m_vb_h_gpu_descriptor_handle = vb_gpuHandle;
 	mesh->m_ib_h_gpu_descriptor_handle = ib_gpuHandle;
+
+	_RegistMeshCount++;
 }
 
 void DXRPipeLine::CreateGlobalRootSignature()
@@ -907,7 +745,7 @@ void DXRPipeLine::CreateGlobalRootSignature()
 	D3D12_ROOT_SIGNATURE_DESC rootSigDesc{};
 	rootSigDesc.NumParameters = UINT(rootParams.size());
 	rootSigDesc.pParameters = rootParams.data();
-	
+
 	//RootSignatureDesc desc;
 	//desc.range.resize(2);
 
@@ -962,7 +800,7 @@ UINT DXRPipeLine::WriteGPUDescriptor(void* dst, const D3D12_GPU_DESCRIPTOR_HANDL
 	return UINT(sizeof(handle));
 }
 
-uint8_t* DXRPipeLine::WriteMeshShaderRecord(uint8_t* dst, const std::shared_ptr<DXRMesh> mesh, UINT recordSize)
+uint8_t* DXRPipeLine::WriteMeshShaderRecord(uint8_t* dst, const std::shared_ptr<DXRMeshData> mesh, UINT recordSize)
 {
 	ComPtr<ID3D12StateObjectProperties> rtsoprops;
 	_PipelineState.As(&rtsoprops);
@@ -974,7 +812,7 @@ uint8_t* DXRPipeLine::WriteMeshShaderRecord(uint8_t* dst, const std::shared_ptr<
 	if (id == nullptr) {
 		throw std::logic_error("Not found ShaderIdentifier");
 	}
-	
+
 	dst += WriteShaderIdentifer(dst, id);
 
 	// インデックスバッファ
@@ -987,20 +825,20 @@ uint8_t* DXRPipeLine::WriteMeshShaderRecord(uint8_t* dst, const std::shared_ptr<
 	return dst;
 }
 
-D3D12_RAYTRACING_GEOMETRY_DESC DXRPipeLine::GetGeomtryDesc(std::shared_ptr<DXRMesh> mesh)
+D3D12_RAYTRACING_GEOMETRY_DESC DXRPipeLine::GetGeomtryDesc(std::shared_ptr<MeshData> meshData)
 {
 	auto geomtryDesc = D3D12_RAYTRACING_GEOMETRY_DESC{};
 	geomtryDesc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
 	geomtryDesc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
 
 	auto& triangles = geomtryDesc.Triangles;
-	triangles.VertexBuffer.StartAddress = mesh->_vertexBuffer->getBuffer()->GetGPUVirtualAddress();
-	triangles.VertexBuffer.StrideInBytes = mesh->_vertexStride;
+	triangles.VertexBuffer.StartAddress = meshData->GetVertexBuffer()->getBuffer()->GetGPUVirtualAddress();
+	triangles.VertexBuffer.StrideInBytes = (UINT)(sizeof(MeshData::Vertex));
 	triangles.VertexFormat = DXGI_FORMAT_R32G32B32_FLOAT;
-	triangles.VertexCount = mesh->_vertexCount;
-	
-	triangles.IndexBuffer = mesh->_indexBuffer->getBuffer()->GetGPUVirtualAddress();
-	triangles.IndexCount = mesh->_indexCount;
+	triangles.VertexCount = meshData->m_VertexCount;
+
+	triangles.IndexBuffer = meshData->GetIndexBuffer()->getBuffer()->GetGPUVirtualAddress();
+	triangles.IndexCount = meshData->m_indexCount;
 	triangles.IndexFormat = DXGI_FORMAT_R32_UINT;
 
 	return geomtryDesc;
@@ -1009,8 +847,9 @@ D3D12_RAYTRACING_GEOMETRY_DESC DXRPipeLine::GetGeomtryDesc(std::shared_ptr<DXRMe
 void DXRPipeLine::SceneCBUpdate()
 {
 	auto camera = CameraManager::GetInstance().GetMainCamera();
-	
-	XMFLOAT3 lightDir{ -0.5f,-1.0f, -0.5f }; // ワールド座標系での光源の向き.
+	auto light = LightManager::GetInstance().GetDirectionalLight();
+
+	SimpleMath::Vector3 lightDir{ light->GetDirection() }; // ワールド座標系での光源の向き.
 
 	m_sceneParam.mtxView = camera->GetViewMat();
 	m_sceneParam.mtxProj = camera->GetProjectMat();

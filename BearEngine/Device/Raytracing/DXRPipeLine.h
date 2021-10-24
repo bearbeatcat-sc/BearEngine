@@ -6,6 +6,7 @@
 #include <wrl/client.h>
 #include <SimpleMath.h>
 
+#include "DXRInstance.h"
 #include "../Singleton.h"
 #include "../DirectX/DirectXDevice.h"
 #include "Device/WindowApp.h"
@@ -14,7 +15,7 @@
 using namespace Microsoft::WRL;
 
 class Mesh;
-class DXRMesh;
+class DXRMeshData;
 
 // アライメント用
 #define align_to(_alignment, _val) (((_val + _alignment - 1) / _alignment) * _alignment)
@@ -187,19 +188,18 @@ public:
 
 	bool InitPipeLine();
 	bool Init();
-	void AddMesh(std::shared_ptr<DXRMesh> mesh);
+
+	std::shared_ptr<DXRInstance> AddInstance(const std::string& meshDataName, const int hitGroupIndex);
+	void AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::wstring& hitGroupName, const std::string& meshDataName);
+	
 	void Render(ID3D12Resource* pRenderResource);
 	void CreateResourceView(std::shared_ptr<MeshData> mesh);
 
 private:
-	ComPtr<ID3D12Resource> CreateTriangleVB();
-
-	// ジオメトリレベルで加速構造を作成する
-	AccelerationStructureBuffers CreateButtomLevelAS(ID3D12Resource* pVB);
-	void CreateButtomLevelAS();
+	
 	ComPtr<ID3D12Resource> CreateBuffer(uint64_t size, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES initState, const D3D12_HEAP_PROPERTIES& heapProps);
-	AccelerationStructureBuffers CreateTopLevelAS(ID3D12Resource* pBottomLevelAS, uint64_t& tlasSize);
 	AccelerationStructureBuffers CreateTopLevelAS();
+	void CreateBLAS(std::shared_ptr<DXRMeshData> pDXRMeshData, std::shared_ptr<MeshData> pMeshData);
 
 	void CreateAccelerationStructures();
 	void CreateLocalRootSignature();
@@ -212,10 +212,12 @@ private:
 	void CreateGlobalRootSignature();
 	void CreateSceneCB();
 	void CreateDescriptorHeaps();
+	
 	UINT WriteShaderIdentifer(void* dst, const void* shaderId);
 	UINT WriteGPUDescriptor(void* dst, const D3D12_GPU_DESCRIPTOR_HANDLE handle);
-	uint8_t* WriteMeshShaderRecord(uint8_t* dst, const std::shared_ptr<DXRMesh> mesh, UINT recordSize);
-	D3D12_RAYTRACING_GEOMETRY_DESC GetGeomtryDesc(std::shared_ptr<DXRMesh> mesh);
+	uint8_t* WriteMeshShaderRecord(uint8_t* dst, const std::shared_ptr<DXRMeshData> mesh, UINT recordSize);
+	
+	D3D12_RAYTRACING_GEOMETRY_DESC GetGeomtryDesc(std::shared_ptr<MeshData> meshData);
 
 	void SceneCBUpdate();
 
@@ -226,7 +228,6 @@ private:
 
 	ComPtr<ID3D12Resource> _vertex_buffer;
 	ComPtr<ID3D12Resource> _TopLevelASResource;
-	ComPtr<ID3D12Resource> _BottomLevelASResource;
 
 	uint64_t _tlasSize;
 
@@ -250,8 +251,9 @@ private:
 	SceneParam m_sceneParam;
 	ComPtr<ID3D12Resource> _SceneCB;
 
-	std::vector<std::shared_ptr<DXRMesh>> _meshs;
-	std::vector<AccelerationStructureBuffers> _BottomLevelASResources;
+	std::map<std::string,std::shared_ptr<DXRMeshData>> _meshDatas;
+	
+	std::vector<std::shared_ptr<DXRInstance>> _instances;;
 
 	D3D12_DISPATCH_RAYS_DESC _dispathRaysDesc;
 

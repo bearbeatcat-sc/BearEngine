@@ -101,7 +101,7 @@ bool MeshData::GenerateMesh(std::vector<Vertex>& positions, std::vector<UINT>& _
 
 
 	m_ibView.BufferLocation = indexBuff->GetGPUVirtualAddress();
-	m_ibView.Format = DXGI_FORMAT_R16_UINT;
+	m_ibView.Format = DXGI_FORMAT_R32_UINT;
 	m_ibView.SizeInBytes = sizeof(_indices[0]) * _indices.size();
 
 
@@ -231,7 +231,6 @@ std::shared_ptr<Buffer> MeshData::GetIndexBuffer()
 {
 	return m_IndexBuffer;
 }
-
 
 bool MeshData::GenerateMaterialBuffer()
 {

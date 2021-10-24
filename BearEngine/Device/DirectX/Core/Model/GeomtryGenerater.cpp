@@ -17,85 +17,127 @@ void GeometryGenerator::GenerateCubeMesh(MeshData::ModelData& modelData,DirectX:
 	MeshData::MaterialData mat01;
 	mat01.material = mat;
 
-
-	constexpr  int faceCount = 6;
-
-	XMVECTORF32 faceNoramls[faceCount] =
-	{
-		{ { {  0,  0,  1, 0 } } },
-		{ { {  0,  0, -1, 0 } } },
-		{ { {  1,  0,  0, 0 } } },
-		{ { { -1,  0,  0, 0 } } },
-		{ { {  0,  1,  0, 0 } } },
-		{ { {  0, -1,  0, 0 } } },
+	vertices = {
+		// ó†
+		{ {-1.0f,-1.0f,-1.0f}, { 0.0f, 0.0f, -1.0f },{0.0f,0.0f} },
+		{ {-1.0f, 1.0f,-1.0f}, { 0.0f, 0.0f, -1.0f }, {0.0f,0.0f} },
+		{ { 1.0f, 1.0f,-1.0f}, { 0.0f, 0.0f, -1.0f },  {0.0f,0.0f}},
+		{ { 1.0f,-1.0f,-1.0f}, { 0.0f, 0.0f, -1.0f },  {0.0f,0.0f}},
+		// âE
+		{ { 1.0f,-1.0f,-1.0f}, { 1.0f, 0.0f, 0.0f },  {0.0f,0.0f}},
+		{ { 1.0f, 1.0f,-1.0f}, { 1.0f, 0.0f, 0.0f },{0.0f,0.0f} },
+		{ { 1.0f, 1.0f, 1.0f}, { 1.0f, 0.0f, 0.0f }, {0.0f,0.0f}},
+		{ { 1.0f,-1.0f, 1.0f}, { 1.0f, 0.0f, 0.0f }, {0.0f,0.0f}},
+		// ç∂
+		{ {-1.0f,-1.0f, 1.0f}, { -1.0f, 0.0f, 0.0f }, {0.0f,0.0f}},
+		{ {-1.0f, 1.0f, 1.0f}, { -1.0f, 0.0f, 0.0f }, {0.0f,0.0f}},
+		{ {-1.0f, 1.0f,-1.0f}, { -1.0f, 0.0f, 0.0f }, {0.0f,0.0f}},
+		{ {-1.0f,-1.0f,-1.0f}, { -1.0f, 0.0f, 0.0f }, {0.0f,0.0f}},
+		// ê≥ñ 
+		{ { 1.0f,-1.0f, 1.0f}, { 0.0f, 0.0f, 1.0f}, {0.0f,0.0f}},
+		{ { 1.0f, 1.0f, 1.0f}, { 0.0f, 0.0f, 1.0f}, {0.0f,0.0f}},
+		{ {-1.0f, 1.0f, 1.0f}, { 0.0f, 0.0f, 1.0f}, {0.0f,0.0f}},
+		{ {-1.0f,-1.0f, 1.0f}, { 0.0f, 0.0f, 1.0f}, {0.0f,0.0f}},
+		// è„
+		{ {-1.0f, 1.0f,-1.0f}, { 0.0f, 1.0f, 0.0f}, {0.0f,0.0f}},
+		{ {-1.0f, 1.0f, 1.0f}, { 0.0f, 1.0f, 0.0f}, {0.0f,0.0f} },
+		{ { 1.0f, 1.0f, 1.0f}, { 0.0f, 1.0f, 0.0f}, {0.0f,0.0f} },
+		{ { 1.0f, 1.0f,-1.0f}, { 0.0f, 1.0f, 0.0f}, {0.0f,0.0f}},
+		// íÍ
+		{ {-1.0f,-1.0f, 1.0f}, { 0.0f, -1.0f, 0.0f}, {0.0f,0.0f}},
+		{ {-1.0f,-1.0f,-1.0f}, { 0.0f, -1.0f, 0.0f}, {0.0f,0.0f}},
+		{ { 1.0f,-1.0f,-1.0f}, { 0.0f, -1.0f, 0.0f}, {0.0f,0.0f}},
+		{ { 1.0f,-1.0f, 1.0f}, { 0.0f, -1.0f, 0.0f}, {0.0f,0.0f}},
 	};
 
-	XMVECTORF32 uvs[4] =
-	{
-		{ { { 1, 0, 0, 0 } } },
-		{ { { 1, 1, 0, 0 } } },
-		{ { { 0, 1, 0, 0 } } },
-		{ { { 0, 0, 0, 0 } } },
+	indices = {
+	0, 1, 2, 2, 3,0,
+	4, 5, 6, 6, 7,4,
+	8, 9, 10, 10, 11, 8,
+	12,13,14, 14,15,12,
+	16,17,18, 18,19,16,
+	20,21,22, 22,23,20,
 	};
 
-	XMVECTOR tSize = size;
-	tSize = XMVectorDivide(tSize, g_XMTwo);
+	
+	//constexpr  int faceCount = 6;
 
-	for (int i = 0; i < faceCount; i++)
-	{
-		auto normal = faceNoramls[i];
+	//XMVECTORF32 faceNoramls[faceCount] =
+	//{
+	//	{ { {  0,  0,  1, 0 } } },
+	//	{ { {  0,  0, -1, 0 } } },
+	//	{ { {  1,  0,  0, 0 } } },
+	//	{ { { -1,  0,  0, 0 } } },
+	//	{ { {  0,  1,  0, 0 } } },
+	//	{ { {  0, -1,  0, 0 } } },
+	//};
 
-		XMVECTOR basis = (i >= 4) ? g_XMIdentityR2 : g_XMIdentityR1;
+	//XMVECTORF32 uvs[4] =
+	//{
+	//	{ { { 1, 0, 0, 0 } } },
+	//	{ { { 1, 1, 0, 0 } } },
+	//	{ { { 0, 1, 0, 0 } } },
+	//	{ { { 0, 0, 0, 0 } } },
+	//};
 
-		XMVECTOR side1 = XMVector3Cross(normal, basis);
-		XMVECTOR side2 = XMVector3Cross(normal, side1);
+	//XMVECTOR tSize = size;
+	//tSize = XMVectorDivide(tSize, g_XMTwo);
 
+	//for (int i = 0; i < faceCount; i++)
+	//{
+	//	auto normal = faceNoramls[i];
 
-		size_t vbase = vertices.size();
-		indices.push_back(vbase + 0);
-		indices.push_back(vbase + 1);
-		indices.push_back(vbase + 2);
+	//	XMVECTOR basis = (i >= 4) ? g_XMIdentityR2 : g_XMIdentityR1;
 
-		indices.push_back(vbase + 0);
-		indices.push_back(vbase + 2);
-		indices.push_back(vbase + 3);
-
-		MeshData::Vertex vert;
-		SimpleMath::Vector3 pos = XMVectorMultiply(XMVectorSubtract(XMVectorSubtract(normal, side1), side2), tSize);
-		SimpleMath::Vector3 _noraml = SimpleMath::Vector3(normal);
-		SimpleMath::Vector3 _uv = SimpleMath::Vector3(uvs[0]);
-		vert.pos = pos;
-		vert.normal = _noraml;
-		vert.uv = XMFLOAT2(_uv.x, _uv.y);
-		vertices.push_back(vert);
-
-
-		pos = XMVectorMultiply(XMVectorAdd(XMVectorSubtract(normal, side1), side2), tSize);
-		_noraml = SimpleMath::Vector3(normal);
-		_uv = SimpleMath::Vector3(uvs[1]);
-		vert.pos = pos;
-		vert.normal = _noraml;
-		vert.uv = XMFLOAT2(_uv.x, _uv.y);
-		vertices.push_back(vert);
+	//	XMVECTOR side1 = XMVector3Cross(normal, basis);
+	//	XMVECTOR side2 = XMVector3Cross(normal, side1);
 
 
-		pos = XMVectorMultiply(XMVectorAdd(normal, XMVectorAdd(side1, side2)), tSize);
-		_noraml = SimpleMath::Vector3(normal);
-		_uv = SimpleMath::Vector3(uvs[2]);
-		vert.pos = pos;
-		vert.normal = _noraml;
-		vert.uv = XMFLOAT2(_uv.x, _uv.y);
-		vertices.push_back(vert);
+	//	size_t vbase = vertices.size();
+	//	indices.push_back(vbase + 0);
+	//	indices.push_back(vbase + 1);
+	//	indices.push_back(vbase + 2);
+
+	//	indices.push_back(vbase + 0);
+	//	indices.push_back(vbase + 2);
+	//	indices.push_back(vbase + 3);
+
+	//	MeshData::Vertex vert;
+	//	SimpleMath::Vector3 pos = XMVectorMultiply(XMVectorSubtract(XMVectorSubtract(normal, side1), side2), tSize);
+	//	SimpleMath::Vector3 _noraml = SimpleMath::Vector3(normal);
+	//	SimpleMath::Vector3 _uv = SimpleMath::Vector3(uvs[0]);
+	//	vert.pos = pos;
+	//	vert.normal = _noraml;
+	//	vert.uv = XMFLOAT2(_uv.x, _uv.y);
+	//	vertices.push_back(vert);
 
 
-		pos = XMVectorMultiply(XMVectorSubtract(XMVectorAdd(normal, side1), side2), tSize);
-		_noraml = SimpleMath::Vector3(normal);
-		_uv = SimpleMath::Vector3(uvs[3]);
-		vert.pos = pos;
-		vert.normal = _noraml;
-		vert.uv = XMFLOAT2(_uv.x, _uv.y);
-		vertices.push_back(vert);
-	}
+	//	pos = XMVectorMultiply(XMVectorAdd(XMVectorSubtract(normal, side1), side2), tSize);
+	//	_noraml = SimpleMath::Vector3(normal);
+	//	_uv = SimpleMath::Vector3(uvs[1]);
+	//	vert.pos = pos;
+	//	vert.normal = _noraml;
+	//	vert.uv = XMFLOAT2(_uv.x, _uv.y);
+	//	vertices.push_back(vert);
+
+
+	//	pos = XMVectorMultiply(XMVectorAdd(normal, XMVectorAdd(side1, side2)), tSize);
+	//	_noraml = SimpleMath::Vector3(normal);
+	//	_uv = SimpleMath::Vector3(uvs[2]);
+	//	vert.pos = pos;
+	//	vert.normal = _noraml;
+	//	vert.uv = XMFLOAT2(_uv.x, _uv.y);
+	//	vertices.push_back(vert);
+
+
+	//	pos = XMVectorMultiply(XMVectorSubtract(XMVectorAdd(normal, side1), side2), tSize);
+	//	_noraml = SimpleMath::Vector3(normal);
+	//	_uv = SimpleMath::Vector3(uvs[3]);
+	//	vert.pos = pos;
+	//	vert.normal = _noraml;
+	//	vert.uv = XMFLOAT2(_uv.x, _uv.y);
+	//	vertices.push_back(vert);
+	//}
 
 	//ReverseWinding(indices, vertices);
 	//mesh->generateMesh(vertices, indices, test);
@@ -109,12 +151,12 @@ void GeometryGenerator::GenerateCubeMesh(MeshData::ModelData& modelData,DirectX:
 	
 
 
-	for (int i = 0; i < _countof(uvs); i++)
-	{
-		SimpleMath::Vector3 _uv = SimpleMath::Vector3(uvs[i]);
-		XMFLOAT2 temp = XMFLOAT2(_uv.x, _uv.z);
-		_uvs.push_back(temp);
-	}
+	//for (int i = 0; i < _countof(uvs); i++)
+	//{
+	//	SimpleMath::Vector3 _uv = SimpleMath::Vector3(uvs[i]);
+	//	XMFLOAT2 temp = XMFLOAT2(_uv.x, _uv.z);
+	//	_uvs.push_back(temp);
+	//}
 
 	modelData.texCords = _uvs;
 

@@ -78,6 +78,8 @@ std::shared_ptr<Mesh> MeshManager::GetSpehereMesh(int tesselation, const std::st
 		std::shared_ptr <MeshData> data = std::make_shared<MeshData>();
 		data->GenerateMesh(model.vertices, model.m_Indices, model.m_MaterialDatas);
 		m_SpehereModelDatas.emplace(tesselation, data);
+		
+		DXRPipeLine::GetInstance().CreateResourceView(data);
 		result = data;
 	}
 

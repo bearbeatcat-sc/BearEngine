@@ -121,6 +121,7 @@ private:
 	std::vector<MaterialData> m_DrawMaterialDatas;
 	std::unordered_map<std::string, ComPtr<ID3D12Resource>> m_Textures;
 
+
 };
 
 #endif

@@ -13,7 +13,7 @@ struct Vertex
 {
     float3 pos;
     float3 normal;
-    float3 uv;
+    float2 uv;
 };
 
 struct SceneCB
@@ -77,6 +77,7 @@ Vertex GetHitVertex(MyAttribute attrib)
         float w = weights[i];
         v.pos += vertexBuffer[index].pos * w;
         v.normal += vertexBuffer[index].normal * w;
+
     }
 
     v.normal = normalize(v.normal);
@@ -109,11 +110,12 @@ void rayGen()
     rayDesc.TMax = 100000;
 
     Payload payload;
-    payload.color = float3(0, 0, 0.5);
+    payload.color = float3(0, 0, 0.0);
 	
     TraceRay(gRtScene, RAY_FLAG_NONE, 0xff, 0, 1, 0, rayDesc, payload);
 
-    float3 col = linearToSrgb(payload.color);
+    //float3 col = linearToSrgb(payload.color);
+    float3 col = payload.color;
 	
 
     gOutput[lanchIndex.xy] = float4(col, 1);
@@ -123,14 +125,15 @@ void rayGen()
 [shader("miss")]
 void miss(inout Payload payload)
 {
-    payload.color = float3(0.4, 0.6, 0.2);
+    payload.color = float3(0.7f, 0.7f, 0.7f);
+
 }
 
 [shader("closesthit")]
 void chs(inout Payload payload, in MyAttribute attribs)
 {
     Vertex vtx = GetHitVertex(attribs);
-
+	
     float3 lightDir = -normalize(gSceneParam.lightDirection.xyz);
 
     float nl = saturate(dot(vtx.normal, lightDir));
@@ -144,3 +147,4 @@ void chs(inout Payload payload, in MyAttribute attribs)
 
     payload.color = color;
 }
+;

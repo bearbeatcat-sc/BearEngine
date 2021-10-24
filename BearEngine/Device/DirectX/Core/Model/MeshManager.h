@@ -29,6 +29,7 @@ public:
 	std::shared_ptr<Mesh> GetTriangleMesh(const SimpleMath::Vector3* points, const std::string& effectName);	
 	std::shared_ptr<Mesh> GetPlaneMesh(const std::string& effectName);
 	const std::shared_ptr<MeshData> GetMeshData(const std::string& modelname);
+	std::shared_ptr<MeshData> FindSpehere(int tesselation);
 	ID3D12DescriptorHeap* GetDescriptrHeap();
 
 protected:
@@ -37,7 +38,6 @@ protected:
 	bool LoadObj(const std::string& filePath, const std::string& fileName, const std::string& modelName,bool isSmooth = false);
 	bool LoadPmd(const std::string& filePath, const std::string& modelName);
 	void SmoothNormal(MeshData::ModelData& meshData);
-	std::shared_ptr<MeshData> FindSpehere(int tesselation);
 	void CreateCubeMeshData();
 	void CreateDescriptorHeap();
 
