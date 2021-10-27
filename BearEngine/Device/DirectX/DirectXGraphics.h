@@ -54,6 +54,8 @@ public:
 	void ClearDepthStencilView(const D3D12_CPU_DESCRIPTOR_HANDLE& handle, D3D12_CLEAR_FLAGS _clearFlag, float _depth, UINT8 _stencil, UINT _numRects,const D3D12_RECT* _pRect = nullptr);
 	void CreateImGUIDescriptrHeap();
 
+	const int GetBackBufferIndex();
+
 	ID3D12DescriptorHeap* GetImGUIDescriptrHeap();
 	ID3D12DescriptorHeap* GetDepthSRVHeap();
 	ID3D12DescriptorHeap* GetDSVHeap();

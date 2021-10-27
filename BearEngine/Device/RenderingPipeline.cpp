@@ -124,33 +124,8 @@ HRESULT RenderingPipeLine::Init()
 	MeshManager::GetInstance().GetSpehereMesh(6, "NormalMeshEffect");
 	MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "TLEX.obj", "TLEX");
 
-	
-	auto meshData = MeshManager::GetInstance().GetMeshData("TLEX");
-	DXRPipeLine::GetInstance().AddMeshData(meshData, L"HitGroup", "TLEX");
-	//auto meshData = MeshManager::GetInstance().FindSpehere(6);
-
-
-	for(int i = 0; i < 1; ++i)
-	{
-		auto instanace = DXRPipeLine::GetInstance().AddInstance("TLEX", 0);
-		auto pos_x = Random::GetRandom(-10.0f, 10.0f);
-		auto pos_z = Random::GetRandom(-10.0f, 10.0f);
-		float pos_y = 2.0f;
-
-		auto mtx = SimpleMath::Matrix::CreateScale(2.0f, 2.0f, 2.0f) * SimpleMath::Matrix::CreateTranslation(pos_x, pos_y, pos_z);
-		instanace->SetMatrix(mtx);
-		instanace->CreateRaytracingInstanceDesc();
-	}
-
-	//auto mesh = std::make_shared<DXRMesh>(L"HitGroup",1,meshData);
-	//auto mesh2 = std::make_shared<DXRMesh>(L"HitGroup",1,meshData);
-
-	//auto mtx2 = SimpleMath::Matrix::CreateScale(2.0f, 2.0f, 4.0f) * SimpleMath::Matrix::CreateTranslation(-0.0f, 1.0f, 0.0f);
-	//mesh2->SetMatrix(mtx2);
-
-	//// 今はとりあえずここに
-	//DXRPipeLine::GetInstance().AddMesh(mesh);
-	//DXRPipeLine::GetInstance().AddMesh(mesh2);
+	auto meshData = MeshManager::GetInstance().GetMeshData("CubeModelData");
+	DXRPipeLine::GetInstance().AddMeshData(meshData, L"HitGroup", "Cube");
 	DXRPipeLine::GetInstance().InitPipeLine();
 	
 	m_pCommandList = DirectXGraphics::GetInstance().GetCommandList();

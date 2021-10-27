@@ -10,6 +10,8 @@
 #include <SimpleMath.h>
 #include <array>
 
+#include "Utility/Timer.h"
+
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
@@ -157,6 +159,7 @@ private:
 	bool m_isDrawFluid;
 
 	float mDofPint = 0.16f;
+
 };
 
 #endif

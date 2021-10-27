@@ -392,6 +392,11 @@ void DirectXGraphics::CreateImGUIDescriptrHeap()
 	DirectXDevice::GetInstance().GetDevice()->CreateDescriptorHeap(&desc, IID_PPV_ARGS(m_ImGUIHeaps.GetAddressOf()));
 }
 
+const int DirectXGraphics::GetBackBufferIndex()
+{
+	return m_Swapchain.Get()->GetCurrentBackBufferIndex();
+}
+
 ID3D12DescriptorHeap* DirectXGraphics::GetImGUIDescriptrHeap()
 {
 	return m_ImGUIHeaps.Get();

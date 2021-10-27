@@ -24,12 +24,15 @@
 #include <Device/RenderingPipeline.h>
 #include <imgui/imgui.h>
 
+#include "Device/Raytracing/DXRPipeLine.h"
+#include "GameObjects/Cube.h"
 #include "GameObjects/Flor.h"
 
 #include "Utility/Timer.h"
 
 
 #include "GameObjects/Wall.h"
+#include "Utility/Random.h"
 
 MainGame::MainGame()
 	:Game(L"TestApp", 1920, 1080)
@@ -45,20 +48,8 @@ void MainGame::Init()
 {
 	DirectXGraphics::GetInstance().InitFontSystem(L"font/fonttest.spritefont");
 
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/MeshParticleComputeShader.hlsl", "cs_5_0", "MeshParticleInitComputeShader", "init");
-
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/MeshEmitterVertexShader.hlsl", "vs_5_0", "MeshEmitterGPUParticleVertexShader");
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/MeshEmitterPixelShader.hlsl", "ps_5_0", "MeshEmitterGPUParticlePixelShader");
-
-	//MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "sphere.obj", "Sphere");
-	//MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "SpaceShip.obj", "SpaceShip");
-	//MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "blenderMonkey.obj", "blenderMonkey");
-	//MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "TLEX.obj", "TLEX");
 
 
-	auto particleMeshEffect = std::shared_ptr<ParticleMeshEffect>(new ParticleMeshEffect());
-	particleMeshEffect->Init("MeshEmitterGPUParticleVertexShader", "MeshEmitterGPUParticlePixelShader", "");
-	EffectManager::GetInstance().AddEffect(particleMeshEffect, "ParticleMeshEffect");
 
 	auto dirlight = LightManager::GetInstance().GetDirectionalLight();
 	auto dir = SimpleMath::Vector3(-0.103f, -0.513f, -0.852f);
@@ -73,13 +64,33 @@ void MainGame::Init()
 	RenderingPipeLine::GetInstance().SetDrawFluidFlag(false);
 
 
-
+	//auto meshData = MeshManager::GetInstance().FindSpehere(6);
+	
+	_AddTimer = std::make_shared<Timer>(3.0f);
 }
 
 
 void MainGame::Update()
 {
 	m_CameraAsistant->Update();
+
+	_AddTimer->Update();
+
+	if(_AddTimer->IsTime())
+	{
+		for (int i = 0; i < 1; ++i)
+		{
+
+			auto pos_x = Random::GetRandom(-10.0f, 10.0f);
+			auto pos_z = Random::GetRandom(-10.0f, 10.0f);
+			float pos_y = 2.0f;
+
+			auto cube = new Cube(SimpleMath::Vector3(pos_x, pos_y, pos_z), SimpleMath::Vector3(1.0f), 4.0f);
+			ActorManager::GetInstance().AddActor(cube);
+
+			_AddTimer->Reset();
+		}
+	}
 }
 
 void MainGame::Destroy()

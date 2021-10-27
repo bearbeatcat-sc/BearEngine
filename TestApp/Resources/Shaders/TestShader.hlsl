@@ -27,7 +27,7 @@ struct SceneCB
     float4 ambientColor;
 };
 
-// GlobalRootSignature
+// GlobalSignature
 RaytracingAccelerationStructure gRtScene : register(t0);
 ConstantBuffer<SceneCB> gSceneParam : register(b0);
 
@@ -125,7 +125,7 @@ void rayGen()
 [shader("miss")]
 void miss(inout Payload payload)
 {
-    payload.color = float3(0.7f, 0.7f, 0.7f);
+    payload.color = float3(0.2f, 0.2f, 0.2f);
 
 }
 

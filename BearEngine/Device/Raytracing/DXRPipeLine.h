@@ -27,6 +27,7 @@ struct AccelerationStructureBuffers
 	// 生成に使う一時的なリソース
 	ComPtr<ID3D12Resource> pScratch;
 	ComPtr<ID3D12Resource> pResult;
+	ComPtr<ID3D12Resource> pUpdate;
 	ComPtr<ID3D12Resource> pInstanceDesc;
 };
 
@@ -194,13 +195,15 @@ public:
 	
 	void Render(ID3D12Resource* pRenderResource);
 	void CreateResourceView(std::shared_ptr<MeshData> mesh);
+	void DeleteInstance();
 
 private:
 	
 	ComPtr<ID3D12Resource> CreateBuffer(uint64_t size, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES initState, const D3D12_HEAP_PROPERTIES& heapProps);
 	AccelerationStructureBuffers CreateTopLevelAS();
 	void CreateBLAS(std::shared_ptr<DXRMeshData> pDXRMeshData, std::shared_ptr<MeshData> pMeshData);
-
+	void UpdateTLAS();
+	
 	void CreateAccelerationStructures();
 	void CreateLocalRootSignature();
 	ComPtr<ID3D12RootSignature> CreateRayGenRootDesc();
@@ -227,7 +230,9 @@ private:
 	uint32_t _shaderTableEntrySize = 0;
 
 	ComPtr<ID3D12Resource> _vertex_buffer;
+	AccelerationStructureBuffers _AccelerationStructureBuffers;
 	ComPtr<ID3D12Resource> _TopLevelASResource;
+	std::vector<ComPtr<ID3D12Resource>> _instanceDescBuffers;;
 
 	uint64_t _tlasSize;
 
@@ -283,4 +288,6 @@ private:
 	const UINT _MaxMeshCount = 1024;
 	UINT _RegistMeshCount = 0;
 	UINT _IncSize;
+
+	const UINT _MaxInstanceCount = 100;
 };

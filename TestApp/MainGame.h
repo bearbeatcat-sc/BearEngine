@@ -29,4 +29,6 @@ public:
 
 private:
 	CameraAsistant* m_CameraAsistant;
+	// DEBUG
+	std::shared_ptr<Timer> _AddTimer;
 };

@@ -20,10 +20,12 @@ public:
 
 	void SetMatrix(const SimpleMath::Matrix mat);
 	void CreateRaytracingInstanceDesc();
+	void Destroy();
 
 	SimpleMath::Matrix _matrix;
-	D3D12_RAYTRACING_INSTANCE_DESC _raytracingInstanceDesc;
+	std::shared_ptr<D3D12_RAYTRACING_INSTANCE_DESC> _raytracingInstanceDesc;
 	int _hitGroupIndex;
 
 	std::shared_ptr<DXRMeshData> _pDXRMeshData;
+	bool _DestroyFlag;
 };

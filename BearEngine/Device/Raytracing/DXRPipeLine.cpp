@@ -128,14 +128,19 @@ bool DXRPipeLine::Init()
 std::shared_ptr<DXRInstance> DXRPipeLine::AddInstance(const std::string& meshDataName, const int hitGroupIndex)
 {
 
-	if(_meshDatas.count(meshDataName) == 0)
+	if (_meshDatas.count(meshDataName) == 0)
 	{
 		throw std::runtime_error("Not Regist Data.");
 	}
 
+	if(_instances.size() >= _MaxInstanceCount)
+	{
+		throw std::runtime_error("exceeded the number can register.");
+	}
+
 	auto meshData = _meshDatas.find(meshDataName);
 	auto instance = std::make_shared<DXRInstance>(hitGroupIndex, meshData->second);
-	
+
 	_instances.push_back(instance);
 
 	// 後でTLASの構築するかも
@@ -143,16 +148,16 @@ std::shared_ptr<DXRInstance> DXRPipeLine::AddInstance(const std::string& meshDat
 	return instance;
 }
 
-void DXRPipeLine::AddMeshData(std::shared_ptr<MeshData> pMeshData,const std::wstring& hitGroupName,const std::string& meshDataName)
+void DXRPipeLine::AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::wstring& hitGroupName, const std::string& meshDataName)
 {
 	auto dxrMesh = std::make_shared<DXRMeshData>(hitGroupName);
-	
+
 	dxrMesh->m_ibView = pMeshData->m_ib_h_gpu_descriptor_handle;
 	dxrMesh->m_vbView = pMeshData->m_vb_h_gpu_descriptor_handle;
 
 	CreateBLAS(dxrMesh, pMeshData);
 
-	_meshDatas.emplace(meshDataName,dxrMesh);
+	_meshDatas.emplace(meshDataName, dxrMesh);
 }
 
 
@@ -204,9 +209,83 @@ void DXRPipeLine::CreateBLAS(std::shared_ptr<DXRMeshData> pDXRMeshData, std::sha
 	pDXRMeshData->_blas = buffers.pResult;
 }
 
+void DXRPipeLine::UpdateTLAS()
+{
+	// 死亡処理を行う
+	DeleteInstance();
+	
+	auto instanceCount = _instances.size();
+	auto size = _MaxInstanceCount * sizeof(D3D12_RAYTRACING_INSTANCE_DESC);
+
+	const int frameIndex = DirectXGraphics::GetInstance().GetBackBufferIndex();
+
+
+
+	D3D12_RAYTRACING_INSTANCE_DESC* p_instance_desc;
+	_instanceDescBuffers[frameIndex]->Map(0, nullptr, (void**)&p_instance_desc);
+	ZeroMemory(p_instance_desc, sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * _MaxInstanceCount);
+
+	for (int i = 0; i < instanceCount; i++)
+	{
+		p_instance_desc[i].InstanceID = i;
+		p_instance_desc[i].Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+		p_instance_desc[i].InstanceMask = 0xFF;
+		p_instance_desc[i].InstanceContributionToHitGroupIndex = _instances[i]->_raytracingInstanceDesc->InstanceContributionToHitGroupIndex;
+		p_instance_desc[i].AccelerationStructure = _instances[i]->_raytracingInstanceDesc->AccelerationStructure;
+
+		SimpleMath::Matrix mat = _instances[i]->_matrix;
+		//memcpy(p_instance_desc[i].Transform, &mat, sizeof(_instances[i]->_raytracingInstanceDesc->Transform));
+
+		XMStoreFloat3x4(
+			reinterpret_cast<XMFLOAT3X4*>(p_instance_desc[i].Transform),
+			_instances[i]->_matrix
+		);
+
+		//p_instance_desc[i].InstanceContributionToHitGroupIndex = static_cast<UINT>(0);
+		//p_instance_desc[i].Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+
+
+
+		//p_instance_desc->AccelerationStructure = _BottomLevelASResources[i].pResult->GetGPUVirtualAddress();
+		//p_instance_desc->InstanceMask = 0xFF;
+	}
+
+	_instanceDescBuffers[frameIndex]->Unmap(0, nullptr);
+	
+	// TLASの作成
+	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC asDesc = {};
+
+	asDesc.Inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+	asDesc.Inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+	asDesc.Inputs.NumDescs = _MaxInstanceCount;
+	asDesc.Inputs.InstanceDescs = _instanceDescBuffers[frameIndex]->GetGPUVirtualAddress();
+
+	// TLAS の更新処理を行うためのフラグを設定する.
+	// 今回は、インスタンスの追加もするので、新しく構築する。
+	asDesc.Inputs.Flags =
+		D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE;
+
+	//asDesc.SourceAccelerationStructureData = _AccelerationStructureBuffers.pResult->GetGPUVirtualAddress();
+	asDesc.DestAccelerationStructureData = _AccelerationStructureBuffers.pResult->GetGPUVirtualAddress();
+	
+	asDesc.ScratchAccelerationStructureData = _AccelerationStructureBuffers.pUpdate->GetGPUVirtualAddress();
+
+
+	DirectXGraphics::GetInstance().GetCommandList()->BuildRaytracingAccelerationStructure(&asDesc, 0, nullptr);
+
+	D3D12_RESOURCE_BARRIER uavBarrier = {};
+	uavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+	uavBarrier.UAV.pResource = _AccelerationStructureBuffers.pResult.Get();
+
+	DirectXGraphics::GetInstance().GetCommandList()->ResourceBarrier(1, &uavBarrier);
+
+
+}
+
 void DXRPipeLine::Render(ID3D12Resource* pRenderResource)
 {
 	auto commandList = DirectXGraphics::GetInstance().GetCommandList();
+	UpdateTLAS();
 
 	// カメラ用のCBの更新
 	// 後でパラメータの変更したときだけ変えるようにする。
@@ -292,10 +371,23 @@ AccelerationStructureBuffers DXRPipeLine::CreateTopLevelAS()
 
 	const int instanceCount = _instances.size();
 
+	_instanceDescBuffers.resize(2);
+
+	auto size = UINT(_MaxInstanceCount * sizeof(D3D12_RAYTRACING_INSTANCE_DESC));
+
+	for (int i = 0; i < 2; i++)
+	{
+		_instanceDescBuffers[i] = CreateBuffer(size,
+			D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, uploadHeapProps);
+	}
+
+	const int currentBuffer = DirectXGraphics::GetInstance().GetBackBufferIndex();
+
+
 	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
 	inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
-	inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
-	inputs.NumDescs = instanceCount;
+	inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE;
+	inputs.NumDescs = _MaxInstanceCount;
 	inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 
 	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info;
@@ -306,20 +398,27 @@ AccelerationStructureBuffers DXRPipeLine::CreateTopLevelAS()
 	AccelerationStructureBuffers buffers;
 	buffers.pScratch = CreateBuffer(info.ScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, defaultHeapProps);
 	buffers.pResult = CreateBuffer(info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, defaultHeapProps);
+	buffers.pUpdate = CreateBuffer(info.UpdateScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, defaultHeapProps);
 	tlasSize = info.ResultDataMaxSizeInBytes;
 
-	buffers.pInstanceDesc = CreateBuffer(sizeof(D3D12_RAYTRACING_INSTANCE_DESC),
-		D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, uploadHeapProps);
-
+	buffers.pInstanceDesc = _instanceDescBuffers[currentBuffer];
 
 	D3D12_RAYTRACING_INSTANCE_DESC* p_instance_desc;
 	buffers.pInstanceDesc->Map(0, nullptr, (void**)&p_instance_desc);
-	ZeroMemory(p_instance_desc, sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * instanceCount);
+	ZeroMemory(p_instance_desc, sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * _MaxInstanceCount);
 
 	for (int i = 0; i < instanceCount; i++)
 	{
-		p_instance_desc[i] = _instances[i]->_raytracingInstanceDesc;
 		p_instance_desc[i].InstanceID = i;
+		p_instance_desc[i].Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+		p_instance_desc[i].InstanceMask = 0xFF;
+		p_instance_desc[i].InstanceContributionToHitGroupIndex = _instances[i]->_hitGroupIndex;
+		p_instance_desc[i].AccelerationStructure = _instances[i]->_raytracingInstanceDesc->AccelerationStructure;
+
+		XMStoreFloat3x4(
+			reinterpret_cast<XMFLOAT3X4*>(p_instance_desc[i].Transform),
+			_instances[i]->_matrix
+		);
 		//p_instance_desc[i].InstanceContributionToHitGroupIndex = static_cast<UINT>(0);
 		//p_instance_desc[i].Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
 
@@ -358,10 +457,10 @@ AccelerationStructureBuffers DXRPipeLine::CreateTopLevelAS()
 void DXRPipeLine::CreateAccelerationStructures()
 {
 	//_vertex_buffer = CreateTriangleVB();
-	AccelerationStructureBuffers top_level_buffers = CreateTopLevelAS();
+	 _AccelerationStructureBuffers = CreateTopLevelAS();
 
 	//_BottomLevelASResource = bottom_level_buffers.pResult;
-	_TopLevelASResource = top_level_buffers.pResult;
+	_TopLevelASResource = _AccelerationStructureBuffers.pResult;
 }
 
 void DXRPipeLine::CreateLocalRootSignature()
@@ -729,6 +828,20 @@ void DXRPipeLine::CreateResourceView(std::shared_ptr<MeshData> mesh)
 	mesh->m_ib_h_gpu_descriptor_handle = ib_gpuHandle;
 
 	_RegistMeshCount++;
+}
+
+void DXRPipeLine::DeleteInstance()
+{
+	for (auto itr = _instances.begin(); itr != _instances.end();)
+	{
+		if ((*itr)->_DestroyFlag)
+		{
+			itr = _instances.erase(itr);
+			continue;
+		}
+		++itr;
+	}
+
 }
 
 void DXRPipeLine::CreateGlobalRootSignature()

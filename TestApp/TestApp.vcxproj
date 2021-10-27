@@ -151,6 +151,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CameraAsistant.cpp" />
+    <ClCompile Include="GameObjects\Cube.cpp" />
     <ClCompile Include="GameObjects\Flor.cpp" />
     <ClCompile Include="GameObjects\Plane.cpp" />
     <ClCompile Include="GameObjects\Sphere.cpp" />
@@ -160,6 +161,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CameraAsistant.h" />
+    <ClInclude Include="GameObjects\Cube.h" />
     <ClInclude Include="GameObjects\Flor.h" />
     <ClInclude Include="GameObjects\Plane.h" />
     <ClInclude Include="GameObjects\Sphere.h" />
