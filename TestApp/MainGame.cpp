@@ -78,7 +78,7 @@ void MainGame::Update()
 
 	if(_AddTimer->IsTime())
 	{
-		for (int i = 0; i < 1; ++i)
+		for (int i = 0; i < 6; ++i)
 		{
 
 			auto pos_x = Random::GetRandom(-10.0f, 10.0f);

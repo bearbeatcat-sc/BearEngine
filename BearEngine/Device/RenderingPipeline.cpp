@@ -217,7 +217,7 @@ void RenderingPipeLine::DrawBegin()
 	DrawPostEffect();
 	DirectXGraphics::GetInstance().Begin();
 
-	DXRPipeLine::GetInstance().Render(m_result_bloom_resource.Get());
+	DXRPipeLine::GetInstance().Render(m_result_bloom_resource.Get(),m_pSkyBox);
 }
 
 void RenderingPipeLine::Draw()

@@ -30,6 +30,8 @@ struct SceneCB
 // GlobalSignature
 RaytracingAccelerationStructure gRtScene : register(t0);
 ConstantBuffer<SceneCB> gSceneParam : register(b0);
+TextureCube<float4> gBackGround : register(t1);
+SamplerState gSampler : register(s0);
 
 // Local  RayGen
 RWTexture2D<float4> gOutput : register(u0);
@@ -125,8 +127,9 @@ void rayGen()
 [shader("miss")]
 void miss(inout Payload payload)
 {
-    payload.color = float3(0.2f, 0.2f, 0.2f);
-
+    //payload.color = float3(0.2f, 0.2f, 0.2f);
+    payload.color = gBackGround.SampleLevel(
+    gSampler, WorldRayDirection(), 0.0).xyz;
 }
 
 [shader("closesthit")]
@@ -142,8 +145,10 @@ void chs(inout Payload payload, in MyAttribute attribs)
     float3 ambientColor = gSceneParam.ambientColor.xyz;
     float3 color = 0;
 
-    color += lightColor * nl;
-    color += ambientColor;
+    float3 diffuseColor = float3(0.8f, 0.0f, 0.0f);
+
+    color += lightColor * nl * diffuseColor;
+    color += ambientColor * diffuseColor;
 
     payload.color = color;
 }

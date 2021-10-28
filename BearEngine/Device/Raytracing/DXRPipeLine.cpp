@@ -10,6 +10,7 @@
 #include "../WindowApp.h"
 #include "../DirectX/DirectXDevice.h"
 #include "../DirectX/DirectXGraphics.h"
+#include "Device/SkyBox.h"
 #include "Device/DirectX/Core/Model/Mesh.h"
 #include "Device/DirectX/Core/Model/MeshDatas.h"
 #include "Device/DirectX/Core/Model/MeshManager.h"
@@ -282,7 +283,7 @@ void DXRPipeLine::UpdateTLAS()
 
 }
 
-void DXRPipeLine::Render(ID3D12Resource* pRenderResource)
+void DXRPipeLine::Render(ID3D12Resource* pRenderResource,SkyBox* pSkyBox)
 {
 	auto commandList = DirectXGraphics::GetInstance().GetCommandList();
 	UpdateTLAS();
@@ -296,10 +297,21 @@ void DXRPipeLine::Render(ID3D12Resource* pRenderResource)
 	_SceneCB->Unmap(0, nullptr);
 
 	commandList->SetPipelineState1(_PipelineState.Get());
+	commandList->SetComputeRootSignature(_globalRootSignature.Get());
+
+	auto skyBoxDescHeap = pSkyBox->GETDescHeap();
+
+	// SkyBoxのハンドルをセット
+	ID3D12DescriptorHeap* skyBoxHeaps[] = { skyBoxDescHeap };
+	commandList->SetDescriptorHeaps(ARRAYSIZE(skyBoxHeaps), skyBoxHeaps);
+	auto skyboxHandle = skyBoxDescHeap->GetGPUDescriptorHandleForHeapStart();
+	skyboxHandle.ptr += DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	commandList->SetComputeRootDescriptorTable(2, skyboxHandle);
+
+	
 
 	ID3D12DescriptorHeap* heaps[] = { _SrvUavHeap.Get() };
 	commandList->SetDescriptorHeaps(ARRAYSIZE(heaps), heaps);
-	commandList->SetComputeRootSignature(_globalRootSignature.Get());
 
 	// 加速構造のセット
 	D3D12_GPU_DESCRIPTOR_HANDLE srvHandle = _SrvUavHeap->GetGPUDescriptorHandleForHeapStart();
@@ -308,6 +320,8 @@ void DXRPipeLine::Render(ID3D12Resource* pRenderResource)
 
 	// カメラCBのセット
 	commandList->SetComputeRootConstantBufferView(1, _SceneCB->GetGPUVirtualAddress());
+
+
 
 	commandList->DispatchRays(&_dispathRaysDesc);
 
@@ -846,18 +860,31 @@ void DXRPipeLine::DeleteInstance()
 
 void DXRPipeLine::CreateGlobalRootSignature()
 {
-	std::array<CD3DX12_ROOT_PARAMETER, 2> rootParams;
+	std::array<CD3DX12_ROOT_PARAMETER, 3> rootParams;
 
 	// TLAS を t0 レジスタに割り当てて使用する設定.
 	CD3DX12_DESCRIPTOR_RANGE descRangeTLAS;
 	descRangeTLAS.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
 
+	// CubeMapテクスチャをt1レジスタに
+	CD3DX12_DESCRIPTOR_RANGE descRangeSkyBoxTex;
+	descRangeSkyBoxTex.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
+
+	
 	rootParams[0].InitAsDescriptorTable(1, &descRangeTLAS);
 	rootParams[1].InitAsConstantBufferView(0); // b0
+	rootParams[2].InitAsDescriptorTable(1,&descRangeSkyBoxTex);
+
+	CD3DX12_STATIC_SAMPLER_DESC desc;
+	desc.Init(
+		0
+	);
 
 	D3D12_ROOT_SIGNATURE_DESC rootSigDesc{};
 	rootSigDesc.NumParameters = UINT(rootParams.size());
 	rootSigDesc.pParameters = rootParams.data();
+	rootSigDesc.pStaticSamplers = &desc;
+	rootSigDesc.NumStaticSamplers = UINT(1);
 
 	//RootSignatureDesc desc;
 	//desc.range.resize(2);

@@ -28,8 +28,41 @@ ComPtr<ID3D12Resource> TextureManager::GetWhiteTex()
 	return m_WhiteBuff;
 }
 
+ComPtr<ID3D12DescriptorHeap> TextureManager::GetHeaps()
+{
+	return _Heaps;
+}
+
+HRESULT TextureManager::CreateShaderResourceView(ComPtr<ID3D12Resource> tex)
+{
+	auto incSize = DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(
+		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	auto cpu_start = _Heaps->GetCPUDescriptorHandleForHeapStart();
+	auto gpu_start = _Heaps->GetGPUDescriptorHandleForHeapStart();
+
+	cpu_start.ptr += incSize * _RegistTextureCount;
+	gpu_start.ptr += incSize * _RegistTextureCount;
+
+	D3D12_SHADER_RESOURCE_VIEW_DESC srVDesc = {};
+	srVDesc.Format = tex.Get()->GetDesc().Format;
+	srVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srVDesc.Texture2D.MipLevels = 1;
+
+	DirectXDevice::GetInstance().GetDevice()->CreateShaderResourceView(
+		tex.Get(),
+		&srVDesc,
+		cpu_start);
+
+	return S_OK;
+}
+
 TextureManager::TextureManager()
 {
+	// 後でテクスチャを一つのヒープで管理するようにする。
+	CreateDescriptorHeap();
+
 	CreateWhiteBuff();
 }
 
@@ -82,6 +115,13 @@ void TextureManager::CreateWhiteBuff()
 		data.data(),
 		4 * 4,
 		data.size());
+
+}
+
+void TextureManager::CreateDescriptorHeap()
+{
+	_Heaps = DirectXDevice::GetInstance().CreateDescriptorHeap(
+		_MaxTextureCount, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, true);
 
 }
 

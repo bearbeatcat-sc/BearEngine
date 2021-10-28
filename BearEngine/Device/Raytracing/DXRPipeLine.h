@@ -16,6 +16,7 @@ using namespace Microsoft::WRL;
 
 class Mesh;
 class DXRMeshData;
+class SkyBox;
 
 // アライメント用
 #define align_to(_alignment, _val) (((_val + _alignment - 1) / _alignment) * _alignment)
@@ -193,7 +194,7 @@ public:
 	std::shared_ptr<DXRInstance> AddInstance(const std::string& meshDataName, const int hitGroupIndex);
 	void AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::wstring& hitGroupName, const std::string& meshDataName);
 	
-	void Render(ID3D12Resource* pRenderResource);
+	void Render(ID3D12Resource* pRenderResource,SkyBox* pSkyBox);
 	void CreateResourceView(std::shared_ptr<MeshData> mesh);
 	void DeleteInstance();
 

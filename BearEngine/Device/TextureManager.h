@@ -20,11 +20,14 @@ public:
 	bool AddTexture(const std::string& filePath, const std::string& textureName);
 	ComPtr<ID3D12Resource> GetTexture(const std::string& textureName);
 	ComPtr<ID3D12Resource> GetWhiteTex();
+	ComPtr<ID3D12DescriptorHeap> GetHeaps();
+	HRESULT CreateShaderResourceView(ComPtr<ID3D12Resource> tex);
 
 protected:
 	TextureManager();
 	~TextureManager();
 	void CreateWhiteBuff();
+	void CreateDescriptorHeap();
 
 private:
 	ComPtr<ID3D12Resource> GenerateTextureResource(std::shared_ptr<Texture> texture);
@@ -32,6 +35,10 @@ private:
 private:
 	std::map<std::string, ComPtr<ID3D12Resource>> m_Textures;
 	ComPtr<ID3D12Resource> m_WhiteBuff;
+	ComPtr<ID3D12DescriptorHeap> _Heaps;
+
+	const UINT _MaxTextureCount = 200;
+	UINT _RegistTextureCount = 0;
 };
 
 #endif
