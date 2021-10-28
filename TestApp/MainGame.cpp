@@ -67,6 +67,8 @@ void MainGame::Init()
 	//auto meshData = MeshManager::GetInstance().FindSpehere(6);
 	
 	_AddTimer = std::make_shared<Timer>(3.0f);
+	_GenerateTimer = std::make_shared<Timer>(0.2f);
+	_IsGenerate = false;
 }
 
 
@@ -74,23 +76,44 @@ void MainGame::Update()
 {
 	m_CameraAsistant->Update();
 
-	_AddTimer->Update();
-
-	if(_AddTimer->IsTime())
+	if(!_IsGenerate)
 	{
-		for (int i = 0; i < 6; ++i)
+		_AddTimer->Update();
+		if (_AddTimer->IsTime())
 		{
-
-			auto pos_x = Random::GetRandom(-10.0f, 10.0f);
-			auto pos_z = Random::GetRandom(-10.0f, 10.0f);
-			float pos_y = 2.0f;
-
-			auto cube = new Cube(SimpleMath::Vector3(pos_x, pos_y, pos_z), SimpleMath::Vector3(1.0f), 4.0f);
-			ActorManager::GetInstance().AddActor(cube);
-
+			_IsGenerate = true;
+			_GenerateCount = 0;
 			_AddTimer->Reset();
 		}
+		return;
 	}
+	
+	_GenerateTimer->Update();
+	if(_GenerateTimer->IsTime())
+	{
+		_GenerateTimer->Reset();
+		auto pos_x = Random::GetRandom(-10.0f, 10.0f);
+		auto pos_z = Random::GetRandom(-10.0f, 10.0f);
+		float pos_y = 2.0f;
+
+		float rotateX = Random::GetRandom(-1.0f, 1.0f);
+		float rotateY = Random::GetRandom(-1.0f, 1.0f);
+		float rotateZ = Random::GetRandom(-1.0f, 1.0f);
+
+		auto cube = new Cube(SimpleMath::Vector3(pos_x, pos_y, pos_z), SimpleMath::Vector3(0.2f), 4.0f);
+		cube->SetRotation(Quaternion::CreateFromYawPitchRoll(rotateX, rotateY, rotateZ));
+		ActorManager::GetInstance().AddActor(cube);
+
+		_GenerateCount++;
+
+		if(_GenerateCount >= _MaxGenerateCount)
+		{
+			_IsGenerate = false;
+		}
+	}
+
+
+
 }
 
 void MainGame::Destroy()

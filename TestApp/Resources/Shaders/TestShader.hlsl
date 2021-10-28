@@ -7,6 +7,7 @@ struct Payload
 struct MyAttribute
 {
     float2 barys;
+    int recursive;
 };
 
 struct Vertex

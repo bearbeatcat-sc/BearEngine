@@ -23,8 +23,13 @@ private:
 	virtual void Shutdown() override;
 	virtual void OnCollsion(Actor* other) override;
 
+	void Generate();
+
 private:	
 	std::shared_ptr<DXRInstance> _instance;
 	std::shared_ptr<Timer> _DestroyTimer;
+	std::shared_ptr<Timer> _GenerateTimer;
 	SimpleMath::Vector3 _initScale;
+	SimpleMath::Vector3 _Acc;
+	bool _IsGenerate;
 };
