@@ -9,8 +9,8 @@
 CameraAsistant::CameraAsistant()
 {
 	m_Camera = CameraManager::GetInstance().GetMainCamera();
-	m_Camera->SetPosition(SimpleMath::Vector3(6.0f, 4.0f, 20.0f));
-	m_Camera->SetTarget(SimpleMath::Vector3(0.0f, 0.0f, 0.0f));
+	m_Camera->SetPosition(SimpleMath::Vector3(0, 0, 0));
+	m_Camera->SetTarget(SimpleMath::Vector3(0.0f, 0.0f, 1.0f));
 	m_Camera->SetNear(0.1f);
 	m_Camera->SetFar(100.0f);
 }

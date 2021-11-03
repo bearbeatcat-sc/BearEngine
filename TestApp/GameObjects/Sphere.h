@@ -5,6 +5,8 @@
 #include <SimpleMath.h>
 #include <memory>
 
+#include "Device/Raytracing/DXRInstance.h"
+
 using namespace DirectX::SimpleMath;
 
 class MeshComponent;
@@ -45,7 +47,8 @@ private:
 	void Move();
 
 private:
-	std::shared_ptr<MeshComponent> m_pMeshComponent;
+	//std::shared_ptr<MeshComponent> m_pMeshComponent;
+	std::shared_ptr<DXRInstance> _instance;
 	
 	ActionType m_ActionType;
 	SphereType m_Type;

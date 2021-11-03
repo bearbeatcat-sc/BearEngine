@@ -50,7 +50,7 @@ bool MeshData::GenerateMesh(std::vector<Vertex>& positions, std::vector<UINT>& _
 
 	// Vertexを設定
 	m_VertexBuffer = std::make_shared<Buffer>();
-	size_t size = sizeof(Vertex) * positions.size();
+	size_t size = UINT(sizeof(Vertex)) * positions.size();
 	m_VertexBuffer->init(D3D12_HEAP_TYPE_UPLOAD, size, D3D12_RESOURCE_STATE_GENERIC_READ);
 	auto vertBuff = m_VertexBuffer->getBuffer();
 
@@ -85,15 +85,13 @@ bool MeshData::GenerateMesh(std::vector<Vertex>& positions, std::vector<UINT>& _
 
 	// indexを設定
 	m_IndexBuffer = std::make_shared<Buffer>();
-	size = sizeof(UINT) * m_indexCount;
+	size = UINT(sizeof(UINT)) * m_indexCount;
 	m_IndexBuffer->init(D3D12_HEAP_TYPE_UPLOAD, size, D3D12_RESOURCE_STATE_GENERIC_READ);
 	auto indexBuff = m_IndexBuffer->getBuffer();
 
 	UINT* indexMap = nullptr;
 
 	indexBuff->Map(0, nullptr, (void**)&indexMap);
-
-	// TODO:インデックスバッファの生成方法
 	std::copy(_indices.begin(), _indices.end(), indexMap);
 
 
@@ -101,14 +99,15 @@ bool MeshData::GenerateMesh(std::vector<Vertex>& positions, std::vector<UINT>& _
 
 
 	m_ibView.BufferLocation = indexBuff->GetGPUVirtualAddress();
-	m_ibView.Format = DXGI_FORMAT_R32_UINT;
+	m_ibView.Format = DXGI_FORMAT_R16_UINT;
 	m_ibView.SizeInBytes = sizeof(_indices[0]) * _indices.size();
 
 
 	m_MaterialDatas = matData;
 
 
-
+	// Test
+	CreateTestMaterialBuffer();
 	GenerateTextureBuffer();
 
 	if (!GenerateMaterialBuffer())
@@ -129,7 +128,29 @@ bool MeshData::GenerateMesh(std::vector<Vertex>& positions, std::vector<UINT>& _
 	return true;
 }
 
+void MeshData::SetTestMaterial(const TestMat& testMat)
+{
+	_TestMat = testMat;
 
+	// 動的な変更は危険か？
+	TestMat* mapTestMat = nullptr;
+	HRESULT result = m_TestMaterialBuffer->getBuffer()->Map(0, nullptr, (void**)&mapTestMat);
+
+	mapTestMat->isReflect = _TestMat.isReflect;
+
+	m_TestMaterialBuffer->getBuffer()->Unmap(0, nullptr);
+}
+
+const UINT MeshData::GetVertexCount()
+{
+	return m_Positions.size();
+}
+
+const UINT MeshData::GetIndexCount()
+{
+	return m_indexCount;
+
+}
 
 ComPtr<ID3D12Resource> MeshData::CreateWhiteTexture()
 {
@@ -220,6 +241,23 @@ const std::vector<XMFLOAT3>& MeshData::GetPositions()
 const MeshData::MeshAABB& MeshData::GetMeshAABB()
 {
 	return m_MeshAABB;
+}
+
+void MeshData::CreateTestMaterialBuffer()
+{
+	auto matearialBuffSize = sizeof(TestMat);
+	matearialBuffSize = (matearialBuffSize + 0xff) & ~0xff;
+	
+	m_TestMaterialBuffer = std::make_shared<Buffer>();
+	m_TestMaterialBuffer->init(D3D12_HEAP_TYPE_UPLOAD, matearialBuffSize, D3D12_RESOURCE_STATE_GENERIC_READ);
+
+	TestMat* mapTestMat = nullptr;	
+	HRESULT result = m_TestMaterialBuffer->getBuffer()->Map(0, nullptr, (void**)&mapTestMat);
+
+	mapTestMat->isReflect = _TestMat.isReflect;
+
+	m_TestMaterialBuffer->getBuffer()->Unmap(0, nullptr);
+
 }
 
 std::shared_ptr<Buffer> MeshData::GetVertexBuffer()

@@ -25,6 +25,8 @@ class SkyBox;
 
 struct AccelerationStructureBuffers
 {
+	AccelerationStructureBuffers() {};
+	
 	// 生成に使う一時的なリソース
 	ComPtr<ID3D12Resource> pScratch;
 	ComPtr<ID3D12Resource> pResult;
@@ -199,9 +201,8 @@ public:
 	void DeleteInstance();
 
 private:
-	
 	ComPtr<ID3D12Resource> CreateBuffer(uint64_t size, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES initState, const D3D12_HEAP_PROPERTIES& heapProps);
-	AccelerationStructureBuffers CreateTopLevelAS();
+	void CreateTopLevelAS();
 	void CreateBLAS(std::shared_ptr<DXRMeshData> pDXRMeshData, std::shared_ptr<MeshData> pMeshData);
 	void UpdateTLAS();
 	
@@ -242,22 +243,23 @@ private:
 
 	ComPtr<ID3D12Resource> _OutPutResource;
 	ComPtr<ID3D12DescriptorHeap> _SrvUavHeap;
+	ComPtr<ID3D12DescriptorHeap> _MeshSrvHeap;
 	const uint32_t kSrvUavHeapSize = 2;
 
 	struct SceneParam
 	{
-		XMMATRIX mtxView;       // ビュー行列.
-		XMMATRIX mtxProj;       // プロジェクション行列.
-		XMMATRIX mtxViewInv;    // ビュー逆行列.
-		XMMATRIX mtxProjInv;    // プロジェクション逆行列.
-		XMVECTOR lightDirection; // 平行光源の向き.
-		XMVECTOR lightColor;    // 平行光源色.
-		XMVECTOR ambientColor;  // 環境光.
+		SimpleMath::Matrix mtxView;       // ビュー行列.
+		SimpleMath::Matrix mtxProj;       // プロジェクション行列.
+		SimpleMath::Matrix mtxViewInv;    // ビュー逆行列.
+		SimpleMath::Matrix mtxProjInv;    // プロジェクション逆行列.
+		SimpleMath::Vector4 lightDirection; // 平行光源の向き.
+		SimpleMath::Vector4 lightColor;    // 平行光源色.
+		SimpleMath::Vector4 ambientColor;  // 環境光.
 	};
 	SceneParam m_sceneParam;
 	ComPtr<ID3D12Resource> _SceneCB;
 
-	std::map<std::string,std::shared_ptr<DXRMeshData>> _meshDatas;
+	std::vector<std::shared_ptr<DXRMeshData>> _meshDatas;
 	
 	std::vector<std::shared_ptr<DXRInstance>> _instances;;
 
@@ -287,7 +289,7 @@ private:
 
 	const UINT _SRVResourceCount = 2;
 	const UINT _MaxMeshCount = 1024;
-	UINT _RegistMeshCount = 0;
+	UINT _AllocateCount = 0;
 	UINT _IncSize;
 
 	const UINT _MaxInstanceCount = 100;

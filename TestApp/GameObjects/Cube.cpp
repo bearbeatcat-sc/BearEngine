@@ -5,7 +5,7 @@
 #include "Utility/Time.h"
 #include "Utility/Timer.h"
 
-Cube::Cube(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& scale, float destroyTime)
+Cube::Cube(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& scale, float destroyTime, bool moveFlag)
 	:_initScale(scale), _IsGenerate(false)
 {
 	SetPosition(pos);
@@ -15,6 +15,8 @@ Cube::Cube(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& scale, flo
 	_GenerateTimer = std::make_shared<Timer>(0.3f);
 
 	_Acc = SimpleMath::Vector3(0, 4.0f, 0.0f);
+}
+{
 }
 
 void Cube::UpdateActor()
@@ -58,7 +60,7 @@ void Cube::Generate()
 
 void Cube::Init()
 {
-	_instance = DXRPipeLine::GetInstance().AddInstance("Cube", 0);
+	_instance = DXRPipeLine::GetInstance().AddInstance("BlenderMonkey", 0);
 
 	auto mtx = SimpleMath::Matrix::CreateFromQuaternion(m_Rotation) * SimpleMath::Matrix::CreateScale(m_Scale) * SimpleMath::Matrix::CreateTranslation(m_Position);
 	_instance->SetMatrix(mtx);

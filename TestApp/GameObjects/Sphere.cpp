@@ -5,6 +5,8 @@
 #include <Utility/Time.h>
 #include <Utility/Random.h>
 
+#include "Device/Raytracing/DXRPipeLine.h"
+
 
 Sphere::Sphere(Vector3 pos, SphereType type)
 	:m_Type(type), m_MoveTime(0.0f)
@@ -24,49 +26,50 @@ void Sphere::SetColor(const DirectX::SimpleMath::Color& color)
 void Sphere::UpdateActor()
 {
 	//Move();
-	m_pMeshComponent->SetMatrix(GetWorldMatrix());
+	//m_pMeshComponent->SetMatrix(GetWorldMatrix());
 }
 
 void Sphere::Init()
 {
-	switch (m_Type)
-	{
-	case Sphere::SphereType_Normal:
-		//SetScale(DirectX::SimpleMath::Vector3(1.0f));
-		m_pMeshComponent = std::shared_ptr<MeshComponent>(new MeshComponent(this, CameraManager::GetInstance().GetMainCamera(), 32, "NormalMeshEffect"));
-		m_pMeshComponent->SetMatrix(GetWorldMatrix());
-		break;
-	case Sphere::SphereType_NormalLowPoly:
-		SetScale(DirectX::SimpleMath::Vector3(1.00f, 1.00f, 1.00f));
-		m_pMeshComponent = std::shared_ptr<MeshComponent>(new MeshComponent(this, "Sphere", CameraManager::GetInstance().GetMainCamera(), "NormalMeshEffect"));
-		m_pMeshComponent->SetMatrix(GetWorldMatrix());
-		break;
-	case Sphere::SphereType_GouraudNormal:
-		SetScale(DirectX::SimpleMath::Vector3(0.063f, 0.063f, 0.063f));
-		m_pMeshComponent = std::shared_ptr<MeshComponent>(new MeshComponent(this, CameraManager::GetInstance().GetMainCamera(), 16, "GouraudMeshEffect"));
-		m_pMeshComponent->SetMatrix(GetWorldMatrix());
-		break;
-	case Sphere::SphereType_GouraudLowPoly:
-		SetScale(DirectX::SimpleMath::Vector3(1.00f, 1.00f, 1.00f));
-		m_pMeshComponent = std::shared_ptr<MeshComponent>(new MeshComponent(this, "Sphere", CameraManager::GetInstance().GetMainCamera(), "GouraudMeshEffect"));
-		m_pMeshComponent->SetMatrix(GetWorldMatrix());
-		break;
-	case Sphere::SphereType_NormalMesh:
-		//SetScale(DirectX::SimpleMath::Vector3(0.063f, 0.063f, 0.063f));
-		m_pMeshComponent = std::shared_ptr<MeshComponent>(new MeshComponent(this, "blenderMonkey", CameraManager::GetInstance().GetMainCamera(), "NormalMeshEffect"));
-		m_pMeshComponent->SetMatrix(GetWorldMatrix());
-		break;
-	case Sphere::SphereType_GouraudMesh:
-		SetScale(DirectX::SimpleMath::Vector3(0.63f, 0.63f, 0.63f));
-		m_pMeshComponent = std::shared_ptr<MeshComponent>(new MeshComponent(this, "SpaceShip", CameraManager::GetInstance().GetMainCamera(), "GouraudMeshEffect"));
-		m_pMeshComponent->SetMatrix(GetWorldMatrix());
-		break;
-	}
+	//switch (m_Type)
+	//{
+	//case Sphere::SphereType_Normal:
+	//	//SetScale(DirectX::SimpleMath::Vector3(1.0f));
+	//	m_pMeshComponent = std::shared_ptr<MeshComponent>(new MeshComponent(this, CameraManager::GetInstance().GetMainCamera(), 32, "NormalMeshEffect"));
+	//	m_pMeshComponent->SetMatrix(GetWorldMatrix());
+	//	break;
+	//case Sphere::SphereType_NormalLowPoly:
+	//	SetScale(DirectX::SimpleMath::Vector3(1.00f, 1.00f, 1.00f));
+	//	m_pMeshComponent = std::shared_ptr<MeshComponent>(new MeshComponent(this, "Sphere", CameraManager::GetInstance().GetMainCamera(), "NormalMeshEffect"));
+	//	m_pMeshComponent->SetMatrix(GetWorldMatrix());
+	//	break;
+	//case Sphere::SphereType_GouraudNormal:
+	//	SetScale(DirectX::SimpleMath::Vector3(0.063f, 0.063f, 0.063f));
+	//	m_pMeshComponent = std::shared_ptr<MeshComponent>(new MeshComponent(this, CameraManager::GetInstance().GetMainCamera(), 16, "GouraudMeshEffect"));
+	//	m_pMeshComponent->SetMatrix(GetWorldMatrix());
+	//	break;
+	//case Sphere::SphereType_GouraudLowPoly:
+	//	SetScale(DirectX::SimpleMath::Vector3(1.00f, 1.00f, 1.00f));
+	//	m_pMeshComponent = std::shared_ptr<MeshComponent>(new MeshComponent(this, "Sphere", CameraManager::GetInstance().GetMainCamera(), "GouraudMeshEffect"));
+	//	m_pMeshComponent->SetMatrix(GetWorldMatrix());
+	//	break;
+	//case Sphere::SphereType_NormalMesh:
+	//	//SetScale(DirectX::SimpleMath::Vector3(0.063f, 0.063f, 0.063f));
+	//	m_pMeshComponent = std::shared_ptr<MeshComponent>(new MeshComponent(this, "blenderMonkey", CameraManager::GetInstance().GetMainCamera(), "NormalMeshEffect"));
+	//	m_pMeshComponent->SetMatrix(GetWorldMatrix());
+	//	break;
+	//case Sphere::SphereType_GouraudMesh:
+	//	SetScale(DirectX::SimpleMath::Vector3(0.63f, 0.63f, 0.63f));
+	//	m_pMeshComponent = std::shared_ptr<MeshComponent>(new MeshComponent(this, "SpaceShip", CameraManager::GetInstance().GetMainCamera(), "GouraudMeshEffect"));
+	//	m_pMeshComponent->SetMatrix(GetWorldMatrix());
+	//	break;
+	//}
 
 
 
-	m_pMeshComponent->SetColor(mColor);
-	AddComponent(m_pMeshComponent);
+	//m_pMeshComponent->SetColor(mColor);
+	//AddComponent(m_pMeshComponent);
+	//SetScale(DirectX::SimpleMath::Vector3(0.5f));
 
 	m_MoveTime = Random::GetRandom(0.0f, 1.0f);
 
@@ -74,6 +77,12 @@ void Sphere::Init()
 
 	mInitPos = m_Position;
 	mStartPos = mInitPos;
+
+	_instance = DXRPipeLine::GetInstance().AddInstance("cube2", 0);
+
+	auto mtx = SimpleMath::Matrix::CreateFromQuaternion(m_Rotation) * SimpleMath::Matrix::CreateScale(m_Scale) * SimpleMath::Matrix::CreateTranslation(m_Position);
+	_instance->SetMatrix(mtx);
+	_instance->CreateRaytracingInstanceDesc();
 }
 
 void Sphere::Shutdown()
@@ -93,7 +102,7 @@ void Sphere::UpDown()
 	m_MoveTime += Time::DeltaTime;
 
 	SetPosition(pos);
-	m_pMeshComponent->SetMatrix(GetWorldMatrix());
+	//m_pMeshComponent->SetMatrix(GetWorldMatrix());
 }
 
 void Sphere::Thrust()
@@ -104,7 +113,7 @@ void Sphere::Thrust()
 	pos.z += Time::DeltaTime * 1.2f;
 
 	SetPosition(pos);
-	m_pMeshComponent->SetMatrix(GetWorldMatrix());
+	//m_pMeshComponent->SetMatrix(GetWorldMatrix());
 
 	float distance = Vector3::Distance(pos, mStartPos);
 

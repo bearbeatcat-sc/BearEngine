@@ -121,11 +121,35 @@ HRESULT RenderingPipeLine::Init()
 	MeshManager::GetInstance().Init();
 	MeshDrawer::GetInstance().Init();
 
-	MeshManager::GetInstance().GetSpehereMesh(6, "NormalMeshEffect");
-	MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "TLEX.obj", "TLEX");
+	MeshManager::GetInstance().GetSpehereMesh(12, "NormalMeshEffect");
+	MeshManager::GetInstance().GetSpehereMesh(13, "NormalMeshEffect");
+	MeshManager::GetInstance().GetSpehereMesh(21, "NormalMeshEffect");
+	MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "blenderMonkey.obj", "BlenderMonkey");
+	MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "SpaceShip.obj", "Cube2");
+	MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "SpaceShip2.obj", "Cube3");
 
-	auto meshData = MeshManager::GetInstance().GetMeshData("CubeModelData");
-	DXRPipeLine::GetInstance().AddMeshData(meshData, L"HitGroup", "Cube");
+	auto cubeMeshData = MeshManager::GetInstance().GetMeshData("CubeModelData");
+	auto blenderMonkyMeshData = MeshManager::GetInstance().GetMeshData("BlenderMonkey");
+	
+	auto cube0 = MeshManager::GetInstance().GetMeshData("Cube0");
+	auto cube2 = MeshManager::GetInstance().GetMeshData("Cube2");
+	auto cube3 = MeshManager::GetInstance().GetMeshData("Cube3");
+
+	
+	auto sphereMeshData1 = MeshManager::GetInstance().FindSpehere(12);
+	auto sphereMeshData2 = MeshManager::GetInstance().FindSpehere(13);
+	auto sphereMeshData3 = MeshManager::GetInstance().FindSpehere(21);
+
+
+	//sphereMeshData->SetTestMaterial(MeshData::TestMat{ true });
+
+
+	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "cube2");
+	//DXRPipeLine::GetInstance().AddMeshData(cube2, L"HitGroup", "cube4");
+	//DXRPipeLine::GetInstance().AddMeshData(cube2, L"HitGroup", "cube6");
+	DXRPipeLine::GetInstance().AddMeshData(sphereMeshData2, L"HitGroup", "BlenderMonkey");
+
+
 	DXRPipeLine::GetInstance().InitPipeLine();
 	
 	m_pCommandList = DirectXGraphics::GetInstance().GetCommandList();

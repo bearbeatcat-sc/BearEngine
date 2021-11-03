@@ -11,8 +11,9 @@ public:
 	Buffer();
 	~Buffer();
 	ID3D12Resource* getBuffer();
+	const D3D12_RESOURCE_DESC& GetResourceDesc();
 	ID3D12Resource* init(D3D12_HEAP_TYPE type, UINT bufferSize, D3D12_RESOURCE_STATES state);
-
+	D3D12_GPU_VIRTUAL_ADDRESS GetVirtualAdress();
 
 private:
 	//ComPtr<ID3D12Resource> m_Buffer;

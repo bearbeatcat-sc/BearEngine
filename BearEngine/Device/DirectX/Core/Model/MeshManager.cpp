@@ -79,7 +79,7 @@ std::shared_ptr<Mesh> MeshManager::GetSpehereMesh(int tesselation, const std::st
 		data->GenerateMesh(model.vertices, model.m_Indices, model.m_MaterialDatas);
 		m_SpehereModelDatas.emplace(tesselation, data);
 		
-		DXRPipeLine::GetInstance().CreateResourceView(data);
+		//DXRPipeLine::GetInstance().CreateResourceView(data);
 		result = data;
 	}
 
@@ -140,7 +140,7 @@ bool MeshManager::LoadObj(const std::string& filePath, const std::string& fileNa
 
 	data->GenerateMesh(model.vertices, model.m_Indices, model.m_MaterialDatas);
 	m_ModelDatas.emplace(modelName, data);
-	DXRPipeLine::GetInstance().CreateResourceView(data);
+	//DXRPipeLine::GetInstance().CreateResourceView(data);
 	
 	return true;
 }
@@ -181,7 +181,7 @@ void MeshManager::CreateCubeMeshData()
 
 	m_ModelDatas.emplace("CubeModelData", m_CubeModelData);
 
-	DXRPipeLine::GetInstance().CreateResourceView(m_CubeModelData);
+	//DXRPipeLine::GetInstance().CreateResourceView(m_CubeModelData);
 }
 
 

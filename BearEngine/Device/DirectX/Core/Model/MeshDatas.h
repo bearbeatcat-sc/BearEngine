@@ -51,6 +51,12 @@ public:
 		}
 	};
 
+	struct TestMat
+	{
+		bool isReflect = false;
+		XMFLOAT3 test;
+	};
+
 	struct MaterialData
 	{
 		Material material;
@@ -77,6 +83,10 @@ public:
 	MeshData();
 	~MeshData();
 	bool GenerateMesh(std::vector<Vertex>& positions, std::vector<UINT>& _indices, std::unordered_map<std::string, MaterialData>& matData);
+	void SetTestMaterial(const TestMat& testMat);
+	const UINT GetVertexCount();
+	const UINT GetIndexCount();
+	
 	ComPtr<ID3D12Resource> CreateWhiteTexture();
 	std::unordered_map<std::string, std::shared_ptr<Buffer>>& GetMaterialBuffer();
 	std::unordered_map<std::string, ComPtr<ID3D12Resource>>& GetTextureBuff();
@@ -87,16 +97,20 @@ public:
 	const std::vector<XMFLOAT3>& GetPositions();
 	const MeshAABB& GetMeshAABB();
 
+	void CreateTestMaterialBuffer();
 	std::shared_ptr<Buffer> GetVertexBuffer();
 	std::shared_ptr<Buffer> GetIndexBuffer();
 
 	D3D12_VERTEX_BUFFER_VIEW m_vbView;
 	D3D12_INDEX_BUFFER_VIEW m_ibView;
-	size_t m_indexCount;
-	size_t m_VertexCount;
+	UINT m_indexCount;
+	UINT m_VertexCount;
 	
 	D3D12_GPU_DESCRIPTOR_HANDLE m_vb_h_gpu_descriptor_handle;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_vb_h_cpu_descriptor_handle;
+
+	D3D12_GPU_DESCRIPTOR_HANDLE m_mat_h_gpu_descriptor_handle;
+	D3D12_CPU_DESCRIPTOR_HANDLE m_mat_h_cpu_descriptor_handle;
 
 	D3D12_GPU_DESCRIPTOR_HANDLE m_ib_h_gpu_descriptor_handle;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_ib_h_cpu_descriptor_handle;
@@ -111,6 +125,11 @@ private:
 
 	std::shared_ptr<Buffer> m_VertexBuffer;
 	std::shared_ptr<Buffer> m_IndexBuffer;
+	
+	std::shared_ptr<Buffer> m_TestMaterialBuffer;
+
+	TestMat _TestMat;
+	
 	ComPtr<ID3D12Resource> m_WhiteTexBuffer;
 	std::vector<XMFLOAT3> m_Positions;
 	MeshAABB m_MeshAABB;
