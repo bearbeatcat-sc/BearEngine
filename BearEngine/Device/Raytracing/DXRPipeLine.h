@@ -255,6 +255,7 @@ private:
 		SimpleMath::Vector4 lightDirection; // 平行光源の向き.
 		SimpleMath::Vector4 lightColor;    // 平行光源色.
 		SimpleMath::Vector4 ambientColor;  // 環境光.
+		SimpleMath::Vector3 eyePos;
 	};
 	SceneParam m_sceneParam;
 	ComPtr<ID3D12Resource> _SceneCB;

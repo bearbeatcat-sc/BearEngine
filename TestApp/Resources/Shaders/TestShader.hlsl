@@ -39,7 +39,8 @@ struct SceneCB
     matrix mtxProjInv;
     float4 lightDirection;
     float4 lightColor;
-    float4 ambientColor;	
+    float4 ambientColor;
+    float3 eyePos;
 };
 
 // GlobalSignature
@@ -76,23 +77,40 @@ inline float3 CalcBarycentrics(float2 barys)
         barys.y);
 }
 
-float3 phongShading(float3 vertexNormal)
+// 入射角 / 法線 /反射率
+float3 caluculateFrasnel(float3 i, float3 n, float3 f0)
 {
-    //float3 worldNormal = mul(vertexNormal, (float3x3) ObjectToWorld4x3());
-    float3 worldNormal = vertexNormal;
-    float3 worldRayDir = WorldRayDirection();
+    float cosi = saturate(dot(-i, n));
 
-    float3 lightDir = -normalize(gSceneParam.lightDirection.xyz);
+    return f0 + (1.0f - f0) * pow(1.0f - cosi, 5);
+}
 
-    float nl = saturate(dot(worldNormal, lightDir));
-    float3 diffuse = clamp(dot(worldNormal, lightDir), 0.0f, 1.0f);
-    float3 specular = pow(clamp(dot(vertexNormal, nl), 0.0f, 1.0f), 50.0f);
-
-    float3 testColor = float3(1, 1, 1);
+float3 phongShading(float3 albedo, float3 vertexNormal, float3 vertexPos)
+{
+    float3 worldNormal = mul(vertexNormal, (float3x3) ObjectToWorld4x3());
+    //float3 worldPos = mul(float4(vertexPos, 1), ObjectToWorld4x3());
+    float3 worldPos = WorldRayOrigin() + RayTCurrent() + WorldRayDirection();
 	
-    float3 color = testColor * float4(diffuse, 1.0f) + float4(specular, 1.0f) + gSceneParam.ambientColor;
 
-    return color;
+    float3 lightDir = gSceneParam.lightDirection.xyz;
+    float diffuse = saturate(dot(-lightDir, worldNormal));
+
+	// 今回はシンプルにマテリアルカラーのみ
+    float3 diffuseColor = diffuse * albedo * diffuse;
+
+    float3 specularColor = float3(0, 0, 0);
+    float3 lightSpecularColor = float3(1, 1, 1);
+
+    float3 _reflect = normalize(reflect(lightDir, worldNormal));
+    float specular = pow(saturate(dot(_reflect, normalize(-WorldRayDirection()))), 50.0f);
+    specularColor = 1.0f * specular * lightSpecularColor;
+
+
+    float3 ambientColor = gSceneParam.ambientColor;
+	
+    return ambientColor + diffuseColor + specularColor;
+	
+
 }
 
 // recursive = 再帰回数
@@ -142,7 +160,7 @@ inline bool checkRecursiveLimit(inout Payload payload)
     return false;
 }
 
-float3 Refraction(float3 vertexPos,float3 vertexNormal,int recursive)
+float3 Refraction(float3 vertexPos, float3 vertexNormal, int recursive)
 {
     float4x3 mtx = ObjectToWorld4x3();
 
@@ -161,23 +179,23 @@ float3 Refraction(float3 vertexPos,float3 vertexNormal,int recursive)
 
     float3 refracted;
 
-	if(nr < 0)
-	{
+    if (nr < 0)
+    {
 		// (1.0 == 空気中)
         float eta = 1.0 / refractVal;
 
         refracted = refract(worldRayDir, worldNormal, eta);
     }
-	else
-	{
+    else
+    {
         float eta = refractVal / 1.0;
 
 		// 内部から表面にレイが飛んでるので、法線が反対になる。
         refracted = refract(worldRayDir, -worldNormal, eta);
     }
 
-	if(length(refracted) < 0.01)
-	{
+    if (length(refracted) < 0.01)
+    {
 		// 
         return Reflection(vertexPos, vertexNormal, recursive);
     }
@@ -293,30 +311,26 @@ void chs(inout Payload payload, in MyAttribute attribs)
     Vertex vtx = GetHitVertex(attribs);
     uint id = InstanceID();
 	
-    float3 lightDir = -normalize(gSceneParam.lightDirection.xyz);
+    float3 worldNormal = mul(vtx.normal, (float3x3) ObjectToWorld4x3());
 
-    float nl = saturate(dot(vtx.normal, lightDir));
-
-  //  bool flag = matBuffer[0].isReflect;
-
-  //  if (flag == false)
-  //  {
+	// 後でパラメータ化
+    float3 albedo = float3(1, 0, 0);
+	
 	    	
 		//// 今回は完全に反射する
-	float3 reflectionColor = Reflection(vtx.pos, vtx.normal, payload.recursive);
-	//float3 refractColor = Refraction(vtx.pos, vtx.normal, payload.recursive);
-  //      payload.color = reflectionColor;
+    float3 reflectionColor = Reflection(vtx.pos, vtx.normal, payload.recursive);
 
-  //      return;
-  //  }
+	// フレネル反射
+    reflectionColor = reflectionColor * caluculateFrasnel(WorldRayDirection(), worldNormal, albedo) * 0.8f;
+
 
 
 
 	
 
 
-    float3 color = lerp(phongShading(vtx.normal), reflectionColor, 0.8f);
+    //float3 color = lerp(phongShading(vtx.normal), reflectionColor, 0.8f);
 	
-    payload.color = reflectionColor;
+    payload.color = phongShading(albedo, vtx.normal, vtx.pos) + reflectionColor;
 };
 

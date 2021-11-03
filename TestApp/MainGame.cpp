@@ -60,7 +60,7 @@ void MainGame::Init()
 
 	const SimpleMath::Vector3 base_position = Vector3(2.5f, 0.0f, 2.5f);
 
-	RenderingPipeLine::GetInstance().SetSkyBox("Resources/OutputCube.dds", SimpleMath::Vector3(10.0f));
+	RenderingPipeLine::GetInstance().SetSkyBox("Resources/SkyBox.dds", SimpleMath::Vector3(10.0f));
 	RenderingPipeLine::GetInstance().SetDrawFluidFlag(false);
 
 
@@ -76,7 +76,7 @@ void MainGame::Init()
 	sphere->SetScale(SimpleMath::Vector3(30, 1, 30));
 	ActorManager::GetInstance().AddActor(sphere);
 
-	auto cube = new Cube(SimpleMath::Vector3(0, -20, 30),SimpleMath::Vector3(3.0f),60.0f);
+	auto cube = new Cube(SimpleMath::Vector3(0, 10, 30),SimpleMath::Vector3(3.0f),60.0f,false);
 	ActorManager::GetInstance().AddActor(cube);
 }
 

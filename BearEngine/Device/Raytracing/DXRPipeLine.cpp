@@ -1092,6 +1092,7 @@ void DXRPipeLine::SceneCBUpdate()
 
 	m_sceneParam.lightColor = XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f);
 	m_sceneParam.lightDirection = XMVector3Normalize(XMLoadFloat3(&lightDir));
-	m_sceneParam.ambientColor = XMVectorSet(0.2f, 0.2f, 0.2f, 0.0f);
+	m_sceneParam.ambientColor = XMVectorSet(0.4f, 0.4f, 0.4f, 0.0f);
+	m_sceneParam.eyePos = camera->GetPosition();
 }
 

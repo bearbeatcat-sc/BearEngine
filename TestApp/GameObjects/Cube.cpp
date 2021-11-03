@@ -6,7 +6,7 @@
 #include "Utility/Timer.h"
 
 Cube::Cube(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& scale, float destroyTime, bool moveFlag)
-	:_initScale(scale), _IsGenerate(false)
+	:_initScale(scale), _IsGenerate(false),_IsMove(moveFlag)
 {
 	SetPosition(pos);
 	SetScale(scale);
@@ -16,11 +16,11 @@ Cube::Cube(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& scale, flo
 
 	_Acc = SimpleMath::Vector3(0, 4.0f, 0.0f);
 }
-{
-}
 
 void Cube::UpdateActor()
 {
+	if (!_IsMove)return;
+	
 	_Acc += SimpleMath::Vector3(0, -2.0f, 0) * Time::DeltaTime;
 	m_Position += Time::DeltaTime * _Acc;
 
