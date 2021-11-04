@@ -216,11 +216,13 @@ private:
 	void CreateShaderResource();
 	void CreateGlobalRootSignature();
 	void CreateSceneCB();
+	void CreateMaterialCB();
 	void CreateDescriptorHeaps();
 	
 	UINT WriteShaderIdentifer(void* dst, const void* shaderId);
 	UINT WriteGPUDescriptor(void* dst, const D3D12_GPU_DESCRIPTOR_HANDLE handle);
-	uint8_t* WriteMeshShaderRecord(uint8_t* dst, const std::shared_ptr<DXRMeshData> mesh, UINT recordSize);
+	UINT WriteGPUResourceAddr(void* dst, D3D12_GPU_VIRTUAL_ADDRESS addr);
+	uint8_t* WriteMeshShaderRecord(uint8_t* dst, const std::shared_ptr<DXRMeshData> mesh, D3D12_GPU_VIRTUAL_ADDRESS address, UINT recordSize);
 	
 	D3D12_RAYTRACING_GEOMETRY_DESC GetGeomtryDesc(std::shared_ptr<MeshData> meshData);
 
@@ -288,7 +290,10 @@ private:
 	ComPtr<ID3D12RootSignature> _closesHitLocalRootSignature;
 	ComPtr<ID3D12RootSignature> _rayGenerationLocalRootSignature;
 
+	ComPtr<ID3D12Resource> _materialCB;
+
 	const UINT _SRVResourceCount = 2;
+	const UINT _MeshDataSize = 3;
 	const UINT _MaxMeshCount = 1024;
 	UINT _AllocateCount = 0;
 	UINT _IncSize;

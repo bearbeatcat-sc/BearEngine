@@ -8,8 +8,8 @@
 struct DXRMeshData
 {
 public:
-	DXRMeshData(const std::wstring& hitGroupName)
-		:_hitGroupName(hitGroupName)
+	DXRMeshData(const std::wstring& hitGroupName,const MeshData::RaytraceMaterial& mat)
+		:_hitGroupName(hitGroupName),_Mat(mat)
 	{
 		
 	};
@@ -25,4 +25,5 @@ public:
 	std::wstring _hitGroupName;
 	int hitGropIndex;
 	std::string meshName;
+	MeshData::RaytraceMaterial _Mat;
 };

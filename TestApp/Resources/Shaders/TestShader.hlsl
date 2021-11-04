@@ -19,17 +19,9 @@ struct Vertex
 
 struct Material
 {
-    float3 diffuseColor;
-    float3 specularColor;
-    float specularRoughness;
+    float4 albedo;
+    float4 specular;
 };
-
-//struct Material
-//{
-//	// 今はテスト用
-//    bool isReflect;
-//    float3 test;
-//};
 
 struct SceneCB
 {
@@ -55,7 +47,7 @@ RWTexture2D<float4> gOutput : register(u0);
 // Local HitGroup
 StructuredBuffer<uint> indexBuffer : register(t0, space1);
 StructuredBuffer<Vertex> vertexBuffer : register(t1, space1);
-//StructuredBuffer<Material> matBuffer : register(t2, space1);
+ConstantBuffer<Material> matBuffer : register(b0, space1);
 
 
 float3 linearToSrgb(float3 c)
@@ -296,8 +288,11 @@ void rayGen()
 void miss(inout Payload payload)
 {
     //payload.color = float3(0.2f, 0.2f, 0.2f);
-    payload.color = gBackGround.SampleLevel(
+    float3 color = gBackGround.SampleLevel(
     gSampler, WorldRayDirection(), 0.0).xyz;
+	
+    payload.color = color;
+
 }
 
 [shader("closesthit")]
@@ -314,16 +309,20 @@ void chs(inout Payload payload, in MyAttribute attribs)
     float3 worldNormal = mul(vtx.normal, (float3x3) ObjectToWorld4x3());
 
 	// 後でパラメータ化
-    float3 albedo = float3(1, 0, 0);
+    float3 albedo = float3(1, 1, 1);
 	
-	    	
-		//// 今回は完全に反射する
+	
+	// 今回は完全に反射する
     float3 reflectionColor = Reflection(vtx.pos, vtx.normal, payload.recursive);
 
 	// フレネル反射
-    reflectionColor = reflectionColor * caluculateFrasnel(WorldRayDirection(), worldNormal, albedo) * 0.8f;
+    reflectionColor = reflectionColor * caluculateFrasnel(WorldRayDirection(), worldNormal, albedo) * 1.0f;
 
+    float t = RayTCurrent();
+    float3 color = /*phongShading(albedo, vtx.normal, vtx.pos) +*/ reflectionColor;
 
+	// fog
+    color = lerp(color, float3(1, 1, 1), 1.0 - exp(-0.000002 * t * t * t));
 
 
 	
@@ -331,6 +330,6 @@ void chs(inout Payload payload, in MyAttribute attribs)
 
     //float3 color = lerp(phongShading(vtx.normal), reflectionColor, 0.8f);
 	
-    payload.color = phongShading(albedo, vtx.normal, vtx.pos) + reflectionColor;
+    payload.color = color;
 };
 

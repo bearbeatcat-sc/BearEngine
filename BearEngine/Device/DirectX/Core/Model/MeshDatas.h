@@ -51,10 +51,17 @@ public:
 		}
 	};
 
-	struct TestMat
+	struct RaytraceMaterial
 	{
-		bool isReflect = false;
-		XMFLOAT3 test;
+		SimpleMath::Vector4 _albedo;
+		SimpleMath::Vector4 _specular;
+
+
+		RaytraceMaterial()
+		{
+			_albedo = SimpleMath::Vector4(1, 1, 1, 1);
+			_specular = SimpleMath::Vector4(1, 1, 1, 1);
+		}
 	};
 
 	struct MaterialData
@@ -83,7 +90,9 @@ public:
 	MeshData();
 	~MeshData();
 	bool GenerateMesh(std::vector<Vertex>& positions, std::vector<UINT>& _indices, std::unordered_map<std::string, MaterialData>& matData);
-	void SetTestMaterial(const TestMat& testMat);
+	void SetRaytraceMaterial(const RaytraceMaterial& testMat);
+	const RaytraceMaterial& GetRaytraceMaterial();
+	
 	const UINT GetVertexCount();
 	const UINT GetIndexCount();
 	
@@ -97,7 +106,6 @@ public:
 	const std::vector<XMFLOAT3>& GetPositions();
 	const MeshAABB& GetMeshAABB();
 
-	void CreateTestMaterialBuffer();
 	std::shared_ptr<Buffer> GetVertexBuffer();
 	std::shared_ptr<Buffer> GetIndexBuffer();
 
@@ -108,9 +116,6 @@ public:
 	
 	D3D12_GPU_DESCRIPTOR_HANDLE m_vb_h_gpu_descriptor_handle;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_vb_h_cpu_descriptor_handle;
-
-	D3D12_GPU_DESCRIPTOR_HANDLE m_mat_h_gpu_descriptor_handle;
-	D3D12_CPU_DESCRIPTOR_HANDLE m_mat_h_cpu_descriptor_handle;
 
 	D3D12_GPU_DESCRIPTOR_HANDLE m_ib_h_gpu_descriptor_handle;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_ib_h_cpu_descriptor_handle;
@@ -125,10 +130,8 @@ private:
 
 	std::shared_ptr<Buffer> m_VertexBuffer;
 	std::shared_ptr<Buffer> m_IndexBuffer;
-	
-	std::shared_ptr<Buffer> m_TestMaterialBuffer;
 
-	TestMat _TestMat;
+	RaytraceMaterial _RaytraceMaterial;
 	
 	ComPtr<ID3D12Resource> m_WhiteTexBuffer;
 	std::vector<XMFLOAT3> m_Positions;

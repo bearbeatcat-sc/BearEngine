@@ -104,10 +104,6 @@ bool MeshData::GenerateMesh(std::vector<Vertex>& positions, std::vector<UINT>& _
 
 
 	m_MaterialDatas = matData;
-
-
-	// Test
-	CreateTestMaterialBuffer();
 	GenerateTextureBuffer();
 
 	if (!GenerateMaterialBuffer())
@@ -128,17 +124,14 @@ bool MeshData::GenerateMesh(std::vector<Vertex>& positions, std::vector<UINT>& _
 	return true;
 }
 
-void MeshData::SetTestMaterial(const TestMat& testMat)
+void MeshData::SetRaytraceMaterial(const RaytraceMaterial& testMat)
 {
-	_TestMat = testMat;
+	_RaytraceMaterial = testMat;
+}
 
-	// “®“I‚È•ÏX‚ÍŠëŒ¯‚©H
-	TestMat* mapTestMat = nullptr;
-	HRESULT result = m_TestMaterialBuffer->getBuffer()->Map(0, nullptr, (void**)&mapTestMat);
-
-	mapTestMat->isReflect = _TestMat.isReflect;
-
-	m_TestMaterialBuffer->getBuffer()->Unmap(0, nullptr);
+const MeshData::RaytraceMaterial& MeshData::GetRaytraceMaterial()
+{
+	return _RaytraceMaterial;
 }
 
 const UINT MeshData::GetVertexCount()
@@ -242,24 +235,6 @@ const MeshData::MeshAABB& MeshData::GetMeshAABB()
 {
 	return m_MeshAABB;
 }
-
-void MeshData::CreateTestMaterialBuffer()
-{
-	auto matearialBuffSize = sizeof(TestMat);
-	matearialBuffSize = (matearialBuffSize + 0xff) & ~0xff;
-	
-	m_TestMaterialBuffer = std::make_shared<Buffer>();
-	m_TestMaterialBuffer->init(D3D12_HEAP_TYPE_UPLOAD, matearialBuffSize, D3D12_RESOURCE_STATE_GENERIC_READ);
-
-	TestMat* mapTestMat = nullptr;	
-	HRESULT result = m_TestMaterialBuffer->getBuffer()->Map(0, nullptr, (void**)&mapTestMat);
-
-	mapTestMat->isReflect = _TestMat.isReflect;
-
-	m_TestMaterialBuffer->getBuffer()->Unmap(0, nullptr);
-
-}
-
 std::shared_ptr<Buffer> MeshData::GetVertexBuffer()
 {
 	return m_VertexBuffer;

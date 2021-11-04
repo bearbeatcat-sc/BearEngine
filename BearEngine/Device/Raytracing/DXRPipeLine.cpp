@@ -116,6 +116,7 @@ bool DXRPipeLine::InitPipeLine()
 	CreatePipeleineState(L"Resources\\Shaders\\TestShader.hlsl");
 	CreateShaderResource();
 	CreateSceneCB();
+	CreateMaterialCB();
 	CreateShaderTable();
 
 	return true;
@@ -168,7 +169,7 @@ void DXRPipeLine::AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::ws
 	}
 
 	CreateResourceView(pMeshData);
-	auto dxrMesh = std::make_shared<DXRMeshData>(hitGroupName);
+	auto dxrMesh = std::make_shared<DXRMeshData>(hitGroupName, pMeshData->GetRaytraceMaterial());
 
 	dxrMesh->m_ibView = pMeshData->m_ib_h_gpu_descriptor_handle;
 	dxrMesh->m_vbView = pMeshData->m_vb_h_gpu_descriptor_handle;
@@ -545,7 +546,11 @@ ComPtr<ID3D12RootSignature> DXRPipeLine::CreateClosestHitRootDesc()
 	rangeVB.NumDescriptors = 1;
 	rangeVB.RegisterSpace = 1;
 
-
+	D3D12_DESCRIPTOR_RANGE rangeMatB{};
+	rangeMatB.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+	rangeMatB.BaseShaderRegister = 0;
+	rangeMatB.NumDescriptors = 1;
+	rangeMatB.RegisterSpace = 1;
 
 
 
@@ -556,7 +561,7 @@ ComPtr<ID3D12RootSignature> DXRPipeLine::CreateClosestHitRootDesc()
 	//rangeMat.RegisterSpace = 1;
 
 
-	std::array<D3D12_ROOT_PARAMETER, 2> rootParams;
+	std::array<D3D12_ROOT_PARAMETER, 3> rootParams;
 
 	rootParams[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
@@ -568,12 +573,10 @@ ComPtr<ID3D12RootSignature> DXRPipeLine::CreateClosestHitRootDesc()
 	rootParams[1].DescriptorTable.NumDescriptorRanges = 1;
 	rootParams[1].DescriptorTable.pDescriptorRanges = &rangeVB;
 
-
-
-	//rootParams[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-	//rootParams[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	//rootParams[2].DescriptorTable.NumDescriptorRanges = 1;
-	//rootParams[2].DescriptorTable.pDescriptorRanges = &rangeMat;
+	rootParams[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	rootParams[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	rootParams[2].DescriptorTable.NumDescriptorRanges = 1;
+	rootParams[2].DescriptorTable.pDescriptorRanges = &rangeMatB;
 
 	D3D12_ROOT_SIGNATURE_DESC rootSigDesc{};
 	rootSigDesc.NumParameters = UINT(rootParams.size());
@@ -751,9 +754,15 @@ void DXRPipeLine::CreateShaderTable()
 	{
 		uint8_t* pRecord = hitgroupStart;
 
+		auto cbAddress = _materialCB->GetGPUVirtualAddress();
+		auto stride = sizeof(MeshData::RaytraceMaterial);
+
 		for (auto mesh : _meshDatas)
 		{
-			pRecord = WriteMeshShaderRecord(pRecord, mesh, hitGroupRecordSize);
+			pRecord = WriteMeshShaderRecord(pRecord, mesh, cbAddress, hitGroupRecordSize);
+
+			// アドレスをずらして定数バッファのアドレスを渡す
+			cbAddress += stride;
 		}
 	}
 
@@ -910,24 +919,11 @@ void DXRPipeLine::CreateResourceView(std::shared_ptr<MeshData> mesh)
 		vb_cpuHandle);
 
 
-
-	//// マテリアル数は1
-	//srvDesc.Buffer.NumElements = 1;
-	//srvDesc.Buffer.FirstElement = 0;
-	//srvDesc.Buffer.StructureByteStride = sizeof(MeshData::TestMat);
-
-	//DirectXDevice::GetInstance().GetDevice()->CreateShaderResourceView(
-	//	mesh->GetIndexBuffer()->getBuffer(),
-	//	&srvDesc,
-	//	mat_cpuHandle);
-
 	mesh->m_vb_h_cpu_descriptor_handle = vb_cpuHandle;
 	mesh->m_ib_h_cpu_descriptor_handle = ib_cpuHandle;
-	//mesh->m_mat_h_cpu_descriptor_handle = mat_cpuHandle;
 
 	mesh->m_vb_h_gpu_descriptor_handle = vb_gpuHandle;
 	mesh->m_ib_h_gpu_descriptor_handle = ib_gpuHandle;
-	//mesh->m_mat_h_gpu_descriptor_handle = mat_gpuHandle;
 
 }
 
@@ -1009,11 +1005,33 @@ void DXRPipeLine::CreateSceneCB()
 		uploadHeapProps);
 }
 
+void DXRPipeLine::CreateMaterialCB()
+{
+	const UINT meshCount = _meshDatas.size();
+	std::vector<MeshData::RaytraceMaterial> mats;
+	mats.resize(meshCount);
+
+	for (int i = 0; i < meshCount; ++i)
+	{
+		mats[i] = _meshDatas[i]->_Mat;
+	}
+
+	const auto bufferSize = sizeof(MeshData::RaytraceMaterial) * mats.size();
+	
+	_materialCB = CreateBuffer(bufferSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ,
+		uploadHeapProps);
+
+	void* mapped = nullptr;
+	_materialCB->Map(0, nullptr, &mapped);
+	memcpy(mapped, mats.data(), bufferSize);
+	_materialCB->Unmap(0, nullptr);
+}
+
 void DXRPipeLine::CreateDescriptorHeaps()
 {
 	//　デスクリプタヒープの作成
 	_SrvUavHeap = DirectXDevice::GetInstance().CreateDescriptorHeap(
-		_SRVResourceCount + _MaxMeshCount, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, true);
+		_SRVResourceCount + (_MaxMeshCount * _MeshDataSize), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, true);
 
 	_MeshSrvHeap = DirectXDevice::GetInstance().CreateDescriptorHeap(
 		_MaxMeshCount, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, true);
@@ -1032,7 +1050,14 @@ UINT DXRPipeLine::WriteGPUDescriptor(void* dst, const D3D12_GPU_DESCRIPTOR_HANDL
 	return UINT(sizeof(handle));
 }
 
-uint8_t* DXRPipeLine::WriteMeshShaderRecord(uint8_t* dst, const std::shared_ptr<DXRMeshData> mesh, UINT recordSize)
+UINT DXRPipeLine::WriteGPUResourceAddr(void* dst,const D3D12_GPU_VIRTUAL_ADDRESS addr)
+{
+	memcpy(dst, &addr, sizeof(addr));
+
+	return UINT(sizeof(addr));
+}
+
+uint8_t* DXRPipeLine::WriteMeshShaderRecord(uint8_t* dst, const std::shared_ptr<DXRMeshData> mesh, D3D12_GPU_VIRTUAL_ADDRESS address, UINT recordSize)
 {
 	ComPtr<ID3D12StateObjectProperties> rtsoprops;
 	_PipelineState.As(&rtsoprops);
@@ -1049,7 +1074,9 @@ uint8_t* DXRPipeLine::WriteMeshShaderRecord(uint8_t* dst, const std::shared_ptr<
 	
 	dst += WriteGPUDescriptor(dst, mesh->m_ibView);
 	dst += WriteGPUDescriptor(dst, mesh->m_vbView);
-	//dst += WriteGPUDescriptor(dst, mesh->m_matView);
+
+	// バッファのアドレスを直接書き込み
+	dst += WriteGPUResourceAddr(dst, address);
 
 	dst = entryBegin + recordSize;
 

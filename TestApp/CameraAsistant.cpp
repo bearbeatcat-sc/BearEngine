@@ -6,6 +6,8 @@
 
 #include <Utility/Math/MathUtility.h>
 
+#include "Device/DirectX/DirectXInput.h"
+
 CameraAsistant::CameraAsistant()
 {
 	m_Camera = CameraManager::GetInstance().GetMainCamera();
@@ -21,6 +23,7 @@ CameraAsistant::~CameraAsistant()
 
 void CameraAsistant::Update()
 {
+#ifdef _DEBUG
 	auto pos = m_Camera->GetPosition();
 	auto target = m_Camera->GetTarget();
 	float _near = m_Camera->GetNear();
@@ -57,4 +60,65 @@ void CameraAsistant::Update()
 	m_Camera->SetNear(_near);
 	m_Camera->SetSpriteScale(_scale);
 	m_Camera->SetFar(_far);
+#endif
+
+	if(DirectXInput::GetInstance().IsKey(DIK_W))
+	{
+		PositionMove(SimpleMath::Vector3::Backward);
+	}
+
+	if (DirectXInput::GetInstance().IsKey(DIK_S))
+	{
+		PositionMove(SimpleMath::Vector3::Forward);
+	}
+
+	if(DirectXInput::GetInstance().IsKey(DIK_LEFTARROW))
+	{
+		ViewMove(SimpleMath::Vector3::Left);
+	}
+
+	if (DirectXInput::GetInstance().IsKey(DIK_RIGHTARROW))
+	{
+		ViewMove(SimpleMath::Vector3::Right);
+	}
+
+	if (DirectXInput::GetInstance().IsKey(DIK_UPARROW))
+	{
+		ViewMove(SimpleMath::Vector3::Up);
+	}
+
+	if (DirectXInput::GetInstance().IsKey(DIK_DOWNARROW))
+	{
+		ViewMove(SimpleMath::Vector3::Down);
+	}
+}
+
+void CameraAsistant::PositionMove(const SimpleMath::Vector3& moveVec)
+{
+	auto currentPos = m_Camera->GetPosition();
+	auto currentTarget = m_Camera->GetTarget();
+
+	auto qu = MathUtility::LookAt(currentPos, currentTarget);
+
+
+
+	auto vec = SimpleMath::Vector3::Transform(moveVec, qu);
+	vec.Normalize();
+
+	auto newPos = currentPos + vec;
+	auto newTarget = currentTarget + vec;
+	m_Camera->SetPosition(newPos);
+	m_Camera->SetTarget(newTarget);
+}
+
+
+void CameraAsistant::ViewMove(const SimpleMath::Vector3& moveVec)
+{
+	auto currentTarget = m_Camera->GetTarget();
+
+	auto vec = moveVec;
+	vec.Normalize();
+
+	auto newTarget = currentTarget + (vec * 0.01f);
+	m_Camera->SetTarget(newTarget);
 }
