@@ -46,7 +46,7 @@ public:
 	static float Sqrt(float value);
 	static float Fmod(float numer, float denom);
 	static DirectX::SimpleMath::Vector3 ScreenToWorld(int screenX, int screenY, float fZ, int screenW, int screenH, float _far, float _near, const DirectX::SimpleMath::Matrix& view, const DirectX::SimpleMath::Matrix& proj);
-	static DirectX::SimpleMath::Quaternion LookAt(DirectX::SimpleMath::Vector3 sourePoint, DirectX::SimpleMath::Vector3 targetPoint);
+	static DirectX::SimpleMath::Quaternion LookAt(const DirectX::SimpleMath::Vector3& sourePoint, const DirectX::SimpleMath::Vector3& targetPoint,const DirectX::SimpleMath::Vector3& up = SimpleMath::Vector3::Up);
 	static  std::vector<float> GetGaussianWeights(size_t count, float s);
 
 };

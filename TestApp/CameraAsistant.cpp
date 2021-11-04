@@ -15,6 +15,11 @@ CameraAsistant::CameraAsistant()
 	m_Camera->SetTarget(SimpleMath::Vector3(0.0f, 0.0f, 1.0f));
 	m_Camera->SetNear(0.1f);
 	m_Camera->SetFar(100.0f);
+
+	_Pitch = 0.0f;
+	_Yaw = 3.2f;
+
+	ViewMove(SimpleMath::Vector3(0.0f));
 }
 
 CameraAsistant::~CameraAsistant()
@@ -72,6 +77,17 @@ void CameraAsistant::Update()
 		PositionMove(SimpleMath::Vector3::Forward);
 	}
 
+	if (DirectXInput::GetInstance().IsKey(DIK_A))
+	{
+		PositionMove(SimpleMath::Vector3::Right);
+	}
+
+	if (DirectXInput::GetInstance().IsKey(DIK_D))
+	{
+		PositionMove(SimpleMath::Vector3::Left);
+	}
+
+
 	if(DirectXInput::GetInstance().IsKey(DIK_LEFTARROW))
 	{
 		ViewMove(SimpleMath::Vector3::Left);
@@ -100,8 +116,6 @@ void CameraAsistant::PositionMove(const SimpleMath::Vector3& moveVec)
 
 	auto qu = MathUtility::LookAt(currentPos, currentTarget);
 
-
-
 	auto vec = SimpleMath::Vector3::Transform(moveVec, qu);
 	vec.Normalize();
 
@@ -116,9 +130,14 @@ void CameraAsistant::ViewMove(const SimpleMath::Vector3& moveVec)
 {
 	auto currentTarget = m_Camera->GetTarget();
 
-	auto vec = moveVec;
-	vec.Normalize();
+	_Pitch += moveVec.y * 0.01f;
+	_Yaw += moveVec.x * 0.01f;
 
-	auto newTarget = currentTarget + (vec * 0.01f);
+	SimpleMath::Quaternion qu = SimpleMath::Quaternion::CreateFromYawPitchRoll(_Yaw, _Pitch, 0.0f);
+
+	SimpleMath::Vector3 viewForward = SimpleMath::Vector3::Transform(SimpleMath::Vector3::Forward, qu);
+	SimpleMath::Vector3 newTarget = m_Camera->GetPosition() + viewForward;
+
+
 	m_Camera->SetTarget(newTarget);
 }

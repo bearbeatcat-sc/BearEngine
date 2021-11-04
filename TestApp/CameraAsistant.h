@@ -19,6 +19,9 @@ private:
 
 private:
 	std::shared_ptr<Camera> m_Camera;
+
+	float _Pitch;
+	float _Yaw;
 };
 
 #endif

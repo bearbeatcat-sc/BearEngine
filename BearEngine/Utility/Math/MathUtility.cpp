@@ -249,36 +249,13 @@ DirectX::SimpleMath::Vector3 MathUtility::ScreenToWorld(int screenX, int screenY
 	//return	DirectX::SimpleMath::Vector3::Transform(pos, temp);
 }
 
-DirectX::SimpleMath::Quaternion MathUtility::LookAt(DirectX::SimpleMath::Vector3 sourePoint, DirectX::SimpleMath::Vector3 targetPoint)
+DirectX::SimpleMath::Quaternion MathUtility::LookAt(const DirectX::SimpleMath::Vector3& sourePoint,
+	const DirectX::SimpleMath::Vector3& targetPoint, const DirectX::SimpleMath::Vector3& up)
 {
-	//// 進行方向ベクトル
-	//DirectX::SimpleMath::Vector3 forwardVector = (sourePoint - targetPoint);
-	//forwardVector.Normalize();
-
-	//// Forwardベクトル（0,0,1)との内積
-	//float dot = DirectX::SimpleMath::Vector3(0, 0, 1).Dot(forwardVector);
-
-	//// 平行かによって、返す値が違う？
-	//if (MathUtility::Abs(dot - (-1.0f)) < 0.000001f)
-	//{
-	//	return DirectX::SimpleMath::Quaternion(DirectX::SimpleMath::Vector3(0, 1, 0), 3.1415926535897932f);
-	//}
-
-	//if (MathUtility::Abs(dot + (1.0f)) < 0.000001f)
-	//{
-	//	return DirectX::SimpleMath::Quaternion::Identity;
-	//}
-
-	//float rotAngle = (float)MathUtility::Acos(dot);
-	//DirectX::SimpleMath::Vector3 rotAxis = DirectX::SimpleMath::Vector3(0, 0, 1).Cross(forwardVector);
-	//rotAxis.Normalize();
-
-	//return DirectX::SimpleMath::Quaternion(rotAxis, rotAngle);
-
 	DirectX::SimpleMath::Vector3 z = (targetPoint - sourePoint);
 	z.Normalize();
 
-	DirectX::SimpleMath::Vector3 x = z.Cross(Vector3::Up);
+	DirectX::SimpleMath::Vector3 x = z.Cross(up);
 	x.Normalize();
 
 	DirectX::SimpleMath::Vector3 y = z.Cross(x);
