@@ -55,9 +55,10 @@ public:
 	{
 		SimpleMath::Vector4 _albedo;
 		SimpleMath::Vector4 _specular;
+		SimpleMath::Vector4 _metallic;
 
-		RaytraceMaterial(const SimpleMath::Vector4& albedo,const SimpleMath::Vector4& specular)
-			:_albedo(albedo),_specular(specular)
+		RaytraceMaterial(const SimpleMath::Vector4& albedo,const SimpleMath::Vector4& specular, SimpleMath::Vector4 metallic)
+			:_albedo(albedo),_specular(specular),_metallic(metallic)
 		{
 
 		}
@@ -67,6 +68,7 @@ public:
 		{
 			_albedo = SimpleMath::Vector4(1, 1, 1, 1);
 			_specular = SimpleMath::Vector4(1, 1, 1, 1);
+			_metallic = SimpleMath::Vector4(1, 1, 1, 1);
 		}
 	};
 

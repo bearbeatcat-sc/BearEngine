@@ -21,6 +21,7 @@ struct Material
 {
     float4 albedo;
     float4 specular;
+    float4 metallic;
 };
 
 struct SceneCB
@@ -77,33 +78,70 @@ float3 caluculateFrasnel(float3 i, float3 n, float3 f0)
     return f0 + (1.0f - f0) * pow(1.0f - cosi, 5);
 }
 
-float3 phongShading(float3 albedo, float3 vertexNormal, float3 vertexPos)
+// フレネル反射を考慮した拡散反射
+float calculateFresnelDiffuse(float3 ray, float3 normal, float3 light)
 {
-    float3 worldNormal = mul(vertexNormal, (float3x3) ObjectToWorld4x3());
-    //float3 worldPos = mul(float4(vertexPos, 1), ObjectToWorld4x3());
-    float3 worldPos = WorldRayOrigin() + RayTCurrent() + WorldRayDirection();
+	
+    float dotNL = saturate(dot(normal, light));
+
+    float dotNV = saturate(dot(normal, ray));
+
+    return (dotNL * dotNV);
+
+}
+
+float3 caluculateDiffuse(float3 albedo, float3 Normal)
+{
+    ////float3 worldPos = mul(float4(vertexPos, 1), ObjectToWorld4x3());
+    //float3 worldPos = WorldRayOrigin() + RayTCurrent() + WorldRayDirection();
 	
 
     float3 lightDir = gSceneParam.lightDirection.xyz;
-    float diffuse = saturate(dot(-lightDir, worldNormal));
+    float diffuse = calculateFresnelDiffuse(-WorldRayDirection(), Normal,-lightDir);
+
+	// 正規化Lambert
+    float NdotL = saturate(dot(Normal, -lightDir));
+    float3 lambertDiffuse = gSceneParam.lightColor *  NdotL / 3.141592653589f;
 
 	// 今回はシンプルにマテリアルカラーのみ
-    float3 diffuseColor = diffuse * albedo * diffuse;
+    float3 diffuseColor = albedo * diffuse * lambertDiffuse;
 
-    float3 specularColor = float3(0, 0, 0);
-    float3 lightSpecularColor = float3(1, 1, 1);
-
-    float3 _reflect = normalize(reflect(lightDir, worldNormal));
-    float specular = pow(saturate(dot(_reflect, normalize(-WorldRayDirection()))), 50.0f);
-    specularColor = 1.0f * specular * lightSpecularColor;
-
-
-    float3 ambientColor = gSceneParam.ambientColor;
-	
-    return ambientColor + diffuseColor + specularColor;
-	
-
+    return diffuseColor;
 }
+
+
+
+
+float3 calculateSpecular(float4 _spec, float3 Normal)
+{
+    ////float3 worldPos = mul(float4(vertexPos, 1), ObjectToWorld4x3());
+    //float3 worldPos = WorldRayOrigin() + RayTCurrent() + WorldRayDirection();
+	
+
+    float3 lightDir = gSceneParam.lightDirection.xyz;
+	
+    float3 specularColor = _spec.rgb;
+
+    float3 _reflect = normalize(reflect(lightDir, Normal));
+    float specular = pow(saturate(dot(_reflect, normalize(-WorldRayDirection()))), _spec.w);
+    specularColor = 1.0f * specular * specularColor;
+
+    return specularColor;
+}
+
+//float3 phongShading(float3 albedo,float4 _spec, float3 vertexNormal, float3 vertexPos)
+//{
+
+
+
+
+
+//    //float3 ambientColor = gSceneParam.ambientColor;
+	
+//    //return ambientColor + diffuseColor + specularColor;
+	
+
+//}
 
 
 // recursive = 再帰回数
@@ -311,17 +349,22 @@ void chs(inout Payload payload, in MyAttribute attribs)
 
 	// 後でパラメータ化
     float3 albedo = matBuffer.albedo.rgb;
-    //float3 albedo = float3(1, 1, 1);
+    float4 specular = matBuffer.specular;
+    float metallic = matBuffer.metallic.r;
+    float smooth = matBuffer.metallic.a;
+
+    float3 resultSpec = calculateSpecular(specular, worldNormal);
+    float3 resultDiffuse = caluculateDiffuse(albedo, worldNormal);
 	
 	
 	// 今回は完全に反射する
     float3 reflectionColor = Reflection(vtx.pos, vtx.normal, payload.recursive);
 
 	// フレネル反射
-    reflectionColor = reflectionColor * caluculateFrasnel(WorldRayDirection(), worldNormal, albedo) * 1.0f;
+    reflectionColor = reflectionColor * caluculateFrasnel(WorldRayDirection(), worldNormal, albedo) * smooth;
 
     float t = RayTCurrent();
-    float3 color = /*phongShading(albedo, vtx.normal, vtx.pos)*/ + reflectionColor;
+    float3 color = resultDiffuse + lerp(resultSpec, reflectionColor, metallic);
 
 	// fog
     //color = lerp(color, float3(1, 1, 1), 1.0 - exp(-0.000002 * t * t * t));
