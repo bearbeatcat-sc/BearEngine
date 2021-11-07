@@ -105,6 +105,7 @@ float3 phongShading(float3 albedo, float3 vertexNormal, float3 vertexPos)
 
 }
 
+
 // recursive = 再帰回数
 float3 Reflection(float3 vertexPos, float3 vertexNormal, int recursive)
 {
@@ -309,7 +310,8 @@ void chs(inout Payload payload, in MyAttribute attribs)
     float3 worldNormal = mul(vtx.normal, (float3x3) ObjectToWorld4x3());
 
 	// 後でパラメータ化
-    float3 albedo = float3(1, 1, 1);
+    float3 albedo = matBuffer.albedo.rgb;
+    //float3 albedo = float3(1, 1, 1);
 	
 	
 	// 今回は完全に反射する
@@ -319,16 +321,10 @@ void chs(inout Payload payload, in MyAttribute attribs)
     reflectionColor = reflectionColor * caluculateFrasnel(WorldRayDirection(), worldNormal, albedo) * 1.0f;
 
     float t = RayTCurrent();
-    float3 color = /*phongShading(albedo, vtx.normal, vtx.pos) +*/ reflectionColor;
+    float3 color = /*phongShading(albedo, vtx.normal, vtx.pos)*/ + reflectionColor;
 
 	// fog
-    color = lerp(color, float3(1, 1, 1), 1.0 - exp(-0.000002 * t * t * t));
-
-
-	
-
-
-    //float3 color = lerp(phongShading(vtx.normal), reflectionColor, 0.8f);
+    //color = lerp(color, float3(1, 1, 1), 1.0 - exp(-0.000002 * t * t * t));
 	
     payload.color = color;
 };

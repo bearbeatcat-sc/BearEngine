@@ -129,6 +129,8 @@ HRESULT RenderingPipeLine::Init()
 	MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "SpaceShip2.obj", "Cube3");
 
 	auto cubeMeshData = MeshManager::GetInstance().GetMeshData("CubeModelData");
+	cubeMeshData->SetRaytraceMaterial(MeshData::RaytraceMaterial(SimpleMath::Vector4(1.0f, 0.0f, 0.0f, 1.0f), SimpleMath::Vector4(1.0f)));
+	
 	auto blenderMonkyMeshData = MeshManager::GetInstance().GetMeshData("BlenderMonkey");
 	
 	auto cube0 = MeshManager::GetInstance().GetMeshData("Cube0");

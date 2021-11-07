@@ -67,7 +67,7 @@ void MainGame::Init()
 	//auto meshData = MeshManager::GetInstance().FindSpehere(6);
 
 	_AddTimer = std::make_shared<Timer>(3.0f);
-	_GenerateTimer = std::make_shared<Timer>(0.2f);
+	_GenerateTimer = std::make_shared<Timer>(0.01f);
 	_IsGenerate = false;
 
 

@@ -205,6 +205,8 @@ private:
 	void CreateTopLevelAS();
 	void CreateBLAS(std::shared_ptr<DXRMeshData> pDXRMeshData, std::shared_ptr<MeshData> pMeshData);
 	void UpdateTLAS();
+
+	void DrawDebugGUI();
 	
 	void CreateAccelerationStructures();
 	void CreateLocalRootSignature();
@@ -298,5 +300,5 @@ private:
 	UINT _AllocateCount = 0;
 	UINT _IncSize;
 
-	const UINT _MaxInstanceCount = 100;
+	const UINT _MaxInstanceCount = 400;
 };

@@ -18,6 +18,7 @@
 #include "Device/Lights/LightManager.h"
 #include "Utility/Camera.h"
 #include "Utility/CameraManager.h"
+#include "imgui/imgui.h"
 
 #pragma comment(lib, "dxcompiler")
 
@@ -310,6 +311,13 @@ void DXRPipeLine::UpdateTLAS()
 
 }
 
+void DXRPipeLine::DrawDebugGUI()
+{
+	ImGui::Begin("DXRPipeline", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+	
+	ImGui::End();
+}
+
 void DXRPipeLine::Render(ID3D12Resource* pRenderResource, SkyBox* pSkyBox)
 {
 	auto commandList = DirectXGraphics::GetInstance().GetCommandList();
@@ -546,11 +554,11 @@ ComPtr<ID3D12RootSignature> DXRPipeLine::CreateClosestHitRootDesc()
 	rangeVB.NumDescriptors = 1;
 	rangeVB.RegisterSpace = 1;
 
-	D3D12_DESCRIPTOR_RANGE rangeMatB{};
-	rangeMatB.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-	rangeMatB.BaseShaderRegister = 0;
-	rangeMatB.NumDescriptors = 1;
-	rangeMatB.RegisterSpace = 1;
+	//D3D12_DESCRIPTOR_RANGE rangeMatB{};
+	//rangeMatB.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+	//rangeMatB.BaseShaderRegister = 0;
+	//rangeMatB.NumDescriptors = 1;
+	//rangeMatB.RegisterSpace = 1;
 
 
 
@@ -574,9 +582,9 @@ ComPtr<ID3D12RootSignature> DXRPipeLine::CreateClosestHitRootDesc()
 	rootParams[1].DescriptorTable.pDescriptorRanges = &rangeVB;
 
 	rootParams[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-	rootParams[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	rootParams[2].DescriptorTable.NumDescriptorRanges = 1;
-	rootParams[2].DescriptorTable.pDescriptorRanges = &rangeMatB;
+	rootParams[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParams[2].Descriptor.ShaderRegister = 0;
+	rootParams[2].Descriptor.RegisterSpace = 1;
 
 	D3D12_ROOT_SIGNATURE_DESC rootSigDesc{};
 	rootSigDesc.NumParameters = UINT(rootParams.size());
@@ -687,6 +695,7 @@ void DXRPipeLine::CreateShaderTable()
 	hitGroupRecordSize += D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 	hitGroupRecordSize += sizeof(D3D12_GPU_DESCRIPTOR_HANDLE);
 	hitGroupRecordSize += sizeof(D3D12_GPU_DESCRIPTOR_HANDLE);
+	//hitGroupRecordSize += sizeof(D3D12_GPU_VIRTUAL_ADDRESS);
 	hitGroupRecordSize = align_to(ShaderRecordAlignment, hitGroupRecordSize);
 
 	// MissShader
@@ -761,7 +770,7 @@ void DXRPipeLine::CreateShaderTable()
 		{
 			pRecord = WriteMeshShaderRecord(pRecord, mesh, cbAddress, hitGroupRecordSize);
 
-			// アドレスをずらして定数バッファのアドレスを渡す
+			//// アドレスをずらして定数バッファのアドレスを渡す
 			cbAddress += stride;
 		}
 	}
@@ -1016,7 +1025,11 @@ void DXRPipeLine::CreateMaterialCB()
 		mats[i] = _meshDatas[i]->_Mat;
 	}
 
-	const auto bufferSize = sizeof(MeshData::RaytraceMaterial) * mats.size();
+	auto bufferSize = sizeof(MeshData::RaytraceMaterial) * mats.size();
+
+	// アライメント調整
+	bufferSize = (bufferSize + 0xff) & ~0xff;
+	
 	
 	_materialCB = CreateBuffer(bufferSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ,
 		uploadHeapProps);
