@@ -5,8 +5,8 @@
 #include "Utility/Time.h"
 #include "Utility/Timer.h"
 
-Cube::Cube(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& scale, float destroyTime, bool moveFlag)
-	:_initScale(scale), _IsGenerate(false),_IsMove(moveFlag)
+Cube::Cube(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& scale, float destroyTime, bool isWhite, bool moveFlag)
+	:_initScale(scale), _IsGenerate(false), _IsMove(moveFlag), _IsWhite(isWhite)
 {
 	SetPosition(pos);
 	SetScale(scale);
@@ -60,7 +60,14 @@ void Cube::Generate()
 
 void Cube::Init()
 {
-	_instance = DXRPipeLine::GetInstance().AddInstance("BlenderMonkey", 0);
+	if(_IsWhite)
+	{
+		_instance = DXRPipeLine::GetInstance().AddInstance("WhiteCube", 0);		
+	}
+	else
+	{
+		_instance = DXRPipeLine::GetInstance().AddInstance("GrayCube", 0);
+	}
 
 	auto mtx = SimpleMath::Matrix::CreateFromQuaternion(m_Rotation) * SimpleMath::Matrix::CreateScale(m_Scale) * SimpleMath::Matrix::CreateTranslation(m_Position);
 	_instance->SetMatrix(mtx);

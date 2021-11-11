@@ -195,7 +195,10 @@ public:
 
 	std::shared_ptr<DXRInstance> AddInstance(const std::string& meshDataName, const int hitGroupIndex);
 	void AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::wstring& hitGroupName, const std::string& meshDataName);
-	
+	void AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::wstring& hitGroupName,
+	                 const std::string& meshDataName,
+	                 MeshData::RaytraceMaterial material);
+
 	void Render(ID3D12Resource* pRenderResource,SkyBox* pSkyBox);
 	void CreateResourceView(std::shared_ptr<MeshData> mesh);
 	void DeleteInstance();
@@ -300,5 +303,5 @@ private:
 	UINT _AllocateCount = 0;
 	UINT _IncSize;
 
-	const UINT _MaxInstanceCount = 400;
+	const UINT _MaxInstanceCount = 300;
 };

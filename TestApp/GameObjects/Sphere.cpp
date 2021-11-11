@@ -78,7 +78,17 @@ void Sphere::Init()
 	mInitPos = m_Position;
 	mStartPos = mInitPos;
 
-	_instance = DXRPipeLine::GetInstance().AddInstance("cube2", 0);
+	if(m_Type == SphereType_NormalLowPoly)
+	{
+		_instance = DXRPipeLine::GetInstance().AddInstance("Sphere2", 0);
+
+	}
+	else
+	{
+		_instance = DXRPipeLine::GetInstance().AddInstance("Sphere", 0);
+
+	}
+	
 
 	auto mtx = SimpleMath::Matrix::CreateFromQuaternion(m_Rotation) * SimpleMath::Matrix::CreateScale(m_Scale) * SimpleMath::Matrix::CreateTranslation(m_Position);
 	_instance->SetMatrix(mtx);

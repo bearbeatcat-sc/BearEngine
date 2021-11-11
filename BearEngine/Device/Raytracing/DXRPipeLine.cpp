@@ -174,6 +174,28 @@ void DXRPipeLine::AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::ws
 
 	dxrMesh->m_ibView = pMeshData->m_ib_h_gpu_descriptor_handle;
 	dxrMesh->m_vbView = pMeshData->m_vb_h_gpu_descriptor_handle;
+
+	// 現状は1メッシュデータにつき、一つのヒットグループを扱っているので
+	dxrMesh->hitGropIndex = _meshDatas.size();
+	dxrMesh->meshName = meshDataName;
+
+	CreateBLAS(dxrMesh, pMeshData);
+
+	_meshDatas.push_back(dxrMesh);
+}
+
+void DXRPipeLine::AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::wstring& hitGroupName, const std::string& meshDataName,const MeshData::RaytraceMaterial material)
+{
+	if (pMeshData == nullptr)
+	{
+		throw std::runtime_error("MeshDatas is null.");
+	}
+
+	CreateResourceView(pMeshData);
+	auto dxrMesh = std::make_shared<DXRMeshData>(hitGroupName, material);
+
+	dxrMesh->m_ibView = pMeshData->m_ib_h_gpu_descriptor_handle;
+	dxrMesh->m_vbView = pMeshData->m_vb_h_gpu_descriptor_handle;
 	//dxrMesh->m_matView = pMeshData->m_mat_h_gpu_descriptor_handle;
 
 	// 現状は1メッシュデータにつき、一つのヒットグループを扱っているので
@@ -628,6 +650,7 @@ void DXRPipeLine::CreatePipeleineState(const wchar_t* shaderPath)
 	dxilLib->DefineExport(L"rayGen");
 	dxilLib->DefineExport(L"miss");
 	dxilLib->DefineExport(L"chs");
+	dxilLib->DefineExport(L"shadowMiss");
 
 	// ヒットグループの設定
 	CD3DX12_HIT_GROUP_SUBOBJECT* hit_group_subobject = subObjects.CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
@@ -707,7 +730,7 @@ void DXRPipeLine::CreateShaderTable()
 	// 使用するシェーダの個数が影響する
 	UINT hitGroupCount = _meshDatas.size();
 	UINT rayGenSize = 1 * rayGenRecordSize;
-	UINT missSize = 1 * missRecordSize;
+	UINT missSize = 2 * missRecordSize; // 通常描画とシャドウの2つ
 	UINT hitGroupSize = hitGroupCount * hitGroupRecordSize;
 
 	UINT tableAlign = D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
@@ -748,6 +771,7 @@ void DXRPipeLine::CreateShaderTable()
 	// Miss Shader 用のシェーダーレコードを書き込み.
 	uint8_t* missStart = pStart + rayGenRegion;
 	{
+		auto recordStart = missStart;
 		uint8_t* p = missStart;
 		auto id = rtsoProps->GetShaderIdentifier(kMissShader);
 		if (id == nullptr) {
@@ -755,7 +779,19 @@ void DXRPipeLine::CreateShaderTable()
 		}
 		p += WriteShaderIdentifer(p, id);
 
-		// ローカルルートシグネチャ使用時には他のデータを書き込む.
+		// 次の開始位置
+		recordStart += missRecordSize;
+
+		// シャドウの判定
+		p = recordStart;
+
+		// エントリポイントみたいな感じ
+		id = rtsoProps->GetShaderIdentifier(L"shadowMiss");
+		if (id == nullptr) {
+			throw std::logic_error("Not found ShaderIdentifier");
+		}
+
+		p += WriteShaderIdentifer(p, id);
 	}
 
 	// Hit Group 用のシェーダーレコードを書き込み.
@@ -770,7 +806,7 @@ void DXRPipeLine::CreateShaderTable()
 		{
 			pRecord = WriteMeshShaderRecord(pRecord, mesh, cbAddress, hitGroupRecordSize);
 
-			//// アドレスをずらして定数バッファのアドレスを渡す
+			// アドレスをずらして定数バッファのアドレスを渡す
 			cbAddress += stride;
 		}
 	}
@@ -1133,6 +1169,5 @@ void DXRPipeLine::SceneCBUpdate()
 	m_sceneParam.lightColor = XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f);
 	m_sceneParam.lightDirection = XMVector3Normalize(XMLoadFloat3(&lightDir));
 	m_sceneParam.ambientColor = XMVectorSet(0.4f, 0.4f, 0.4f, 0.0f);
-	m_sceneParam.eyePos = camera->GetPosition();
 }
 

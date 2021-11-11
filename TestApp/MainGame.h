@@ -32,7 +32,7 @@ private:
 	// DEBUG
 	std::shared_ptr<Timer> _AddTimer;
 	std::shared_ptr<Timer> _GenerateTimer;
-	const int _MaxGenerateCount = 128;
+	const int _MaxGenerateCount = 200;
 	int _GenerateCount;
 
 	bool _IsGenerate;

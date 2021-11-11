@@ -54,11 +54,11 @@ public:
 	struct RaytraceMaterial
 	{
 		SimpleMath::Vector4 _albedo;
-		SimpleMath::Vector4 _specular;
 		SimpleMath::Vector4 _metallic;
+		float _roughness;
 
-		RaytraceMaterial(const SimpleMath::Vector4& albedo,const SimpleMath::Vector4& specular, SimpleMath::Vector4 metallic)
-			:_albedo(albedo),_specular(specular),_metallic(metallic)
+		RaytraceMaterial(const SimpleMath::Vector4& albedo, const SimpleMath::Vector4& metallic,float roughness)
+			:_albedo(albedo), _roughness(roughness),_metallic(metallic)
 		{
 
 		}
@@ -67,8 +67,8 @@ public:
 		RaytraceMaterial()
 		{
 			_albedo = SimpleMath::Vector4(1, 1, 1, 1);
-			_specular = SimpleMath::Vector4(1, 1, 1, 1);
 			_metallic = SimpleMath::Vector4(1, 1, 1, 1);
+			_roughness = 0.5f;
 		}
 	};
 

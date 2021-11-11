@@ -57,15 +57,15 @@ HRESULT RenderingPipeLine::Init()
 	ShaderManager::GetInstance().LoadShader(L"BasicResources/ParticleComputeShader.hlsl", "cs_5_0", "ParticleUpdateComputeShader");
 	ShaderManager::GetInstance().LoadShader(L"BasicResources/ParticleComputeShader.hlsl", "cs_5_0", "ParticleInitComputeShader", "init");
 
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/FluidParticleComputeShader.hlsl", "cs_5_0", "FluidParticleForceComputeShader","CS_Force");
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/FluidParticleComputeShader.hlsl", "cs_5_0", "FluidParticleCollisionComputeShader","CS_Collision");
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/FluidParticleComputeShader.hlsl", "cs_5_0", "FluidParticlePressureComputeShader","CS_Pressure");
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/FluidParticleComputeShader.hlsl", "cs_5_0", "FluidParticlePressureGradientComputeShader","CS_PressureGradient");
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/FluidParticleComputeShader.hlsl", "cs_5_0", "FluidParticleMoveParticleComputeShader","CS_MoveParticle");
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/FluidParticleComputeShader.hlsl", "cs_5_0", "FluidParticleIntegrateComputeShader","CS_Integrate");
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/FluidParticleComputeShader.hlsl", "cs_5_0", "FluidParticleInitComputeShader","init");
+	ShaderManager::GetInstance().LoadShader(L"BasicResources/FluidParticleComputeShader.hlsl", "cs_5_0", "FluidParticleForceComputeShader", "CS_Force");
+	ShaderManager::GetInstance().LoadShader(L"BasicResources/FluidParticleComputeShader.hlsl", "cs_5_0", "FluidParticleCollisionComputeShader", "CS_Collision");
+	ShaderManager::GetInstance().LoadShader(L"BasicResources/FluidParticleComputeShader.hlsl", "cs_5_0", "FluidParticlePressureComputeShader", "CS_Pressure");
+	ShaderManager::GetInstance().LoadShader(L"BasicResources/FluidParticleComputeShader.hlsl", "cs_5_0", "FluidParticlePressureGradientComputeShader", "CS_PressureGradient");
+	ShaderManager::GetInstance().LoadShader(L"BasicResources/FluidParticleComputeShader.hlsl", "cs_5_0", "FluidParticleMoveParticleComputeShader", "CS_MoveParticle");
+	ShaderManager::GetInstance().LoadShader(L"BasicResources/FluidParticleComputeShader.hlsl", "cs_5_0", "FluidParticleIntegrateComputeShader", "CS_Integrate");
+	ShaderManager::GetInstance().LoadShader(L"BasicResources/FluidParticleComputeShader.hlsl", "cs_5_0", "FluidParticleInitComputeShader", "init");
 
-	
+
 	ShaderManager::GetInstance().LoadShader(L"BasicResources/BasicVertexShader.hlsl", "vs_5_0", "GPUParticleVertexShader");
 	ShaderManager::GetInstance().LoadShader(L"BasicResources/Fluid_Wall_VertexShader.hlsl", "vs_5_0", "Fluid_Wall_VertexShader");
 	ShaderManager::GetInstance().LoadShader(L"BasicResources/BasicPixelShader.hlsl", "ps_5_0", "GPUParticlePixelShader");
@@ -108,7 +108,7 @@ HRESULT RenderingPipeLine::Init()
 
 	DirectXDevice::GetInstance().EnableDebugLayer();
 
-	
+
 	DirectXDevice::GetInstance().InitDirectX();
 	DirectXGraphics::GetInstance().Init();
 	LightManager::GetInstance().Init();
@@ -121,39 +121,36 @@ HRESULT RenderingPipeLine::Init()
 	MeshManager::GetInstance().Init();
 	MeshDrawer::GetInstance().Init();
 
-	MeshManager::GetInstance().GetSpehereMesh(12, "NormalMeshEffect");
-	MeshManager::GetInstance().GetSpehereMesh(13, "NormalMeshEffect");
-	MeshManager::GetInstance().GetSpehereMesh(21, "NormalMeshEffect");
+	MeshManager::GetInstance().GetSpehereMesh(6, "NormalMeshEffect");
 	MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "blenderMonkey.obj", "BlenderMonkey");
-	MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "SpaceShip.obj", "Cube2");
-	MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "SpaceShip2.obj", "Cube3");
+	MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "cube0.obj", "Cube0");
 
 	auto cubeMeshData = MeshManager::GetInstance().GetMeshData("CubeModelData");
-	cubeMeshData->SetRaytraceMaterial(MeshData::RaytraceMaterial(SimpleMath::Vector4(1.0f, 0.0f, 0.0f, 1.0f), SimpleMath::Vector4(1.0f), SimpleMath::Vector4(0.1f)));
-	
-	auto blenderMonkyMeshData = MeshManager::GetInstance().GetMeshData("BlenderMonkey");
-	
-	auto cube0 = MeshManager::GetInstance().GetMeshData("Cube0");
-	auto cube2 = MeshManager::GetInstance().GetMeshData("Cube2");
-	auto cube3 = MeshManager::GetInstance().GetMeshData("Cube3");
+	cubeMeshData->SetRaytraceMaterial(MeshData::RaytraceMaterial(SimpleMath::Vector4(1.0f, 0.0f, 0.0f, 1.0f), SimpleMath::Vector4(1.0f, 10.0f, 1.0f, 0.5f),0.5f));
+
+	//auto cubeMeshData1 = MeshManager::GetInstance().GetMeshData("Cube0");
+	//cubeMeshData1->SetRaytraceMaterial(MeshData::RaytraceMaterial(SimpleMath::Vector4(1.0f, 0.0f, 0.0f, 1.0f), SimpleMath::Vector4(1.0f), SimpleMath::Vector4(1.0f, 10.0f, 1.0f, 0.5f)));
 
 	
-	auto sphereMeshData1 = MeshManager::GetInstance().FindSpehere(12);
-	auto sphereMeshData2 = MeshManager::GetInstance().FindSpehere(13);
-	auto sphereMeshData3 = MeshManager::GetInstance().FindSpehere(21);
+	auto sphereMeshData = MeshManager::GetInstance().FindSpehere(6);
+	sphereMeshData->SetRaytraceMaterial(MeshData::RaytraceMaterial(SimpleMath::Vector4(0.2f, 0.0f, 1.0f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.0f),0.5f));
+
+	auto blenderMonkey = MeshManager::GetInstance().GetMeshData("BlenderMonkey");
 
 
 	//sphereMeshData->SetTestMaterial(MeshData::TestMat{ true });
 
 
-	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "cube2");
-	//DXRPipeLine::GetInstance().AddMeshData(cube2, L"HitGroup", "cube4");
+	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "WhiteCube", MeshData::RaytraceMaterial(SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.6f), 0.8f));
+	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "GrayCube", MeshData::RaytraceMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.6f), 0.8f));
+
 	//DXRPipeLine::GetInstance().AddMeshData(cube2, L"HitGroup", "cube6");
-	DXRPipeLine::GetInstance().AddMeshData(sphereMeshData2, L"HitGroup", "BlenderMonkey");
+	DXRPipeLine::GetInstance().AddMeshData(blenderMonkey, L"HitGroup", "Sphere");
+	DXRPipeLine::GetInstance().AddMeshData(blenderMonkey, L"HitGroup", "Sphere2", MeshData::RaytraceMaterial(SimpleMath::Vector4(0.4f, 0.4f, 1.0f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.6f), 1.0f));
 
 
 	DXRPipeLine::GetInstance().InitPipeLine();
-	
+
 	m_pCommandList = DirectXGraphics::GetInstance().GetCommandList();
 
 	//各種リソース生成
@@ -178,7 +175,7 @@ HRESULT RenderingPipeLine::Init()
 		return S_FALSE;
 	}
 
-	if(CreateDofParameterResource() != S_OK)
+	if (CreateDofParameterResource() != S_OK)
 	{
 		return S_FALSE;
 	}
@@ -197,7 +194,7 @@ HRESULT RenderingPipeLine::Init()
 	{
 		return S_FALSE;
 	}
-	
+
 	if (CreatePipeLines() != S_OK)
 	{
 		return S_FALSE;
@@ -243,7 +240,7 @@ void RenderingPipeLine::DrawBegin()
 	DrawPostEffect();
 	DirectXGraphics::GetInstance().Begin();
 
-	DXRPipeLine::GetInstance().Render(m_result_bloom_resource.Get(),m_pSkyBox);
+	DXRPipeLine::GetInstance().Render(m_result_bloom_resource.Get(), m_pSkyBox);
 }
 
 void RenderingPipeLine::Draw()
@@ -279,7 +276,7 @@ void RenderingPipeLine::Draw()
 
 #endif
 }
-	
+
 
 void RenderingPipeLine::DrawEnd()
 {
@@ -465,8 +462,8 @@ void RenderingPipeLine::EffectBloom()
 
 	m_pCommandList->SetDescriptorHeaps(1, m_peraSRVHeap.GetAddressOf());
 	m_pCommandList->SetGraphicsRootDescriptorTable(Bloom_RootParamter_NormalColor, srvHandle);
-	
-	
+
+
 
 	m_pCommandList->SetDescriptorHeaps(1, m_peraSRVHeap.GetAddressOf());
 	srvHandle = m_peraSRVHeap->GetGPUDescriptorHandleForHeapStart();
@@ -529,18 +526,18 @@ void RenderingPipeLine::EffectDepthOfField()
 	}
 
 
-	
-	
+
+
 	// 通常の描画テクスチャ 
 	m_pCommandList->SetDescriptorHeaps(1, m_peraSRVHeap.GetAddressOf());
 	auto renderingTexture = m_peraSRVHeap.Get()->GetGPUDescriptorHandleForHeapStart();
 	m_pCommandList->SetGraphicsRootDescriptorTable(0, renderingTexture);
-	
+
 
 
 	m_pCommandList->DrawInstanced(4, 1, 0, 0);
 
-	
+
 	// RENDER_TARGET -> SHADER_RESOUCE
 	m_pCommandList->ResourceBarrier(
 		1, &CD3DX12_RESOURCE_BARRIER::Transition(
@@ -558,7 +555,7 @@ void RenderingPipeLine::EffectDepthOfField()
 
 
 
-	
+
 	// 最終的なレンダリング
 	m_pCommandList->SetPipelineState(posteffect_dof_result_pso.pso.Get());
 	m_pCommandList->SetGraphicsRootSignature(posteffect_dof_horizontal_pso.rootSignature.Get());
@@ -566,7 +563,7 @@ void RenderingPipeLine::EffectDepthOfField()
 	m_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	m_pCommandList->IASetVertexBuffers(0, 1, &m_PeraVBV);
 
-	
+
 	// SHADER_RESOUCE -> RENDER_TARGET
 	m_pCommandList->ResourceBarrier(
 		1, &CD3DX12_RESOURCE_BARRIER::Transition(
@@ -584,7 +581,7 @@ void RenderingPipeLine::EffectDepthOfField()
 
 	// 通常の描画テクスチャ
 	m_pCommandList->SetDescriptorHeaps(1, m_peraSRVHeap.GetAddressOf());
-	 renderingTexture = m_peraSRVHeap.Get()->GetGPUDescriptorHandleForHeapStart();
+	renderingTexture = m_peraSRVHeap.Get()->GetGPUDescriptorHandleForHeapStart();
 	m_pCommandList->SetGraphicsRootDescriptorTable(0, renderingTexture);
 
 	auto srvHandle = m_peraSRVHeap->GetGPUDescriptorHandleForHeapStart();
@@ -601,7 +598,7 @@ void RenderingPipeLine::EffectDepthOfField()
 
 	srvHandle.ptr += DirectXDevice::GetInstance().GetDevice()
 		->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * 2;
-	
+
 	// Dofパラメータ
 	m_pCommandList->SetGraphicsRootDescriptorTable(4, srvHandle);
 
@@ -673,7 +670,7 @@ HRESULT RenderingPipeLine::CreateRTV()
 
 	// RTV用ヒープの作成
 	heapDesc.NumDescriptors = OutputRenderResouce + m_BloomBufferCount + ResultBloomResource
-		+ BlurTextureCount  + ResultDOFResource; // Bloom 
+		+ BlurTextureCount + ResultDOFResource; // Bloom 
 	auto result = DirectXDevice::GetInstance().GetDevice()
 		->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(m_peraRTVHeap.ReleaseAndGetAddressOf()));
 
@@ -763,7 +760,7 @@ HRESULT RenderingPipeLine::CreateSRV()
 {
 
 	auto heapDesc = DirectXGraphics::GetInstance().GetRTVHeap()->GetDesc();
-	
+
 	// SRV用ヒープの作成
 	heapDesc.NumDescriptors = OutputRenderResouce + m_BloomBufferCount + m_BlurWeights + ResultBloomResource + BlurTextureCount + ResultDOFResource + DofParamterCount;
 	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
@@ -856,7 +853,7 @@ HRESULT RenderingPipeLine::CreateSRV()
 		&srvDesc,
 		handle);
 
-	
+
 	// Dof用のParameter
 	handle.ptr += DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize
 	(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -868,7 +865,7 @@ HRESULT RenderingPipeLine::CreateSRV()
 	DirectXDevice::GetInstance().GetDevice()->CreateConstantBufferView(
 		&cbvDesc,
 		handle);
-	
+
 	return result;
 }
 
@@ -1002,7 +999,7 @@ HRESULT RenderingPipeLine::CreatePipeLines()
 	// あとで　ここに並べていく
 
 	// Bloom
-	if(CreateBloomPSO() != S_OK)
+	if (CreateBloomPSO() != S_OK)
 	{
 		assert(0);
 	}
@@ -1012,7 +1009,7 @@ HRESULT RenderingPipeLine::CreatePipeLines()
 	{
 		assert(0);
 	}
-	
+
 
 	// 最終的なリザルト結果
 	return CreateResultPSO();
@@ -1557,7 +1554,7 @@ void RenderingPipeLine::DrawPostEffect()
 	//m_pCommandList->ClearDepthStencilView(dsvH, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
 	//MeshDrawer::GetInstance().Draw();
-	
+
 	// DOF 被写界深度
 	//EffectDepthOfField();
 	//Bloom
@@ -1808,10 +1805,10 @@ void RenderingPipeLine::UpdateCubeMapCameraTargets(const SimpleMath::Vector3& ca
 	mCubeMapCameraTargets[2] = SimpleMath::Vector3(0, +1.0f, 0); // +Y
 	mCubeMapCameraTargets[3] = SimpleMath::Vector3(0, -1.0f, 0); // -Y
 
-	mCubeMapCameraTargets[4] = SimpleMath::Vector3(0,0,+1.0f ); // +Z
-	mCubeMapCameraTargets[5] = SimpleMath::Vector3(0,0,-1.0f); // -Z
+	mCubeMapCameraTargets[4] = SimpleMath::Vector3(0, 0, +1.0f); // +Z
+	mCubeMapCameraTargets[5] = SimpleMath::Vector3(0, 0, -1.0f); // -Z
 
-	
+
 }
 
 void RenderingPipeLine::UpdateConstantBuffers()
@@ -1828,7 +1825,7 @@ void RenderingPipeLine::UpdareDofParameterBuffer()
 	bool changeFlag = false;
 
 	changeFlag = ImGui::DragFloat("Pint", &mDofPint, 0.01f, -1.0f, 1.0f);
-	
+
 	if (!changeFlag)return;
 
 	auto dofParamasBuffer = mDofParameterResource->getBuffer();
@@ -1837,5 +1834,5 @@ void RenderingPipeLine::UpdareDofParameterBuffer()
 	dofParamasBuffer->Map(0, nullptr, (void**)&dofParams);
 	dofParams->Pint = mDofPint;
 	dofParamasBuffer->Unmap(0, nullptr);
-	
+
 }

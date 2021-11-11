@@ -14,7 +14,7 @@ class Cube
 	:public Actor
 {
 public:
-	Cube(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& scale,float destroyTime,bool moveFlag = true);
+	Cube(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& scale,float destroyTime, bool isWhite,bool moveFlag = true);
 	~Cube() = default;
 
 private:
@@ -33,4 +33,5 @@ private:
 	SimpleMath::Vector3 _Acc;
 	bool _IsGenerate;
 	bool _IsMove;
+	bool _IsWhite;
 };

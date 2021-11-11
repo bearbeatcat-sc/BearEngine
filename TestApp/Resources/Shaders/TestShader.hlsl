@@ -5,6 +5,11 @@ struct Payload
     int recursive;
 };
 
+struct ShadowPayload
+{
+    bool isHit;
+};
+
 struct MyAttribute
 {
     float2 barys;
@@ -20,8 +25,8 @@ struct Vertex
 struct Material
 {
     float4 albedo;
-    float4 specular;
     float4 metallic;
+    float roughness;
 };
 
 struct SceneCB
@@ -33,8 +38,23 @@ struct SceneCB
     float4 lightDirection;
     float4 lightColor;
     float4 ambientColor;
-    float3 eyePos;
 };
+
+//反射光
+struct ReflectedLight
+{
+	// ローカル照明
+    float3 directDiffuse;
+    float3 directSpecular;
+};
+
+// 入射光
+struct IncidentLight
+{
+    float3 direction;
+    float3 color;
+};
+
 
 // GlobalSignature
 RaytracingAccelerationStructure gRtScene : register(t0);
@@ -50,6 +70,14 @@ StructuredBuffer<uint> indexBuffer : register(t0, space1);
 StructuredBuffer<Vertex> vertexBuffer : register(t1, space1);
 ConstantBuffer<Material> matBuffer : register(b0, space1);
 
+static const float PI = 3.1415926f;
+static const float EPSILON = 1e-6;
+
+
+inline float lengthSqr(float3 vec)
+{
+    return (vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
+}
 
 float3 linearToSrgb(float3 c)
 {
@@ -70,88 +98,26 @@ inline float3 CalcBarycentrics(float2 barys)
         barys.y);
 }
 
-// 入射角 / 法線 /反射率
-float3 caluculateFrasnel(float3 i, float3 n, float3 f0)
+inline bool checkRecursiveLimit(inout Payload payload)
 {
-    float cosi = saturate(dot(-i, n));
-
-    return f0 + (1.0f - f0) * pow(1.0f - cosi, 5);
+    payload.recursive++;
+    if (payload.recursive >= 15)
+    {
+        payload.color = float3(0, 0, 0);
+        return true;
+    }
+    return false;
 }
-
-// フレネル反射を考慮した拡散反射
-float calculateFresnelDiffuse(float3 ray, float3 normal, float3 light)
-{
-	
-    float dotNL = saturate(dot(normal, light));
-
-    float dotNV = saturate(dot(normal, ray));
-
-    return (dotNL * dotNV);
-
-}
-
-float3 caluculateDiffuse(float3 albedo, float3 Normal)
-{
-    ////float3 worldPos = mul(float4(vertexPos, 1), ObjectToWorld4x3());
-    //float3 worldPos = WorldRayOrigin() + RayTCurrent() + WorldRayDirection();
-	
-
-    float3 lightDir = gSceneParam.lightDirection.xyz;
-    float diffuse = calculateFresnelDiffuse(-WorldRayDirection(), Normal,-lightDir);
-
-	// 正規化Lambert
-    float NdotL = saturate(dot(Normal, -lightDir));
-    float3 lambertDiffuse = gSceneParam.lightColor *  NdotL / 3.141592653589f;
-
-	// 今回はシンプルにマテリアルカラーのみ
-    float3 diffuseColor = albedo * diffuse * lambertDiffuse;
-
-    return diffuseColor;
-}
-
-
-
-
-float3 calculateSpecular(float4 _spec, float3 Normal)
-{
-    ////float3 worldPos = mul(float4(vertexPos, 1), ObjectToWorld4x3());
-    //float3 worldPos = WorldRayOrigin() + RayTCurrent() + WorldRayDirection();
-	
-
-    float3 lightDir = gSceneParam.lightDirection.xyz;
-	
-    float3 specularColor = _spec.rgb;
-
-    float3 _reflect = normalize(reflect(lightDir, Normal));
-    float specular = pow(saturate(dot(_reflect, normalize(-WorldRayDirection()))), _spec.w);
-    specularColor = 1.0f * specular * specularColor;
-
-    return specularColor;
-}
-
-//float3 phongShading(float3 albedo,float4 _spec, float3 vertexNormal, float3 vertexPos)
-//{
-
-
-
-
-
-//    //float3 ambientColor = gSceneParam.ambientColor;
-	
-//    //return ambientColor + diffuseColor + specularColor;
-	
-
-//}
-
 
 // recursive = 再帰回数
-float3 Reflection(float3 vertexPos, float3 vertexNormal, int recursive)
+float3 Reflection(float3 vertexPos, float3 vertexNormal, int recursive, float roughness, float instanceID)
 {
+	
     float3 worldPos = mul(float4(vertexPos, 1), ObjectToWorld4x3());
     float3 worldNormal = mul(vertexNormal, (float3x3) ObjectToWorld4x3());
     float3 worldRayDir = WorldRayDirection();
     float3 reflectDir = reflect(worldRayDir, worldNormal);
-
+    
     RAY_FLAG flags = RAY_FLAG_NONE;
     uint rayMask = 0xFF;
 
@@ -178,17 +144,6 @@ float3 Reflection(float3 vertexPos, float3 vertexNormal, int recursive)
     reflectPayload);
 
     return reflectPayload.color;
-}
-
-inline bool checkRecursiveLimit(inout Payload payload)
-{
-    payload.recursive++;
-    if (payload.recursive >= 15)
-    {
-        payload.color = float3(0, 0, 0);
-        return true;
-    }
-    return false;
 }
 
 float3 Refraction(float3 vertexPos, float3 vertexNormal, int recursive)
@@ -228,7 +183,7 @@ float3 Refraction(float3 vertexPos, float3 vertexNormal, int recursive)
     if (length(refracted) < 0.01)
     {
 		// 
-        return Reflection(vertexPos, vertexNormal, recursive);
+        //return Reflection(vertexPos, vertexNormal, recursive);
     }
 
     RAY_FLAG flags = RAY_FLAG_NONE;
@@ -285,6 +240,140 @@ Vertex GetHitVertex(MyAttribute attrib)
 	
 }
 
+// マイクロファセットのGGX分布関数
+float D_GGX(float a, float dotNH)
+{
+    float a2 = a * a;
+
+    float dotNH2 = dotNH * dotNH;
+
+    float d = dotNH2 * (a2 - 1.0) + 1.0;
+	
+    return a2 / (PI * d * d);
+}
+
+// 幾何減衰項
+float G_Smith_Shlinck_GGX(float a, float dotNV, float dotNL)
+{
+    float k = a * a * 0.5 + EPSILON;
+
+    float gl = dotNL / (dotNL * (1.0 - k) + k);
+    float gv = dotNV / (dotNV * (1.0 - k) + k);
+
+    return gl * gv;
+}
+
+// Shlinkの近似式によるフレネル項
+float3 F_Schlink(float3 specularColor, float3 h, float3 v)
+{
+    return (specularColor + (1.0 - specularColor) * pow(1.0 - saturate(dot(v, h)), 5.0));
+}
+
+float3 ShlinkFresnel(float u,float f0,float f90)
+{
+    return f0 + (f90 - f0) * pow(1.0 - u, 5.0);
+}
+
+float3 specularBRDF(IncidentLight incident_light, float3 normal, float3 specularColor, float roughness)
+{
+    float3 n = normal;
+    float3 v = normalize(-WorldRayDirection());
+    float3 l = incident_light.direction;
+
+    float dotNL = saturate(dot(n, l));
+    float dotNV = saturate(dot(n, v));
+
+    float3 halfVec = normalize(l + v);
+
+    float dotNH = saturate(dot(n, halfVec));
+    //float dotVH = saturate(dot(v, halfVec));
+    //float dotLV = saturate(dot(l, v));
+
+	// マイクロファセットの分布関数
+    float a = roughness * roughness;
+    float d = D_GGX(a, dotNH);
+
+    float g = G_Smith_Shlinck_GGX(a, dotNV, dotNL);
+
+    float3 f = F_Schlink(specularColor, halfVec, v);
+
+    return (f * (g * d)) / (4.0 * dotNL * dotNV + EPSILON);
+	
+}
+
+// 正規化したLambert
+float3 diffuseBRDF(float3 diffuseColor)
+{
+    return diffuseColor / PI;
+}
+
+float3 NormalizeDisneyDiffuse(float3 albedo, IncidentLight incident_light,float3 normal, float roughness)
+{
+    float3 n = normal;
+    float3 v = normalize(-WorldRayDirection());
+    float3 l = incident_light.direction;
+
+    float3 halfVec = normalize(l + v);
+
+    float dotLH = saturate(dot(l, halfVec));
+    float dotNL = saturate(dot(n, l));
+    float dotNV = saturate(dot(n, v));
+	
+    float energyBias = lerp(0.0f, 0.5f, roughness);
+    float energyFactor = lerp(1.0f, 1.0f / 1.51f, roughness);
+
+    float fd90 = energyBias + 2.0f * dotLH * dotLH * roughness;
+
+	// フレネル反射率をラフネスに応じて
+    float fl = ShlinkFresnel(1.0, fd90, dotNL);
+    float fv = ShlinkFresnel(1.0, fd90, dotNV);
+	
+    return (albedo * fl * fv * energyFactor) / PI;
+}
+
+float3 phongShading(float3 albedo, float4 _spec, float3 vertexNormal, float3 vertexPos)
+{
+	
+    float3 worldNormal = mul(vertexNormal, (float3x3) ObjectToWorld4x3());
+    //float3 worldPos = mul(float4(vertexPos, 1), ObjectToWorld4x3());
+    float3 worldPos = WorldRayOrigin() + RayTCurrent() + WorldRayDirection();
+	
+
+    float diffuse = saturate(dot(-gSceneParam.lightDirection.xyz, worldNormal));
+    float3 diffuseColor = diffuse * albedo;
+
+
+
+    float3 ambientColor = gSceneParam.ambientColor;
+	
+    return diffuseColor;
+
+}
+
+
+void CalculateLight(IncidentLight incident_light, float3 normal, float3 diffuseColor, float3 specularColor, float roughness, inout ReflectedLight reflected)
+{
+    float dotNL = saturate(dot(normal, incident_light.direction));
+
+	// 放射輝度の計算
+    float3 irradiance = dotNL * incident_light.color;
+
+	// 放射輝度にCosを掛けて放射照度に変換
+    irradiance *= PI;
+
+    float diffuse = saturate(dot(-gSceneParam.lightDirection.xyz, normal));
+    float3 _diffuseColor = diffuse * diffuseColor;
+
+    reflected.directDiffuse += irradiance * NormalizeDisneyDiffuse(diffuseColor, incident_light, normal, roughness);
+    reflected.directSpecular += irradiance * specularBRDF(incident_light, normal, specularColor, roughness);
+}
+
+
+
+
+
+
+
 [shader("raygeneration")]
 void rayGen()
 {
@@ -322,6 +411,37 @@ void rayGen()
     gOutput[lanchIndex.xy] = float4(col, 1);
 }
 
+bool ShotShadowRay(float3 origin,float3 direction)
+{
+    RayDesc rayDesc;
+    rayDesc.Origin = origin;
+    rayDesc.Direction = direction;
+    rayDesc.TMin = 0.1;
+    rayDesc.TMax = 100000;
+
+    ShadowPayload payload;
+    payload.isHit = true;
+
+    RAY_FLAG flags = RAY_FLAG_NONE;
+
+	// 交差したときのシェーダーは呼び出さない
+    flags |= RAY_FLAG_SKIP_CLOSEST_HIT_SHADER;
+
+    uint rayMask = ~(0x88);
+
+    TraceRay(
+    gRtScene,
+    flags,
+    rayMask,
+    0,
+    1,
+    1,
+    rayDesc,
+    payload
+    );
+
+    return payload.isHit;
+}
 
 [shader("miss")]
 void miss(inout Payload payload)
@@ -331,8 +451,14 @@ void miss(inout Payload payload)
     gSampler, WorldRayDirection(), 0.0).xyz;
 	
     payload.color = color;
-
 }
+
+[shader("miss")]
+void shadowMiss(inout ShadowPayload payload)
+{
+    payload.isHit = false;
+}
+
 
 [shader("closesthit")]
 void chs(inout Payload payload, in MyAttribute attribs)
@@ -344,31 +470,47 @@ void chs(inout Payload payload, in MyAttribute attribs)
 	
     Vertex vtx = GetHitVertex(attribs);
     uint id = InstanceID();
+    uint3 dispatchRayIndex = DispatchRaysIndex();
 	
-    float3 worldNormal = mul(vtx.normal, (float3x3) ObjectToWorld4x3());
+    float3 worldNormal = normalize(mul(vtx.normal, (float3x3) ObjectToWorld4x3()));
+    float3 worldPosition = mul(float4(vtx.pos, 1), ObjectToWorld4x3());
 
-	// 後でパラメータ化
-    float3 albedo = matBuffer.albedo.rgb;
-    float4 specular = matBuffer.specular;
-    float metallic = matBuffer.metallic.r;
-    float smooth = matBuffer.metallic.a;
+    float4 metallic = matBuffer.metallic;
+    float4 albedo = matBuffer.albedo;
+    float roughness = matBuffer.roughness;
 
-    float3 resultSpec = calculateSpecular(specular, worldNormal);
-    float3 resultDiffuse = caluculateDiffuse(albedo, worldNormal);
+    //metallic.w = 0.6f;
+    //roughness = 0.8f;
 	
+	// 金属に近いほど、鏡面反射の割合を高くする
+    float3 reflectionColor = Reflection(vtx.pos, vtx.normal, payload.recursive, roughness, dispatchRayIndex.x);
+
 	
-	// 今回は完全に反射する
-    float3 reflectionColor = Reflection(vtx.pos, vtx.normal, payload.recursive);
+    float3 diffuseColor = lerp(albedo.rgb, float3(0.0f, 0.0f, 0.0f), metallic.w);
+    float3 specularColor = lerp(float3(0.04f, 0.04f, 0.04f), albedo.rgb, metallic.w);
+    reflectionColor = lerp(float3(0.04f, 0.04f, 0.04f), reflectionColor.rgb, metallic.w);
 
-	// フレネル反射
-    reflectionColor = reflectionColor * caluculateFrasnel(WorldRayDirection(), worldNormal, albedo) * smooth;
-
-    float t = RayTCurrent();
-    float3 color = resultDiffuse + lerp(resultSpec, reflectionColor, metallic);
-
-	// fog
-    //color = lerp(color, float3(1, 1, 1), 1.0 - exp(-0.000002 * t * t * t));
+    IncidentLight directionalLight;
+    directionalLight.direction = -gSceneParam.lightDirection.xyz;
+    directionalLight.color = gSceneParam.lightColor.rgb;
 	
-    payload.color = color;
-};
+    ReflectedLight reflected;
+    reflected.directDiffuse = diffuseColor;
+    reflected.directSpecular = specularColor;
+
+	
+    CalculateLight(directionalLight, worldNormal, diffuseColor, specularColor, roughness, reflected);
+
+    bool isInShadow = false;
+    float3 shadowRayDir = -gSceneParam.lightDirection;
+
+    isInShadow = ShotShadowRay(worldPosition, shadowRayDir);
+	
+    payload.color = reflected.directDiffuse + (reflected.directSpecular * (reflectionColor));
+
+	if(isInShadow)
+	{
+        payload.color.rgb *= 0.5;
+    }
+}
 
