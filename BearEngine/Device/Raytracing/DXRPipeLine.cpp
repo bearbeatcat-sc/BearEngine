@@ -335,9 +335,11 @@ void DXRPipeLine::UpdateTLAS()
 
 void DXRPipeLine::DrawDebugGUI()
 {
-	ImGui::Begin("DXRPipeline", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-	
-	ImGui::End();
+	if(ImGui::BeginTabItem("DXRPipeline"))
+	{
+		ImGui::Text("InstanceCount:%i", _instances.size());
+		ImGui::EndTabItem();
+	}
 }
 
 void DXRPipeLine::Render(ID3D12Resource* pRenderResource, SkyBox* pSkyBox)

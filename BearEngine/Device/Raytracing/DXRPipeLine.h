@@ -202,6 +202,7 @@ public:
 	void Render(ID3D12Resource* pRenderResource,SkyBox* pSkyBox);
 	void CreateResourceView(std::shared_ptr<MeshData> mesh);
 	void DeleteInstance();
+	void DrawDebugGUI();
 
 private:
 	ComPtr<ID3D12Resource> CreateBuffer(uint64_t size, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES initState, const D3D12_HEAP_PROPERTIES& heapProps);
@@ -209,7 +210,6 @@ private:
 	void CreateBLAS(std::shared_ptr<DXRMeshData> pDXRMeshData, std::shared_ptr<MeshData> pMeshData);
 	void UpdateTLAS();
 
-	void DrawDebugGUI();
 	
 	void CreateAccelerationStructures();
 	void CreateLocalRootSignature();

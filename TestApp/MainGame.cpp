@@ -131,7 +131,30 @@ void MainGame::Init()
 	sphere2->SetRotation(Quaternion::CreateFromYawPitchRoll(-2.4f, 0.0f, 0.0f));
 	ActorManager::GetInstance().AddActor(sphere2);
 
-	
+	for (int i = 0; i < 241; ++i)
+	{
+		auto pos_x = Random::GetRandom(-20.0f, 20.0f);
+		auto pos_z = Random::GetRandom(-5.0f, 10.0f);
+		float pos_y = 2.0f;
+
+		float rotateX = Random::GetRandom(-1.0f, 1.0f);
+		float rotateY = Random::GetRandom(-1.0f, 1.0f);
+		float rotateZ = Random::GetRandom(-1.0f, 1.0f);
+
+		float scale = 0.4f;
+
+		auto sphere = new Sphere(SimpleMath::Vector3((i / 8) * 1.0f, pos_y, (i % 8) * 1.0f), Sphere::SphereType_Normal);
+		sphere->SetScale(SimpleMath::Vector3(scale));
+		sphere->SetRotation(Quaternion::CreateFromYawPitchRoll(rotateX, rotateY, rotateZ));
+		ActorManager::GetInstance().AddActor(sphere);
+
+		//_GenerateCount++;
+
+		//if (_GenerateCount >= _MaxGenerateCount)
+		//{
+		//	_IsGenerate = false;
+		//}
+	}
 
 }
 
@@ -151,6 +174,8 @@ void MainGame::Update()
 		}
 		return;
 	}
+
+
 	
 	//_GenerateTimer->Update();
 	//if(_GenerateTimer->IsTime())
@@ -166,10 +191,10 @@ void MainGame::Update()
 
 	//	float scale = Random::GetRandom(1.0f, 3.0f);
 
-	//	auto cube = new Sphere(SimpleMath::Vector3(pos_x, pos_y, pos_z), Sphere::SphereType_Normal);
-	//	cube->SetScale(SimpleMath::Vector3(scale));
-	//	cube->SetRotation(Quaternion::CreateFromYawPitchRoll(rotateX, rotateY, rotateZ));
-	//	ActorManager::GetInstance().AddActor(cube);
+	//	auto sphere = new Sphere(SimpleMath::Vector3(pos_x, pos_y, pos_z), Sphere::SphereType_Normal);
+	//	sphere->SetScale(SimpleMath::Vector3(scale));
+	//	sphere->SetRotation(Quaternion::CreateFromYawPitchRoll(rotateX, rotateY, rotateZ));
+	//	ActorManager::GetInstance().AddActor(sphere);
 
 	//	_GenerateCount++;
 

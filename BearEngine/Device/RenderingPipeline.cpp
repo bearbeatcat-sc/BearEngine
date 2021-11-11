@@ -266,6 +266,7 @@ void RenderingPipeLine::Draw()
 	LogSystem::DrawLog();
 	MeshDrawer::GetInstance().DrawDebug();
 	LightManager::GetInstance().Draw();
+	DXRPipeLine::GetInstance().DrawDebugGUI();
 
 	ImGui::EndTabBar();
 
