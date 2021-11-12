@@ -121,7 +121,7 @@ HRESULT RenderingPipeLine::Init()
 	MeshManager::GetInstance().Init();
 	MeshDrawer::GetInstance().Init();
 
-	MeshManager::GetInstance().GetSpehereMesh(6, "NormalMeshEffect");
+	MeshManager::GetInstance().GetSpehereMesh(12, "NormalMeshEffect");
 	MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "blenderMonkey.obj", "BlenderMonkey");
 	MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "cube0.obj", "Cube0");
 
@@ -132,8 +132,8 @@ HRESULT RenderingPipeLine::Init()
 	//cubeMeshData1->SetRaytraceMaterial(MeshData::RaytraceMaterial(SimpleMath::Vector4(1.0f, 0.0f, 0.0f, 1.0f), SimpleMath::Vector4(1.0f), SimpleMath::Vector4(1.0f, 10.0f, 1.0f, 0.5f)));
 
 	
-	auto sphereMeshData = MeshManager::GetInstance().FindSpehere(6);
-	sphereMeshData->SetRaytraceMaterial(MeshData::RaytraceMaterial(SimpleMath::Vector4(0.2f, 0.0f, 1.0f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.0f),0.5f));
+	auto sphereMeshData = MeshManager::GetInstance().FindSpehere(12);
+	sphereMeshData->SetRaytraceMaterial(MeshData::RaytraceMaterial(SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f),0.1f));
 
 	auto blenderMonkey = MeshManager::GetInstance().GetMeshData("BlenderMonkey");
 
