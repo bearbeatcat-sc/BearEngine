@@ -27,7 +27,7 @@ MeshData::~MeshData()
 	m_Textures.clear();
 }
 
-bool MeshData::GenerateMesh(std::vector<Vertex>& positions, std::vector<UINT>& _indices, std::unordered_map<std::string, MaterialData>& matData)
+bool MeshData::GenerateMesh(std::wstring& modelName, std::vector<Vertex>& positions, std::vector<UINT>& _indices, std::unordered_map<std::string, MaterialData>& matData)
 {
 #pragma region Vertex
 	m_Positions.resize(positions.size());
@@ -38,19 +38,18 @@ bool MeshData::GenerateMesh(std::vector<Vertex>& positions, std::vector<UINT>& _
 	// 頂点情報だけをコピー
 	for (int i = 0; i < positionSize; ++i)
 	{
-		m_Positions[i] = positions[i].pos;		
+		m_Positions[i] = positions[i].pos;
 	}
-
 
 	// 頂点情報の最小値と最大値でAABB生成
 	auto min = MathUtility::GetMin(m_Positions);
 	auto max = MathUtility::GetMax(m_Positions);
-	CreateMeshAABB(min,max);
+	CreateMeshAABB(min, max);
 
 
 	// Vertexを設定
 	m_VertexBuffer = std::make_shared<Buffer>();
-	size_t size = UINT(sizeof(Vertex)) * positions.size();
+	UINT size = UINT(sizeof(Vertex)) * positions.size();
 	m_VertexBuffer->init(D3D12_HEAP_TYPE_UPLOAD, size, D3D12_RESOURCE_STATE_GENERIC_READ);
 	auto vertBuff = m_VertexBuffer->getBuffer();
 
@@ -59,6 +58,10 @@ bool MeshData::GenerateMesh(std::vector<Vertex>& positions, std::vector<UINT>& _
 	{
 		return false;
 	}
+
+	wchar_t vertexBufferName[40] = L"VertexBuffer_";
+	wcscat_s(vertexBufferName, modelName.data());
+	vertBuff->SetName(vertexBufferName);
 
 	Vertex* vertMap = nullptr;
 
@@ -89,6 +92,18 @@ bool MeshData::GenerateMesh(std::vector<Vertex>& positions, std::vector<UINT>& _
 	m_IndexBuffer->init(D3D12_HEAP_TYPE_UPLOAD, size, D3D12_RESOURCE_STATE_GENERIC_READ);
 	auto indexBuff = m_IndexBuffer->getBuffer();
 
+	// バッファ生成失敗
+	if (indexBuff == nullptr)
+	{
+		return false;
+	}
+	
+	wchar_t indexBufferName[40] = L"IndexBuffer_";
+	wcscat_s(indexBufferName, modelName.data());
+	indexBuff->SetName(indexBufferName);
+
+
+	
 	UINT* indexMap = nullptr;
 
 	indexBuff->Map(0, nullptr, (void**)&indexMap);
@@ -99,7 +114,7 @@ bool MeshData::GenerateMesh(std::vector<Vertex>& positions, std::vector<UINT>& _
 
 
 	m_ibView.BufferLocation = indexBuff->GetGPUVirtualAddress();
-	m_ibView.Format = DXGI_FORMAT_R16_UINT;
+	m_ibView.Format = DXGI_FORMAT_R32_UINT;
 	m_ibView.SizeInBytes = sizeof(_indices[0]) * _indices.size();
 
 

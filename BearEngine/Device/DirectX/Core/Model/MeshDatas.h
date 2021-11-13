@@ -97,7 +97,7 @@ public:
 
 	MeshData();
 	~MeshData();
-	bool GenerateMesh(std::vector<Vertex>& positions, std::vector<UINT>& _indices, std::unordered_map<std::string, MaterialData>& matData);
+	bool GenerateMesh(std::wstring& modelName, std::vector<Vertex>& positions, std::vector<UINT>& _indices, std::unordered_map<std::string, MaterialData>& matData);
 	void SetRaytraceMaterial(const RaytraceMaterial& testMat);
 	const RaytraceMaterial& GetRaytraceMaterial();
 	

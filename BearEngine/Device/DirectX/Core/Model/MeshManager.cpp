@@ -5,6 +5,7 @@
 #include "Device/DirectX/DirectXDevice.h"
 #include "Device/DirectX/Core/Buffer.h"
 #include "Device/Raytracing/DXRPipeLine.h"
+#include "Utility/StringUtil.h"
 
 MeshManager::MeshManager()
 {
@@ -76,7 +77,11 @@ std::shared_ptr<Mesh> MeshManager::GetSpehereMesh(int tesselation, const std::st
 
 
 		std::shared_ptr <MeshData> data = std::make_shared<MeshData>();
-		data->GenerateMesh(model.vertices, model.m_Indices, model.m_MaterialDatas);
+
+		std::string modelName = "SphereMesh_" + std::to_string(tesselation);
+		std::wstring wst_modelName = StringUtil::GetWideStringFromString(modelName);
+		
+		data->GenerateMesh(wst_modelName, model.vertices,model.m_Indices, model.m_MaterialDatas);
 		m_SpehereModelDatas.emplace(tesselation, data);
 		
 		//DXRPipeLine::GetInstance().CreateResourceView(data);
@@ -97,7 +102,11 @@ std::shared_ptr<Mesh> MeshManager::GetTriangleMesh(const SimpleMath::Vector3* po
 	MeshData::ModelData model;
 	GeometryGenerator::GenerateTriangleMesh(model, points);
 	std::shared_ptr <MeshData> data = std::make_shared<MeshData>();
-	data->GenerateMesh(model.vertices, model.m_Indices, model.m_MaterialDatas);
+	
+	std::wstring modelName = L"TriangleMesh";
+	
+	data->GenerateMesh(modelName,model.vertices, model.m_Indices, model.m_MaterialDatas);
+
 
 	std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>(data, effectName);
 	return mesh;
@@ -108,7 +117,10 @@ std::shared_ptr<Mesh> MeshManager::GetPlaneMesh(const std::string& effectName)
 	MeshData::ModelData model;
 	GeometryGenerator::GenerateSquareMesh(model);
 	std::shared_ptr <MeshData> data = std::make_shared<MeshData>();
-	data->GenerateMesh(model.vertices, model.m_Indices, model.m_MaterialDatas);
+
+	std::wstring modelName = L"PlaneMesh";
+	
+	data->GenerateMesh(modelName, model.vertices, model.m_Indices, model.m_MaterialDatas);
 
 	std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>(data, effectName);
 	return mesh;
@@ -138,7 +150,8 @@ bool MeshManager::LoadObj(const std::string& filePath, const std::string& fileNa
 
 	//}
 
-	data->GenerateMesh(model.vertices, model.m_Indices, model.m_MaterialDatas);
+	std::wstring wstr_modelName = StringUtil::GetWideStringFromString(modelName);
+	data->GenerateMesh(wstr_modelName,model.vertices, model.m_Indices, model.m_MaterialDatas);
 	m_ModelDatas.emplace(modelName, data);
 	//DXRPipeLine::GetInstance().CreateResourceView(data);
 	
@@ -177,7 +190,10 @@ void MeshManager::CreateCubeMeshData()
 	MeshData::ModelData model;
 	GeometryGenerator::GenerateCubeMesh(model, SimpleMath::Vector3(1.0f, 1.0f, 1.0f));
 	m_CubeModelData = std::make_shared<MeshData>();
-	m_CubeModelData->GenerateMesh(model.vertices, model.m_Indices, model.m_MaterialDatas);
+
+	std::wstring modelName = L"CubeMesh";
+	
+	m_CubeModelData->GenerateMesh(modelName,model.vertices, model.m_Indices, model.m_MaterialDatas);
 
 	m_ModelDatas.emplace("CubeModelData", m_CubeModelData);
 

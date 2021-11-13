@@ -720,7 +720,6 @@ void DXRPipeLine::CreateShaderTable()
 	hitGroupRecordSize += D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 	hitGroupRecordSize += sizeof(D3D12_GPU_DESCRIPTOR_HANDLE);
 	hitGroupRecordSize += sizeof(D3D12_GPU_DESCRIPTOR_HANDLE);
-	//hitGroupRecordSize += sizeof(D3D12_GPU_VIRTUAL_ADDRESS);
 	hitGroupRecordSize = align_to(ShaderRecordAlignment, hitGroupRecordSize);
 
 	// MissShader
@@ -821,7 +820,7 @@ void DXRPipeLine::CreateShaderTable()
 
 	auto& shaderRecordRG = _dispathRaysDesc.RayGenerationShaderRecord;
 	shaderRecordRG.StartAddress = startAddress;
-	shaderRecordRG.SizeInBytes = rayGenSize;
+	shaderRecordRG.SizeInBytes = rayGenRecordSize;
 	startAddress += rayGenRegion;
 
 	auto& shaderRecordMS = _dispathRaysDesc.MissShaderTable;

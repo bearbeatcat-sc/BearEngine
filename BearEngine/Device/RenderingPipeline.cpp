@@ -127,15 +127,12 @@ HRESULT RenderingPipeLine::Init()
 
 	auto cubeMeshData = MeshManager::GetInstance().GetMeshData("CubeModelData");
 	cubeMeshData->SetRaytraceMaterial(MeshData::RaytraceMaterial(SimpleMath::Vector4(1.0f, 0.0f, 0.0f, 1.0f), SimpleMath::Vector4(1.0f, 10.0f, 1.0f, 0.5f),0.5f));
-
-	//auto cubeMeshData1 = MeshManager::GetInstance().GetMeshData("Cube0");
-	//cubeMeshData1->SetRaytraceMaterial(MeshData::RaytraceMaterial(SimpleMath::Vector4(1.0f, 0.0f, 0.0f, 1.0f), SimpleMath::Vector4(1.0f), SimpleMath::Vector4(1.0f, 10.0f, 1.0f, 0.5f)));
-
 	
 	auto sphereMeshData = MeshManager::GetInstance().FindSpehere(12);
 	sphereMeshData->SetRaytraceMaterial(MeshData::RaytraceMaterial(SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f),0.1f));
 
 	auto blenderMonkey = MeshManager::GetInstance().GetMeshData("BlenderMonkey");
+	blenderMonkey->SetRaytraceMaterial(MeshData::RaytraceMaterial(SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f), SimpleMath::Vector4(1.0f, 10.0f, 1.0f, 1.0f), 1.0f));
 
 
 	//sphereMeshData->SetTestMaterial(MeshData::TestMat{ true });
@@ -144,9 +141,8 @@ HRESULT RenderingPipeLine::Init()
 	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "WhiteCube", MeshData::RaytraceMaterial(SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.6f), 0.8f));
 	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "GrayCube", MeshData::RaytraceMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.6f), 0.8f));
 
-	//DXRPipeLine::GetInstance().AddMeshData(cube2, L"HitGroup", "cube6");
-	DXRPipeLine::GetInstance().AddMeshData(blenderMonkey, L"HitGroup", "Sphere");
-	DXRPipeLine::GetInstance().AddMeshData(blenderMonkey, L"HitGroup", "Sphere2", MeshData::RaytraceMaterial(SimpleMath::Vector4(0.4f, 0.4f, 1.0f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.6f), 1.0f));
+	DXRPipeLine::GetInstance().AddMeshData(sphereMeshData, L"HitGroup", "Sphere");
+	DXRPipeLine::GetInstance().AddMeshData(blenderMonkey, L"HitGroup", "Sphere2", MeshData::RaytraceMaterial(SimpleMath::Vector4(0.4f, 0.4f, 1.0f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f), 1.0f));
 
 
 	DXRPipeLine::GetInstance().InitPipeLine();

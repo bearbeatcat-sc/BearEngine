@@ -299,7 +299,7 @@ private:
 
 	const UINT _SRVResourceCount = 2;
 	const UINT _MeshDataSize = 3;
-	const UINT _MaxMeshCount = 1024;
+	const UINT _MaxMeshCount = 256 * 2;
 	UINT _AllocateCount = 0;
 	UINT _IncSize;
 
