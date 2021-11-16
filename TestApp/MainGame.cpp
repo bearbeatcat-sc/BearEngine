@@ -48,6 +48,27 @@ void MainGame::Init()
 {
 	DirectXGraphics::GetInstance().InitFontSystem(L"font/fonttest.spritefont");
 
+	auto cubeMeshData = MeshManager::GetInstance().GetMeshData("CubeModelData");
+	cubeMeshData->SetRaytraceMaterial(MeshData::RaytraceMaterial(SimpleMath::Vector4(1.0f, 0.0f, 0.0f, 1.0f), SimpleMath::Vector4(1.0f, 10.0f, 1.0f, 0.5f), 0.5f));
+
+	auto sphereMeshData = MeshManager::GetInstance().FindSpehere(12);
+	//sphereMeshData->SetRaytraceMaterial(MeshData::RaytraceMaterial(SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f), 1.0f));
+
+	auto blenderMonkey = MeshManager::GetInstance().GetMeshData("BlenderMonkey");
+	blenderMonkey->SetRaytraceMaterial(MeshData::RaytraceMaterial(SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f), SimpleMath::Vector4(1.0f, 10.0f, 1.0f, 1.0f), 1.0f));
+
+
+	//sphereMeshData->SetTestMaterial(MeshData::TestMat{ true });
+
+
+	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "WhiteCube", MeshData::RaytraceMaterial(SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f), 0.1f));
+	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "GrayCube", MeshData::RaytraceMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f), 0.1));
+
+	DXRPipeLine::GetInstance().AddMeshData(sphereMeshData, L"HitGroup", "Sphere", MeshData::RaytraceMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.6f), 0.8f, 0.1f, 2.22f));
+	DXRPipeLine::GetInstance().AddMeshData(blenderMonkey, L"HitGroup", "Sphere2", MeshData::RaytraceMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.6f), 0.8f, 0.2f,1.22f));
+
+	// 必ず、メッシュデータを追加してからパイプラインの初期化を行う。
+	DXRPipeLine::GetInstance().InitPipeLine();
 
 
 

@@ -27,6 +27,9 @@ struct Material
     float4 albedo;
     float4 metallic;
     float roughness;
+    float transmission;
+    float refract;
+    float pad;
 };
 
 struct SceneCB
@@ -79,6 +82,21 @@ inline float lengthSqr(float3 vec)
     return (vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
 }
 
+inline float hash(float3 p)
+{
+    p = frac(p * 0.3183099 + 0.1f);
+    p *= 17.0f;
+
+    return frac(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+
+// フレネル反射
+inline float shlinck(float cos,float ri)
+{
+    float r0 = pow((1.0f - ri) / (1.0f + ri),2);
+    return r0 + (1.0f - r0) * pow(1.0f - cos, 5);
+}
+
 float3 linearToSrgb(float3 c)
 {
     float3 sq1 = sqrt(c);
@@ -110,7 +128,7 @@ inline bool checkRecursiveLimit(inout Payload payload)
 }
 
 // recursive = 再帰回数
-float3 Reflection(float3 vertexPos, float3 vertexNormal, int recursive, float roughness, float instanceID)
+float3 Reflection(float3 vertexPos, float3 vertexNormal, int recursive, float roughness)
 {
 	
     float3 worldPos = mul(float4(vertexPos, 1), ObjectToWorld4x3());
@@ -146,7 +164,7 @@ float3 Reflection(float3 vertexPos, float3 vertexNormal, int recursive, float ro
     return reflectPayload.color;
 }
 
-float3 Refraction(float3 vertexPos, float3 vertexNormal, int recursive)
+float3 Refraction(float3 vertexPos, float3 vertexNormal, int recursive,float roughness,float refractVal)
 {
     float4x3 mtx = ObjectToWorld4x3();
 
@@ -156,9 +174,6 @@ float3 Refraction(float3 vertexPos, float3 vertexNormal, int recursive)
     worldNormal = normalize(worldNormal);
 	
     float3 worldRayDir = normalize(WorldRayDirection());
-
-	// 屈折率 (水の相対屈折率）
-    const float refractVal = 1.4;
 
 	// 物体の内部からか、物体の表面かを判定する
     float nr = dot(worldNormal, worldRayDir);
@@ -182,8 +197,7 @@ float3 Refraction(float3 vertexPos, float3 vertexNormal, int recursive)
 
     if (length(refracted) < 0.01)
     {
-		// 
-        //return Reflection(vertexPos, vertexNormal, recursive);
+        return Reflection(vertexPos, vertexNormal, recursive, roughness);
     }
 
     RAY_FLAG flags = RAY_FLAG_NONE;
@@ -211,6 +225,34 @@ float3 Refraction(float3 vertexPos, float3 vertexNormal, int recursive)
 
     return refractPayload.color;
 
+}
+
+inline bool scatter(float3 worldPos, float3 worldNormal, float refractVal,int recursive,float3 dispatchRayIndex,in float3 color)
+{
+    float3 outward_normal;
+    float3 worldRayDir = WorldRayDirection();
+    float3 reflectDir = reflect(worldRayDir, worldNormal);
+    float3 reflactDir = float3(1, 1, 1);
+    float reflect_prob = 1;
+    float cosine;
+    float ni_over_nt = refractVal;
+	
+    RAY_FLAG flags = RAY_FLAG_NONE;
+    uint rayMask = 0xFF;
+
+    RayDesc rayDesc;
+    rayDesc.Origin = worldPos;
+    rayDesc.Direction = reflectDir;
+    rayDesc.TMin = 0.001;
+    rayDesc.TMax = 100000;
+
+    Payload refractPayload;
+    refractPayload.color = float3(0, 0, 0);
+    refractPayload.recursive = recursive;
+
+
+
+    return true;
 }
 
 Vertex GetHitVertex(MyAttribute attrib)
@@ -269,7 +311,7 @@ float3 F_Schlink(float3 specularColor, float3 h, float3 v)
     return (specularColor + (1.0 - specularColor) * pow(1.0 - saturate(dot(v, h)), 5.0));
 }
 
-float3 ShlinkFresnel(float u,float f0,float f90)
+float3 ShlinkFresnel(float u, float f0, float f90)
 {
     return f0 + (f90 - f0) * pow(1.0 - u, 5.0);
 }
@@ -307,7 +349,7 @@ float3 diffuseBRDF(float3 diffuseColor)
     return diffuseColor / PI;
 }
 
-float3 NormalizeDisneyDiffuse(float3 albedo, IncidentLight incident_light,float3 normal, float roughness)
+float3 NormalizeDisneyDiffuse(float3 albedo, IncidentLight incident_light, float3 normal, float roughness)
 {
     float3 n = normal;
     float3 v = normalize(-WorldRayDirection());
@@ -411,7 +453,7 @@ void rayGen()
     gOutput[lanchIndex.xy] = float4(col, 1);
 }
 
-bool ShotShadowRay(float3 origin,float3 direction)
+bool ShotShadowRay(float3 origin, float3 direction)
 {
     RayDesc rayDesc;
     rayDesc.Origin = origin;
@@ -478,17 +520,21 @@ void chs(inout Payload payload, in MyAttribute attribs)
     float4 metallic = matBuffer.metallic;
     float4 albedo = matBuffer.albedo;
     float roughness = matBuffer.roughness;
+    float refract = matBuffer.refract;
+    float transmission = matBuffer.transmission;
+	
+    bool isRefract = (transmission < 1.0f) ? true : false;
 
     //metallic.w = 0.6f;
     //roughness = 0.8f;
 	
 	// 金属に近いほど、鏡面反射の割合を高くする
-    float3 reflectionColor = Reflection(vtx.pos, vtx.normal, payload.recursive, roughness, dispatchRayIndex.x);
+    //float3 reflectionColor = float3(1, 1, 1);
 
-	
+
+		
     float3 diffuseColor = lerp(albedo.rgb, float3(0.0f, 0.0f, 0.0f), metallic.w);
     float3 specularColor = lerp(float3(0.04f, 0.04f, 0.04f), albedo.rgb, metallic.w);
-    reflectionColor = lerp(float3(0.04f, 0.04f, 0.04f), reflectionColor.rgb, metallic.w);
 
     IncidentLight directionalLight;
     directionalLight.direction = -gSceneParam.lightDirection.xyz;
@@ -501,16 +547,29 @@ void chs(inout Payload payload, in MyAttribute attribs)
 	
     CalculateLight(directionalLight, worldNormal, diffuseColor, specularColor, roughness, reflected);
 
-    bool isInShadow = false;
-    float3 shadowRayDir = -gSceneParam.lightDirection;
+    if (isRefract)
+    {
+        float3 reflractionColor = Refraction(vtx.pos, vtx.normal, payload.recursive, roughness, refract);
+        payload.color = lerp(reflected.directDiffuse + (reflected.directSpecular), reflractionColor, 1.0f - transmission);
 
-    isInShadow = ShotShadowRay(worldPosition, shadowRayDir);
-	
-    payload.color = reflected.directDiffuse + (reflected.directSpecular * (reflectionColor));
-
-	if(isInShadow)
-	{
-        payload.color.rgb *= 0.5;
     }
+	else
+    {
+        float3 reflectionColor = Reflection(vtx.pos, vtx.normal, payload.recursive, roughness);
+        reflectionColor = lerp(float3(0.04f, 0.04f, 0.04f), reflectionColor.rgb, metallic.w);
+
+        bool isInShadow = false;
+        float3 shadowRayDir = -gSceneParam.lightDirection;
+
+        isInShadow = ShotShadowRay(worldPosition, shadowRayDir);
+	
+        payload.color = reflected.directDiffuse + (reflected.directSpecular * (reflectionColor));
+
+        if (isInShadow)
+        {
+            payload.color.rgb *= 0.5;
+        }		
+	}
+
 }
 

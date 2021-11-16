@@ -125,27 +125,6 @@ HRESULT RenderingPipeLine::Init()
 	MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "blenderMonkey.obj", "BlenderMonkey");
 	MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "cube0.obj", "Cube0");
 
-	auto cubeMeshData = MeshManager::GetInstance().GetMeshData("CubeModelData");
-	cubeMeshData->SetRaytraceMaterial(MeshData::RaytraceMaterial(SimpleMath::Vector4(1.0f, 0.0f, 0.0f, 1.0f), SimpleMath::Vector4(1.0f, 10.0f, 1.0f, 0.5f),0.5f));
-	
-	auto sphereMeshData = MeshManager::GetInstance().FindSpehere(12);
-	sphereMeshData->SetRaytraceMaterial(MeshData::RaytraceMaterial(SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f),0.1f));
-
-	auto blenderMonkey = MeshManager::GetInstance().GetMeshData("BlenderMonkey");
-	blenderMonkey->SetRaytraceMaterial(MeshData::RaytraceMaterial(SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f), SimpleMath::Vector4(1.0f, 10.0f, 1.0f, 1.0f), 1.0f));
-
-
-	//sphereMeshData->SetTestMaterial(MeshData::TestMat{ true });
-
-
-	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "WhiteCube", MeshData::RaytraceMaterial(SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.6f), 0.8f));
-	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "GrayCube", MeshData::RaytraceMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.6f), 0.8f));
-
-	DXRPipeLine::GetInstance().AddMeshData(sphereMeshData, L"HitGroup", "Sphere");
-	DXRPipeLine::GetInstance().AddMeshData(blenderMonkey, L"HitGroup", "Sphere2", MeshData::RaytraceMaterial(SimpleMath::Vector4(0.4f, 0.4f, 1.0f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f), 1.0f));
-
-
-	DXRPipeLine::GetInstance().InitPipeLine();
 
 	m_pCommandList = DirectXGraphics::GetInstance().GetCommandList();
 
@@ -221,6 +200,7 @@ HRESULT RenderingPipeLine::Init()
 	auto cubemapMeshEffect = std::shared_ptr<MeshEffect>(new MeshEffect());
 	cubemapMeshEffect->Init("CubeMap_ModelVertexShader", "ModelPixelShader", "");
 	EffectManager::GetInstance().AddEffect(cubemapMeshEffect, "CubeMapMeshEffect");
+
 }
 
 void RenderingPipeLine::SetSkyBox(const std::string& texturePath, const SimpleMath::Vector3& scale)
