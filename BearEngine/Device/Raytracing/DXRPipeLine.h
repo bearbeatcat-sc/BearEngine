@@ -205,6 +205,15 @@ public:
 	void DrawDebugGUI();
 
 private:
+
+	enum GlobalRootParamter
+	{
+		GlobalRootParamter_TLAS = 0,
+		GlobalRootParamter_SceneParams,
+		GlobalRootParamter_SkyBoxTexture,
+		GlobalRootParamter_PointLight,
+	};
+	
 	ComPtr<ID3D12Resource> CreateBuffer(uint64_t size, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES initState, const D3D12_HEAP_PROPERTIES& heapProps);
 	void CreateTopLevelAS();
 	void CreateBLAS(std::shared_ptr<DXRMeshData> pDXRMeshData, std::shared_ptr<MeshData> pMeshData);

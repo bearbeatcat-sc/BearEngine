@@ -3,6 +3,7 @@
 #include "../../imgui/imgui.h"
 #include "DirectionalLight.h"
 #include "PointLight.h"
+#include "Device/DirectX/DirectXDevice.h"
 #include "Device/DirectX/Core/Buffer.h"
 
 LightManager::LightManager()
@@ -22,6 +23,23 @@ void LightManager::CreatePointLightResource()
 	
 	_PointLightsResource = std::make_shared<Buffer>();
 	_PointLightsResource->init(D3D12_HEAP_TYPE_UPLOAD, buffSize, D3D12_RESOURCE_STATE_GENERIC_READ);
+}
+
+void LightManager::UpdatePointLightResource()
+{
+	std::vector<PointLight::ConstPointLightDatas> constPointLightDatas;
+
+	for (auto light : m_PointLights)
+	{
+		constPointLightDatas.push_back(light->CreateLightData());
+	}
+
+	CD3DX12_RANGE readRange(0, 0);
+
+	void* data;
+	_PointLightsResource->getBuffer()->Map(0, &readRange, &data);
+	memcpy(data, constPointLightDatas.data(), constPointLightDatas.size() * sizeof(PointLight::ConstPointLightDatas));
+	_PointLightsResource->getBuffer()->Unmap(0, nullptr);
 }
 
 void LightManager::Init()
@@ -47,25 +65,54 @@ void LightManager::AddPointLight(std::shared_ptr<PointLight> light)
 	{
 		throw std::runtime_error("ポイントライトの登録数上限を超えました。");
 	}
+	
 	m_PointLights.push_back(light);
+	UpdatePointLightResource();
+}
+
+void LightManager::UpdatePointLight(int index, const SimpleMath::Vector3& position, const SimpleMath::Color& color,
+	float distance, float decay)
+{
+	if(m_PointLights.size() <= index)
+	{
+		throw std::runtime_error("登録したポイントライトのIndexを超えています。");
+	}
+
+	m_PointLights[index]->UpdatePointLight(position, color, distance, decay);
+
+	UpdatePointLightResource();
 }
 
 void LightManager::Draw()
 {
 	if (m_IsDebugMode)
 	{
+		bool isUpdate = false;
 		auto dir = m_DirectionalLight->GetDirection();
-
+		float dir_[3] = { dir.x,dir.y,dir.z };
+		
 		if (ImGui::BeginTabItem("LightProperties"))
 		{
-			ImGui::DragFloat("LightDirection X", &dir.x, 0.01f, -1.0f, 1.0f);
-			ImGui::DragFloat("LightDirection Y", &dir.y, 0.01f, -1.0f, 1.0f);
-			ImGui::DragFloat("LightDirection Z", &dir.z, 0.01f, -1.0f, 1.0f);
+			
+			ImGui::DragFloat3("LightDirection X", dir_, 0.01f, -1.0f, 1.0f);		
+			ImGui::Text("PointLights");
+
+
+			for(int i = 0; i < m_PointLights.size(); ++i)
+			{
+				isUpdate = m_PointLights[i]->DebugRender();
+			}
+
 			ImGui::EndTabItem();
 			m_DirectionalLight->UpdateDirectionalLight(dir, SimpleMath::Color(1, 1, 1, 1));
 		}
 
+		dir = SimpleMath::Vector3(dir_);
 
+		if(isUpdate)
+		{
+			UpdatePointLightResource();
+		}
 	}
 }
 
@@ -82,5 +129,26 @@ std::shared_ptr<PointLight> LightManager::GetPointLights(int index)
 std::shared_ptr<DirectionalLight> LightManager::GetDirectionalLight()
 {
 	return m_DirectionalLight;
+}
+
+ int LightManager::GetMaxPointLightCount()
+{
+	return _MaxPointLightCount;
+}
+
+bool LightManager::AllocateDescriptor(const D3D12_CPU_DESCRIPTOR_HANDLE& handle)
+{
+	D3D12_SHADER_RESOURCE_VIEW_DESC pointLightSRVDesc = {};
+
+	pointLightSRVDesc.Format = DXGI_FORMAT_UNKNOWN;
+	pointLightSRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	pointLightSRVDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+	pointLightSRVDesc.Buffer.FirstElement = 0;
+	pointLightSRVDesc.Buffer.NumElements = _MaxPointLightCount;
+	pointLightSRVDesc.Buffer.StructureByteStride = sizeof(PointLight::ConstPointLightDatas);
+
+	DirectXDevice::GetInstance().GetDevice()->CreateShaderResourceView(_PointLightsResource->getBuffer(), &pointLightSRVDesc, handle);
+
+	return true;
 }
 

@@ -554,6 +554,8 @@ void chs(inout Payload payload, in MyAttribute attribs)
     reflected.directDiffuse = diffuseColor;
     reflected.directSpecular = specularColor;
 
+    float3 light = gPointLights[0].position;
+
 	
     CalculateLight(directionalLight, worldNormal, diffuseColor, specularColor, roughness, reflected);
 
@@ -578,8 +580,8 @@ void chs(inout Payload payload, in MyAttribute attribs)
         if (isInShadow)
         {
             payload.color.rgb *= 0.5;
-        }		
-	}
+        }
+    }
 
 }
 

@@ -57,3 +57,4 @@ D3D12_GPU_VIRTUAL_ADDRESS Buffer::GetVirtualAdress()
 {
 	return m_Buffer->GetGPUVirtualAddress();
 }
+

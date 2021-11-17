@@ -4,7 +4,6 @@
 #include "Device/DirectX/DirectXInput.h"
 #include "Device/DirectX/DirectXGraphics.h"
 #include "Device/DirectX/Core/Model/MeshManager.h"
-#include "Device/DirectX/Core/ShaderManager.h"
 #include "Game_Object/ActorManager.h"
 #include "CameraAsistant.h"
 #include "GameObjects/Sphere.h"
@@ -15,7 +14,6 @@
 
 #include <imgui/imgui.h>
 #include <time.h>
-#include <Device/Lights/DirectionalLight.h>
 #include <Device/Lights/LightManager.h>
 #include <Device/DirectX/Core/Sounds/SoundManager.h>
 #include <Device/RenderingPipeline.h>
@@ -63,6 +61,9 @@ void MainGame::Init()
 	auto dir = SimpleMath::Vector3(-0.103f, -0.513f, -0.852f);
 	dirlight->UpdateDirectionalLight(dir, SimpleMath::Color(1, 1, 1, 1));
 
+	auto pointLight = std::make_shared<PointLight>(SimpleMath::Vector3(0, 0, 0), SimpleMath::Color(1, 1, 1, 1), 1.0f, 1.0f);
+	LightManager::GetInstance().AddPointLight(pointLight);
+	
 	m_CameraAsistant = new CameraAsistant();
 
 

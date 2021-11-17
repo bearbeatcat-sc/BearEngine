@@ -1,10 +1,16 @@
 ﻿#ifndef _LIGHT_MANAGER_H_
 #define _LIGHT_MANAGER_H_
 
-#include "../../Device/Singleton.h"
-#include <map>
 #include <vector>
 #include <memory>
+#include <d3d12.h>
+#include <SimpleMath.h>
+
+#include "../../Device/Singleton.h"
+#include "PointLight.h"
+#include "DirectionalLight.h"
+
+using namespace DirectX;
 
 class DirectionalLight;
 class PointLight;
@@ -19,10 +25,15 @@ public:
 	void Shutdown();
 	void SetDirectionalLight(std::shared_ptr<DirectionalLight> light);
 	void AddPointLight(std::shared_ptr<PointLight> light);
+	void UpdatePointLight(int index, const SimpleMath::Vector3& position, const SimpleMath::Color& color, float distance,
+		float decay);
 	void Draw();
 	void SetDebugMode(bool flag);
 	std::shared_ptr<PointLight> GetPointLights(int index);
 	std::shared_ptr<DirectionalLight> GetDirectionalLight();
+	int GetMaxPointLightCount();
+	bool AllocateDescriptor(const D3D12_CPU_DESCRIPTOR_HANDLE& handle);
+
 
 protected:
 	LightManager();
@@ -30,6 +41,7 @@ protected:
 
 private:
 	void CreatePointLightResource();
+	void UpdatePointLightResource();
 
 private:
 	std::vector<std::shared_ptr<PointLight>> m_PointLights;

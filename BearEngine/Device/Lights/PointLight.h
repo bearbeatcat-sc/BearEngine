@@ -11,9 +11,8 @@ class PointLight
 public:
 	PointLight(const SimpleMath::Vector3& position, const SimpleMath::Color& color, float distance, float decay);
 	~PointLight() = default;
-	std::shared_ptr<Buffer> GetBuffer();
 	void UpdatePointLight(const SimpleMath::Vector3& position, const SimpleMath::Color& color, float distance, float decay);
-
+	
 	struct ConstPointLightDatas
 	{
 		SimpleMath::Vector3 position;
@@ -23,12 +22,12 @@ public:
 		float decay;
 	};
 
-private:
-	bool GenerateLightBuffer();
-	bool UpdateLightBuffer();
+	const ConstPointLightDatas CreateLightData();
+	bool DebugRender();
 
 private:
-	std::shared_ptr<Buffer> m_LightDataBuffer;
+
+private:
 
 	SimpleMath::Vector3 _position;
 	SimpleMath::Color _color;

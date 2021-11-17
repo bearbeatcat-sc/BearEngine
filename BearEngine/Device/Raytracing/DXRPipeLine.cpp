@@ -16,6 +16,7 @@
 #include "Device/DirectX/Core/Model/MeshManager.h"
 #include "Device/Lights/DirectionalLight.h"
 #include "Device/Lights/LightManager.h"
+#include "Device/Lights/PointLight.h"
 #include "Utility/Camera.h"
 #include "Utility/CameraManager.h"
 #include "imgui/imgui.h"
@@ -100,7 +101,7 @@ DXRPipeLine::DXRPipeLine()
 	_meshDatas.clear();
 	_instances.clear();
 
-	_AllocateCount = 2;
+	_AllocateCount = 3;
 }
 
 bool DXRPipeLine::InitPipeLine()
@@ -365,7 +366,7 @@ void DXRPipeLine::Render(ID3D12Resource* pRenderResource, SkyBox* pSkyBox)
 	commandList->SetDescriptorHeaps(ARRAYSIZE(skyBoxHeaps), skyBoxHeaps);
 	auto skyboxHandle = skyBoxDescHeap->GetGPUDescriptorHandleForHeapStart();
 	skyboxHandle.ptr += DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	commandList->SetComputeRootDescriptorTable(2, skyboxHandle);
+	commandList->SetComputeRootDescriptorTable(GlobalRootParamter_SkyBoxTexture, skyboxHandle);
 
 
 
@@ -375,10 +376,14 @@ void DXRPipeLine::Render(ID3D12Resource* pRenderResource, SkyBox* pSkyBox)
 	// 加速構造のセット
 	D3D12_GPU_DESCRIPTOR_HANDLE srvHandle = _SrvUavHeap->GetGPUDescriptorHandleForHeapStart();
 	srvHandle.ptr += DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	commandList->SetComputeRootDescriptorTable(0, srvHandle);
+	commandList->SetComputeRootDescriptorTable(GlobalRootParamter_TLAS, srvHandle);
+
+	// ライトのセット
+	srvHandle.ptr += DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	commandList->SetComputeRootDescriptorTable(GlobalRootParamter_PointLight, srvHandle);
 
 	// カメラCBのセット
-	commandList->SetComputeRootConstantBufferView(1, _SceneCB->GetGPUVirtualAddress());
+	commandList->SetComputeRootConstantBufferView(GlobalRootParamter_SceneParams, _SceneCB->GetGPUVirtualAddress());
 	commandList->DispatchRays(&_dispathRaysDesc);
 
 	DirectXGraphics::GetInstance().ResourceBarrier(
@@ -889,6 +894,11 @@ void DXRPipeLine::CreateShaderResource()
 	srvHandle.ptr += DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	DirectXDevice::GetInstance().GetDevice()->CreateShaderResourceView(nullptr, &srvDesc, srvHandle);
 
+
+	// ポイントライト
+	srvHandle.ptr += DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	LightManager::GetInstance().AllocateDescriptor(srvHandle);
+
 }
 
 void DXRPipeLine::CreateResourceView(std::shared_ptr<MeshData> mesh)
@@ -989,7 +999,7 @@ void DXRPipeLine::DeleteInstance()
 
 void DXRPipeLine::CreateGlobalRootSignature()
 {
-	std::array<CD3DX12_ROOT_PARAMETER, 3> rootParams;
+	std::array<CD3DX12_ROOT_PARAMETER, 4> rootParams;
 
 	// TLAS を t0 レジスタに割り当てて使用する設定.
 	CD3DX12_DESCRIPTOR_RANGE descRangeTLAS;
@@ -998,11 +1008,15 @@ void DXRPipeLine::CreateGlobalRootSignature()
 	// CubeMapテクスチャをt1レジスタに
 	CD3DX12_DESCRIPTOR_RANGE descRangeSkyBoxTex;
 	descRangeSkyBoxTex.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
+	
+	// ポイントライト
+	CD3DX12_DESCRIPTOR_RANGE descPointLights;
+	descPointLights.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2);
 
-
-	rootParams[0].InitAsDescriptorTable(1, &descRangeTLAS);
-	rootParams[1].InitAsConstantBufferView(0); // b0
-	rootParams[2].InitAsDescriptorTable(1, &descRangeSkyBoxTex);
+	rootParams[GlobalRootParamter_TLAS].InitAsDescriptorTable(1, &descRangeTLAS);
+	rootParams[GlobalRootParamter_SceneParams].InitAsConstantBufferView(0); //b0
+	rootParams[GlobalRootParamter_SkyBoxTexture].InitAsDescriptorTable(1, &descRangeSkyBoxTex);
+	rootParams[GlobalRootParamter_PointLight].InitAsDescriptorTable(1, &descPointLights);
 
 	CD3DX12_STATIC_SAMPLER_DESC desc;
 	desc.Init(
