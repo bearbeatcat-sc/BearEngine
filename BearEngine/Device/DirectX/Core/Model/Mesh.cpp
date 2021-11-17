@@ -149,12 +149,12 @@ std::unordered_map<std::string, ComPtr<ID3D12Resource>>& Mesh::GetTextureBuff()
 	return m_MeshDatas->GetTextureBuff();
 }
 
-std::vector<MeshData::MaterialData>& Mesh::GetDrawMaterialDatas()
+std::vector<MaterialData>& Mesh::GetDrawMaterialDatas()
 {
 	return m_MeshDatas->GetDrawMaterialDatas();
 }
 
-std::unordered_map<std::string, MeshData::MaterialData>& Mesh::GetMaterialDatas()
+std::unordered_map<std::string, MaterialData>& Mesh::GetMaterialDatas()
 {
 	return m_MeshDatas->GetMaterialDatas();
 }

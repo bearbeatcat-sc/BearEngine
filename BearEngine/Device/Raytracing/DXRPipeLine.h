@@ -197,7 +197,7 @@ public:
 	void AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::wstring& hitGroupName, const std::string& meshDataName);
 	void AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::wstring& hitGroupName,
 	                 const std::string& meshDataName,
-	                 MeshData::RaytraceMaterial material);
+	                 PhysicsBaseMaterial material);
 
 	void Render(ID3D12Resource* pRenderResource,SkyBox* pSkyBox);
 	void CreateResourceView(std::shared_ptr<MeshData> mesh);

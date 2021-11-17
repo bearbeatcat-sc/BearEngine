@@ -2,7 +2,9 @@
 
 #include "../../Device/DirectX/Core/Buffer.h"
 
-DirectionalLight::DirectionalLight()
+
+DirectionalLight::DirectionalLight(const SimpleMath::Vector3& direction, const SimpleMath::Color& color)
+	:_isUpdate(true),_direction(direction),_color(color)
 {
 	GenerateLightBuffer();
 }
@@ -14,12 +16,25 @@ DirectionalLight::~DirectionalLight()
 std::shared_ptr<Buffer> DirectionalLight::GetBuffer()
 {
 	// 更新前のデータなら更新する
-	if (m_DirtyFlag)
+	if (_isUpdate)
 	{
 		UpdateLightBuffer();
 	}
 
 	return m_LightDataBuffer;
+}
+
+void DirectionalLight::UpdateDirectionalLight(const SimpleMath::Vector3& direction,const SimpleMath::Color& color)
+{
+	_direction = direction;
+	_color = color;
+
+	_isUpdate = true;
+}
+
+const SimpleMath::Vector3& DirectionalLight::GetDirection()
+{
+	return _direction;
 }
 
 bool DirectionalLight::GenerateLightBuffer()
@@ -31,8 +46,8 @@ bool DirectionalLight::GenerateLightBuffer()
 
 	ConstLightDatas* constMap = nullptr;
 	constBuff->Map(0, nullptr, (void**)&constMap);
-	constMap->LightColor = XMFLOAT3(m_LightColor.R(), m_LightColor.G(), m_LightColor.B());
-	constMap->LightDir = m_Direction;
+	constMap->LightColor = _color;
+	constMap->LightDir = _direction;
 	constBuff->Unmap(0, nullptr);
 
 
@@ -42,13 +57,14 @@ bool DirectionalLight::GenerateLightBuffer()
 bool DirectionalLight::UpdateLightBuffer()
 {
 	auto constBuff = m_LightDataBuffer->getBuffer();
+
 	ConstLightDatas* constMap = nullptr;
 	constBuff->Map(0, nullptr, (void**)&constMap);
-	constMap->LightColor = XMFLOAT3(m_LightColor.R(), m_LightColor.G(), m_LightColor.B());
-	constMap->LightDir = m_Direction;
+	constMap->LightColor = _color;
+	constMap->LightDir = _direction;
 	constBuff->Unmap(0, nullptr);
-
-	m_DirtyFlag = false;
+	
+	_isUpdate = false;
 
 	return true;
 }

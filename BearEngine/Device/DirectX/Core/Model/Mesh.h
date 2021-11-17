@@ -45,8 +45,8 @@ public:
 	const std::vector<std::shared_ptr<Buffer>>& GetCubeMapConstantBuffers();
 	std::unordered_map<std::string, std::shared_ptr<Buffer>>& GetMaterialBuffer();
 	std::unordered_map<std::string, ComPtr<ID3D12Resource>>& GetTextureBuff();
-	std::vector<MeshData::MaterialData>& GetDrawMaterialDatas();
-	std::unordered_map<std::string, MeshData::MaterialData>& GetMaterialDatas();
+	std::vector<MaterialData>& GetDrawMaterialDatas();
+	std::unordered_map<std::string, MaterialData>& GetMaterialDatas();
 	ID3D12Resource* GetWhiteTextureBuff();
 
 	std::shared_ptr<Buffer> GetIndexBuffer();

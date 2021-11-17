@@ -5,16 +5,16 @@ void GeometryGenerator::GenerateCubeMesh(MeshData::ModelData& modelData,DirectX:
 	//Mesh* mesh = new Mesh();
 	std::vector<MeshData::Vertex> vertices;
 	std::vector<UINT> indices;
-	std::unordered_map<std::string, MeshData::MaterialData> m_Mats;
+	std::unordered_map<std::string, MaterialData> m_Mats;
 	std::string curretMatName = "Mat01";
 	std::vector<XMFLOAT2> _uvs;
 
-	MeshData::Material mat;
+	Material mat;
 	mat.ambient = XMFLOAT3(1.0f, 1.0f, 1.0f);
 	mat.diffuse = XMFLOAT3(1.0f, 1.0f, 1.0f);
 
 
-	MeshData::MaterialData mat01;
+	MaterialData mat01;
 	mat01.material = mat;
 
 	vertices = {
@@ -169,16 +169,16 @@ void GeometryGenerator::GenerateCubeMeshDatas(MeshData::ModelData& modelData,Dir
 {
 	std::vector<MeshData::Vertex> vertices;
 	std::vector<UINT> indices;
-	std::unordered_map<std::string, MeshData::MaterialData> m_Mats;
+	std::unordered_map<std::string, MaterialData> m_Mats;
 	std::string curretMatName = "Mat01";
 	std::vector<XMFLOAT2> _uvs;
 
-	MeshData::Material mat;
+	Material mat;
 	mat.ambient = XMFLOAT3(1.0f, 1.0f, 1.0f);
 	mat.diffuse = XMFLOAT3(1.0f, 1.0f, 1.0f);
 
 
-	MeshData::MaterialData mat01;
+	MaterialData mat01;
 	mat01.material = mat;
 
 
@@ -288,16 +288,16 @@ void GeometryGenerator::GenerateSpehereMesh(MeshData::ModelData& modelData,float
 	//MeshData* mesh = new Mesh();
 	std::vector<MeshData::Vertex> vertices;
 	std::vector<UINT> indices;
-	std::unordered_map<std::string, MeshData::MaterialData> m_Mats;
+	std::unordered_map<std::string, MaterialData> m_Mats;
 	std::string curretMatName = "Mat01";
 	std::vector<XMFLOAT2> _uvs;
 
-	MeshData::Material mat;
+	Material mat;
 	mat.ambient = XMFLOAT3(1.0f, 1.0f, 1.0f);
 	mat.diffuse = XMFLOAT3(1.0f, 1.0f, 1.0f);
 
 
-	MeshData::MaterialData mat01;
+	MaterialData mat01;
 	mat01.material = mat;
 
 
@@ -393,16 +393,16 @@ void GeometryGenerator::GenerateSquareMesh(MeshData::ModelData& modelData)
 {
 	std::vector<MeshData::Vertex> vertices;
 	std::vector<UINT> indices;
-	std::unordered_map<std::string, MeshData::MaterialData> m_Mats;
+	std::unordered_map<std::string, MaterialData> m_Mats;
 	std::string curretMatName = "Mat01";
 	std::vector<XMFLOAT2> _uvs;
 
-	MeshData::Material mat;
+	Material mat;
 	mat.ambient = XMFLOAT3(1.0f, 1.0f, 1.0f);
 	mat.diffuse = XMFLOAT3(1.0f, 1.0f, 1.0f);
 
 
-	MeshData::MaterialData mat01;
+	MaterialData mat01;
 	mat01.material = mat;
 
 	MeshData::Vertex vert0 = { {0,0,1},{-5.0f,-5.0f,0.0f},{0,1} };
@@ -439,11 +439,11 @@ void GeometryGenerator::GenerateTriangleMesh(MeshData::ModelData& modelData, con
 {
 	std::vector<MeshData::Vertex> vertices;
 	std::vector<UINT> indices;
-	std::unordered_map<std::string, MeshData::MaterialData> m_Mats;
+	std::unordered_map<std::string, MaterialData> m_Mats;
 	std::string curretMatName = "Mat01";
 	std::vector<XMFLOAT2> _uvs;
 
-	MeshData::Material mat;
+	Material mat;
 	mat.ambient = XMFLOAT3(1.0f, 1.0f, 1.0f);
 	mat.diffuse = XMFLOAT3(1.0f, 1.0f, 1.0f);
 
@@ -455,7 +455,7 @@ void GeometryGenerator::GenerateTriangleMesh(MeshData::ModelData& modelData, con
 		indices.push_back(i);
 	}
 
-	MeshData::MaterialData mat01;
+	MaterialData mat01;
 	mat01.m_StartIndex = 0;
 	mat01.indexCount = indices.size();
 	mat01.material = mat;

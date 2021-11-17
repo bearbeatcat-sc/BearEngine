@@ -7,12 +7,9 @@
 #include "Utility/Camera.h"
 #include "../../../../Utility/CameraManager.h"
 #include "../EffectManager.h"
-#include "../../../Lights/Light.h"
 #include "../../../Lights/DirectionalLight.h"
 #include "../../../Lights/LightManager.h"
 #include "../ShaderManager.h"
-#include "../../../../Utility/LogSystem.h"
-#include "../../../../Utility/Math/Plane.h"
 #include "../../../../imgui/imgui.h"
 
 #include <assert.h>

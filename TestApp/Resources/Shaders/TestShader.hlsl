@@ -43,6 +43,15 @@ struct SceneCB
     float4 ambientColor;
 };
 
+struct PointLight
+{
+    float3 position;
+    float padding;
+    float4 color;
+    float distance;
+    float decay;
+};
+
 //”½ŽËŒõ
 struct ReflectedLight
 {
@@ -63,6 +72,7 @@ struct IncidentLight
 RaytracingAccelerationStructure gRtScene : register(t0);
 ConstantBuffer<SceneCB> gSceneParam : register(b0);
 TextureCube<float4> gBackGround : register(t1);
+StructuredBuffer<PointLight> gPointLights : register(t2);
 SamplerState gSampler : register(s0);
 
 // Local  RayGen

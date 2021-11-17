@@ -170,7 +170,7 @@ void DXRPipeLine::AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::ws
 	}
 
 	CreateResourceView(pMeshData);
-	auto dxrMesh = std::make_shared<DXRMeshData>(hitGroupName, pMeshData->GetRaytraceMaterial());
+	auto dxrMesh = std::make_shared<DXRMeshData>(hitGroupName, pMeshData->GetPhysicsBaseMaterial());
 
 	dxrMesh->m_ibView = pMeshData->m_ib_h_gpu_descriptor_handle;
 	dxrMesh->m_vbView = pMeshData->m_vb_h_gpu_descriptor_handle;
@@ -184,7 +184,7 @@ void DXRPipeLine::AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::ws
 	_meshDatas.push_back(dxrMesh);
 }
 
-void DXRPipeLine::AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::wstring& hitGroupName, const std::string& meshDataName,const MeshData::RaytraceMaterial material)
+void DXRPipeLine::AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::wstring& hitGroupName, const std::string& meshDataName,const PhysicsBaseMaterial material)
 {
 	if (pMeshData == nullptr)
 	{
@@ -801,7 +801,7 @@ void DXRPipeLine::CreateShaderTable()
 		uint8_t* pRecord = hitgroupStart;
 
 		auto cbAddress = _materialCB->GetGPUVirtualAddress();
-		auto stride = sizeof(MeshData::RaytraceMaterial);
+		auto stride = sizeof(PhysicsBaseMaterial);
 
 		for (auto mesh : _meshDatas)
 		{
@@ -1054,7 +1054,7 @@ void DXRPipeLine::CreateSceneCB()
 void DXRPipeLine::CreateMaterialCB()
 {
 	const UINT meshCount = _meshDatas.size();
-	std::vector<MeshData::RaytraceMaterial> mats;
+	std::vector<PhysicsBaseMaterial> mats;
 	mats.resize(meshCount);
 
 	for (int i = 0; i < meshCount; ++i)
@@ -1062,7 +1062,7 @@ void DXRPipeLine::CreateMaterialCB()
 		mats[i] = _meshDatas[i]->_Mat;
 	}
 
-	auto bufferSize = sizeof(MeshData::RaytraceMaterial) * mats.size();
+	auto bufferSize = sizeof(PhysicsBaseMaterial) * mats.size();
 
 	// アライメント調整
 	bufferSize = (bufferSize + 0xff) & ~0xff;

@@ -139,12 +139,12 @@ bool MeshData::GenerateMesh(std::wstring& modelName, std::vector<Vertex>& positi
 	return true;
 }
 
-void MeshData::SetRaytraceMaterial(const RaytraceMaterial& testMat)
+void MeshData::SetPhysicsBaseMaterial(const PhysicsBaseMaterial& testMat)
 {
 	_RaytraceMaterial = testMat;
 }
 
-const MeshData::RaytraceMaterial& MeshData::GetRaytraceMaterial()
+const PhysicsBaseMaterial& MeshData::GetPhysicsBaseMaterial()
 {
 	return _RaytraceMaterial;
 }
@@ -226,12 +226,12 @@ ComPtr<ID3D12Resource> MeshData::GetFirstTextureBuffer()
 	return m_Textures.at(m_MaterialDatas.begin()->first);
 }
 
-std::vector<MeshData::MaterialData>& MeshData::GetDrawMaterialDatas()
+std::vector<MaterialData>& MeshData::GetDrawMaterialDatas()
 {
 	return m_DrawMaterialDatas;
 }
 
-std::unordered_map<std::string, MeshData::MaterialData>& MeshData::GetMaterialDatas()
+std::unordered_map<std::string,MaterialData>& MeshData::GetMaterialDatas()
 {
 	return m_MaterialDatas;
 }
