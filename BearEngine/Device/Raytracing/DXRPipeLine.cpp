@@ -351,10 +351,7 @@ void DXRPipeLine::Render(ID3D12Resource* pRenderResource, SkyBox* pSkyBox)
 	// カメラ用のCBの更新
 	// 後でパラメータの変更したときだけ変えるようにする。
 	SceneCBUpdate();
-	void* dst = nullptr;
-	_SceneCB->Map(0, nullptr, &dst);
-	memcpy(dst, &m_sceneParam, sizeof(SceneParam));
-	_SceneCB->Unmap(0, nullptr);
+
 
 	commandList->SetPipelineState1(_PipelineState.Get());
 	commandList->SetComputeRootSignature(_globalRootSignature.Get());
@@ -1176,13 +1173,18 @@ void DXRPipeLine::SceneCBUpdate()
 
 	SimpleMath::Vector3 lightDir{ light->GetDirection() }; // ワールド座標系での光源の向き.
 
-	m_sceneParam.mtxView = camera->GetViewMat();
-	m_sceneParam.mtxProj = camera->GetProjectMat();
-	m_sceneParam.mtxViewInv = XMMatrixInverse(nullptr, m_sceneParam.mtxView);
-	m_sceneParam.mtxProjInv = XMMatrixInverse(nullptr, m_sceneParam.mtxProj);
+
+	m_sceneParam.mtxViewInv = XMMatrixInverse(nullptr, camera->GetViewMat());
+	m_sceneParam.mtxProjInv = XMMatrixInverse(nullptr, camera->GetProjectMat());
 
 	m_sceneParam.lightColor = XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f);
 	m_sceneParam.lightDirection = XMVector3Normalize(XMLoadFloat3(&lightDir));
 	m_sceneParam.ambientColor = XMVectorSet(0.4f, 0.4f, 0.4f, 0.0f);
+	m_sceneParam.pointLightCount = LightManager::GetInstance().GetPointLightCount();
+
+	void* dst = nullptr;
+	_SceneCB->Map(0, nullptr, &dst);
+	memcpy(dst, &m_sceneParam, sizeof(SceneParam));
+	_SceneCB->Unmap(0, nullptr);
 }
 

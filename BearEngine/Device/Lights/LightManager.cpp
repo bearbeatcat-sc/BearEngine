@@ -104,10 +104,13 @@ void LightManager::Draw()
 			}
 
 			ImGui::EndTabItem();
-			m_DirectionalLight->UpdateDirectionalLight(dir, SimpleMath::Color(1, 1, 1, 1));
+
+			auto vec3_dir = SimpleMath::Vector3(dir_);
+			vec3_dir.Normalize();
+			m_DirectionalLight->UpdateDirectionalLight(vec3_dir, SimpleMath::Color(1, 1, 1, 1));
 		}
 
-		dir = SimpleMath::Vector3(dir_);
+
 
 		if(isUpdate)
 		{
@@ -134,6 +137,11 @@ std::shared_ptr<DirectionalLight> LightManager::GetDirectionalLight()
  int LightManager::GetMaxPointLightCount()
 {
 	return _MaxPointLightCount;
+}
+
+int LightManager::GetPointLightCount()
+{
+	return m_PointLights.size();
 }
 
 bool LightManager::AllocateDescriptor(const D3D12_CPU_DESCRIPTOR_HANDLE& handle)

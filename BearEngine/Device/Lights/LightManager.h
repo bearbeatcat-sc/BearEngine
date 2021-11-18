@@ -32,6 +32,7 @@ public:
 	std::shared_ptr<PointLight> GetPointLights(int index);
 	std::shared_ptr<DirectionalLight> GetDirectionalLight();
 	int GetMaxPointLightCount();
+	int GetPointLightCount();
 	bool AllocateDescriptor(const D3D12_CPU_DESCRIPTOR_HANDLE& handle);
 
 

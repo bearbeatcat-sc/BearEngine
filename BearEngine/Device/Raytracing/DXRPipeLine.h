@@ -264,14 +264,12 @@ private:
 
 	struct SceneParam
 	{
-		SimpleMath::Matrix mtxView;       // ビュー行列.
-		SimpleMath::Matrix mtxProj;       // プロジェクション行列.
 		SimpleMath::Matrix mtxViewInv;    // ビュー逆行列.
 		SimpleMath::Matrix mtxProjInv;    // プロジェクション逆行列.
 		SimpleMath::Vector4 lightDirection; // 平行光源の向き.
 		SimpleMath::Vector4 lightColor;    // 平行光源色.
 		SimpleMath::Vector4 ambientColor;  // 環境光.
-		SimpleMath::Vector3 eyePos;
+		int pointLightCount;
 	};
 	SceneParam m_sceneParam;
 	ComPtr<ID3D12Resource> _SceneCB;

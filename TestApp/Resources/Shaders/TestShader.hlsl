@@ -34,13 +34,12 @@ struct Material
 
 struct SceneCB
 {
-    matrix mtxView;
-    matrix mtxProj;
     matrix mtxViewInv;
     matrix mtxProjInv;
     float4 lightDirection;
     float4 lightColor;
     float4 ambientColor;
+    int pointLightCount;
 };
 
 struct PointLight
@@ -65,6 +64,7 @@ struct IncidentLight
 {
     float3 direction;
     float3 color;
+    bool visible;
 };
 
 
@@ -292,6 +292,45 @@ Vertex GetHitVertex(MyAttribute attrib)
 	
 }
 
+// ライトの減衰率を計算
+float calclLightIntensity(const in float lightDistance,const in float cutoffDistance,const in float decayExponent)
+{
+	if(decayExponent > 0.0f)
+	{
+        return pow(saturate(-lightDistance / cutoffDistance + 1.0f), decayExponent);
+    }
+
+    return 1.0f;
+}
+
+bool isLightInRange(const in float lightDistance,const in float cutoffDistance)
+{
+    return any(float2(cutoffDistance == 0.0, lightDistance < cutoffDistance));
+}
+
+// ポイントライトによる入射光を計算する
+void GetPointLightIrradiance(const in PointLight pointLight, float3 position, out IncidentLight light)
+{
+    float3 l = pointLight.position - position;
+
+	// 入射方向
+    light.direction = normalize(l);
+
+    float lightDistance = length(l);
+
+    if (isLightInRange(lightDistance, pointLight.distance))
+    {
+        light.color = pointLight.color;
+        light.color *= calclLightIntensity(lightDistance, pointLight.distance, pointLight.decay);
+        light.visible = true;
+    }
+    else
+    {
+        light.color = float3(0.0f, 0.0f, 0.0f);
+        light.visible = false;
+    }
+}
+
 // マイクロファセットのGGX分布関数
 float D_GGX(float a, float dotNH)
 {
@@ -403,7 +442,7 @@ float3 phongShading(float3 albedo, float4 _spec, float3 vertexNormal, float3 ver
 }
 
 
-void CalculateLight(IncidentLight incident_light, float3 normal, float3 diffuseColor, float3 specularColor, float roughness, inout ReflectedLight reflected)
+void CalculateLight(in IncidentLight incident_light, float3 normal, float3 diffuseColor, float3 specularColor, float roughness, inout ReflectedLight reflected)
 {
     float dotNL = saturate(dot(normal, incident_light.direction));
 
@@ -413,8 +452,8 @@ void CalculateLight(IncidentLight incident_light, float3 normal, float3 diffuseC
 	// 放射輝度にCosを掛けて放射照度に変換
     irradiance *= PI;
 
-    float diffuse = saturate(dot(-gSceneParam.lightDirection.xyz, normal));
-    float3 _diffuseColor = diffuse * diffuseColor;
+    //float diffuse = saturate(dot(-gSceneParam.lightDirection.xyz, normal));
+    //float3 _diffuseColor = diffuse * diffuseColor;
 
     reflected.directDiffuse += irradiance * NormalizeDisneyDiffuse(diffuseColor, incident_light, normal, roughness);
     reflected.directSpecular += irradiance * specularBRDF(incident_light, normal, specularColor, roughness);
@@ -534,35 +573,44 @@ void chs(inout Payload payload, in MyAttribute attribs)
     float transmission = matBuffer.transmission;
 	
     bool isRefract = (transmission < 1.0f) ? true : false;
-
-    //metallic.w = 0.6f;
-    //roughness = 0.8f;
-	
-	// 金属に近いほど、鏡面反射の割合を高くする
-    //float3 reflectionColor = float3(1, 1, 1);
-
-
 		
     float3 diffuseColor = lerp(albedo.rgb, float3(0.0f, 0.0f, 0.0f), metallic.w);
     float3 specularColor = lerp(float3(0.04f, 0.04f, 0.04f), albedo.rgb, metallic.w);
 
-    IncidentLight directionalLight;
-    directionalLight.direction = -gSceneParam.lightDirection.xyz;
-    directionalLight.color = gSceneParam.lightColor.rgb;
+    IncidentLight light;
 	
     ReflectedLight reflected;
-    reflected.directDiffuse = diffuseColor;
-    reflected.directSpecular = specularColor;
+    reflected.directDiffuse = float3(0, 0, 0);
+    reflected.directSpecular = float3(0, 0, 0);
 
-    float3 light = gPointLights[0].position;
+    const int pointLightCount = gSceneParam.pointLightCount;
 
+
+    // ポイントライトの計算
+
+    for (int i = 0; i < pointLightCount; ++i)
+    {
+        GetPointLightIrradiance(gPointLights[i], worldPosition, light);
+
+        if (light.visible)
+        {
+            CalculateLight(light, worldNormal, diffuseColor, specularColor, roughness, reflected);
+        }
+    }
 	
-    CalculateLight(directionalLight, worldNormal, diffuseColor, specularColor, roughness, reflected);
+
+	// ディレクショナルライトの計算
+
+    light.direction = -gSceneParam.lightDirection.xyz;
+    light.color = float3(1, 1, 1);
+    light.visible = true;
+    CalculateLight(light, worldNormal, diffuseColor, specularColor, roughness, reflected);
+	
 
     if (isRefract)
     {
         float3 reflractionColor = Refraction(vtx.pos, vtx.normal, payload.recursive, roughness, refract);
-        payload.color = lerp(reflected.directDiffuse + (reflected.directSpecular), reflractionColor, 1.0f - transmission);
+        payload.color = lerp(reflected.directDiffuse + (reflected.directSpecular), reflractionColor + (reflected.directSpecular), 1.0f - transmission);
 
     }
 	else
@@ -576,6 +624,7 @@ void chs(inout Payload payload, in MyAttribute attribs)
         isInShadow = ShotShadowRay(worldPosition, shadowRayDir);
 	
         payload.color = reflected.directDiffuse + (reflected.directSpecular * (reflectionColor));
+
 
         if (isInShadow)
         {
