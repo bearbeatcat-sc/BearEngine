@@ -18,6 +18,8 @@
 #include <Device/DirectX/Core/Sounds/SoundManager.h>
 #include <Device/RenderingPipeline.h>
 
+#include "Device/Raytracing/DXRMeshData.h"
+
 
 MainGame::MainGame()
 	:Game(L"TestApp", 1920, 1080)
@@ -39,18 +41,19 @@ void MainGame::Init()
 	auto sphereMeshData = MeshManager::GetInstance().FindSpehere(12);
 	//sphereMeshData->SetRaytraceMaterial(MeshData::RaytraceMaterial(SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f), 1.0f));
 
-	auto blenderMonkey = MeshManager::GetInstance().GetMeshData("BlenderMonkey");
-	blenderMonkey->SetPhysicsBaseMaterial(PhysicsBaseMaterial(SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f), SimpleMath::Vector4(1.0f, 10.0f, 1.0f, 1.0f), 1.0f));
+	auto blenderMonkyMeshData = MeshManager::GetInstance().GetMeshData("BlenderMonkey");
+	blenderMonkyMeshData->SetPhysicsBaseMaterial(PhysicsBaseMaterial(SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f), SimpleMath::Vector4(1.0f, 10.0f, 1.0f, 1.0f), 1.0f));
 
 
 	//sphereMeshData->SetTestMaterial(MeshData::TestMat{ true });
+	_blenderMonkyMaterial = PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.6f), 0.8f, 1.0f, 1.22f);
 
 
 	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "WhiteCube", PhysicsBaseMaterial(SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f), 0.1f));
 	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "GrayCube", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f), 0.1));
 
-	DXRPipeLine::GetInstance().AddMeshData(sphereMeshData, L"HitGroup", "Sphere", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.6f), 0.8f, 0.1f, 2.22f));
-	DXRPipeLine::GetInstance().AddMeshData(blenderMonkey, L"HitGroup", "Sphere2", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.6f), 0.8f, 0.2f,1.22f));
+	DXRPipeLine::GetInstance().AddMeshData(blenderMonkyMeshData, L"HitGroup", "Sphere", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f), 0.2f));
+	_blenderMonkey = DXRPipeLine::GetInstance().AddMeshData(blenderMonkyMeshData, L"HitGroup", "Sphere2", _blenderMonkyMaterial);
 
 	// 必ず、メッシュデータを追加してからパイプラインの初期化を行う。
 	DXRPipeLine::GetInstance().InitPipeLine();
@@ -66,7 +69,7 @@ void MainGame::Init()
 
 	auto pointLight1 = std::make_shared<PointLight>(SimpleMath::Vector3(1, 0, 0), SimpleMath::Color(1, 1, 1, 1), 100.0f, 1.0f);
 	LightManager::GetInstance().AddPointLight(pointLight1);
-	
+
 	m_CameraAsistant = new CameraAsistant();
 
 
@@ -123,19 +126,19 @@ void MainGame::Init()
 
 
 			bool flag = ((grid_size_x * z) + x) % 2;
-			auto cube = new Cube(basePos + (SimpleMath::Vector3(x, 0, z) * 2.0f), SimpleMath::Vector3(1.0f, 1, 1.0f),300.0f, flag,false);
+			auto cube = new Cube(basePos + (SimpleMath::Vector3(x, 0, z) * 2.0f), SimpleMath::Vector3(1.0f, 1, 1.0f), 300.0f, flag, false);
 			ActorManager::GetInstance().AddActor(cube);
 		}
 
 
 	}
-	
-	auto wall = new Cube(SimpleMath::Vector3(1.5f, 3.0f, 10.0f),SimpleMath::Vector3(grid_size_x,6,1),300.0f,true,false);
+
+	auto wall = new Cube(SimpleMath::Vector3(1.5f, 3.0f, 10.0f), SimpleMath::Vector3(grid_size_x, 6, 1), 300.0f, true, false);
 	ActorManager::GetInstance().AddActor(wall);
 
 	auto sphere = new Sphere(SimpleMath::Vector3(0, 0.0f, 6.0f), Sphere::SphereType_Normal);
 	sphere->SetScale(SimpleMath::Vector3(1.0f));
-	sphere->SetRotation(Quaternion::CreateFromYawPitchRoll(3.0f,0.0f,0.0f));
+	sphere->SetRotation(Quaternion::CreateFromYawPitchRoll(3.0f, 0.0f, 0.0f));
 	ActorManager::GetInstance().AddActor(sphere);
 
 	auto sphere2 = new Sphere(SimpleMath::Vector3(6.0f, 0.0f, 3.0f), Sphere::SphereType_NormalLowPoly);
@@ -175,8 +178,27 @@ void MainGame::Init()
 void MainGame::Update()
 {
 	m_CameraAsistant->Update();
+	
+	ImGui::Begin("BlenderMonkeyMaterial", nullptr);
+	float transmission = _blenderMonkyMaterial._transmission;
+	float refract = _blenderMonkyMaterial._refract;
 
-	if(!_IsGenerate)
+	if (ImGui::DragFloat("Transmission", &transmission, 0.01f, 0.0f, 1.0f))
+	{
+		_blenderMonkyMaterial._transmission = transmission;
+
+		_blenderMonkey->UpdateMaterial(_blenderMonkyMaterial);
+	}
+	if (ImGui::DragFloat("Refract", &refract, 0.01f, 1.0f, 3.0f))
+	{
+		_blenderMonkyMaterial._refract = refract;
+
+		_blenderMonkey->UpdateMaterial(_blenderMonkyMaterial);
+	}
+
+	ImGui::End();
+
+	if (!_IsGenerate)
 	{
 		_AddTimer->Update();
 		if (_AddTimer->IsTime())
@@ -189,7 +211,8 @@ void MainGame::Update()
 	}
 
 
-	
+
+
 	//_GenerateTimer->Update();
 	//if(_GenerateTimer->IsTime())
 	//{

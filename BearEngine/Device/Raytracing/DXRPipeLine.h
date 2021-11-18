@@ -194,8 +194,8 @@ public:
 	bool Init();
 
 	std::shared_ptr<DXRInstance> AddInstance(const std::string& meshDataName, const int hitGroupIndex);
-	void AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::wstring& hitGroupName, const std::string& meshDataName);
-	void AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::wstring& hitGroupName,
+	std::shared_ptr<DXRMeshData> AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::wstring& hitGroupName, const std::string& meshDataName);
+	std::shared_ptr<DXRMeshData> AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::wstring& hitGroupName,
 	                 const std::string& meshDataName,
 	                 PhysicsBaseMaterial material);
 
@@ -203,6 +203,8 @@ public:
 	void CreateResourceView(std::shared_ptr<MeshData> mesh);
 	void DeleteInstance();
 	void DrawDebugGUI();
+	void OnUpdateMaterial();
+	void UpdateMaterial();
 
 private:
 
@@ -230,6 +232,8 @@ private:
 	void CreateShaderResource();
 	void CreateGlobalRootSignature();
 	void CreateSceneCB();
+	
+	void UpdateMaterialCB();
 	void CreateMaterialCB();
 	void CreateDescriptorHeaps();
 	
@@ -311,4 +315,6 @@ private:
 	UINT _IncSize;
 
 	const UINT _MaxInstanceCount = 300;
+
+	bool _IsUpdateMaterial;
 };

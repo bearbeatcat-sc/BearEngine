@@ -163,7 +163,7 @@ std::shared_ptr<DXRInstance> DXRPipeLine::AddInstance(const std::string& meshDat
 	return instance;
 }
 
-void DXRPipeLine::AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::wstring& hitGroupName, const std::string& meshDataName)
+std::shared_ptr<DXRMeshData> DXRPipeLine::AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::wstring& hitGroupName, const std::string& meshDataName)
 {
 	if(pMeshData == nullptr)
 	{
@@ -183,9 +183,11 @@ void DXRPipeLine::AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::ws
 	CreateBLAS(dxrMesh, pMeshData);
 
 	_meshDatas.push_back(dxrMesh);
+
+	return dxrMesh;
 }
 
-void DXRPipeLine::AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::wstring& hitGroupName, const std::string& meshDataName,const PhysicsBaseMaterial material)
+std::shared_ptr<DXRMeshData> DXRPipeLine::AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::wstring& hitGroupName, const std::string& meshDataName,const PhysicsBaseMaterial material)
 {
 	if (pMeshData == nullptr)
 	{
@@ -206,6 +208,8 @@ void DXRPipeLine::AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::ws
 	CreateBLAS(dxrMesh, pMeshData);
 
 	_meshDatas.push_back(dxrMesh);
+
+	return dxrMesh;
 }
 
 
@@ -343,6 +347,20 @@ void DXRPipeLine::DrawDebugGUI()
 	}
 }
 
+void DXRPipeLine::OnUpdateMaterial()
+{
+	_IsUpdateMaterial = true;
+}
+
+void DXRPipeLine::UpdateMaterial()
+{
+	if (!_IsUpdateMaterial)return;
+
+	UpdateMaterialCB();
+
+	_IsUpdateMaterial = false;
+}
+
 void DXRPipeLine::Render(ID3D12Resource* pRenderResource, SkyBox* pSkyBox)
 {
 	auto commandList = DirectXGraphics::GetInstance().GetCommandList();
@@ -351,7 +369,7 @@ void DXRPipeLine::Render(ID3D12Resource* pRenderResource, SkyBox* pSkyBox)
 	// カメラ用のCBの更新
 	// 後でパラメータの変更したときだけ変えるようにする。
 	SceneCBUpdate();
-
+	UpdateMaterial();
 
 	commandList->SetPipelineState1(_PipelineState.Get());
 	commandList->SetComputeRootSignature(_globalRootSignature.Get());
@@ -1060,6 +1078,29 @@ void DXRPipeLine::CreateSceneCB()
 	sceneCBSize = (sceneCBSize + 0xff) & ~0xff;
 	_SceneCB = CreateBuffer(sceneCBSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ,
 		uploadHeapProps);
+}
+
+// メッシュ登録数が多い場合、処理が重くなる可能性
+void DXRPipeLine::UpdateMaterialCB()
+{
+	const UINT meshCount = _meshDatas.size();
+	std::vector<PhysicsBaseMaterial> mats;
+	mats.resize(meshCount);
+
+	for (int i = 0; i < meshCount; ++i)
+	{
+		mats[i] = _meshDatas[i]->_Mat;
+	}
+
+	auto bufferSize = sizeof(PhysicsBaseMaterial) * mats.size();
+
+	// アライメント調整
+	bufferSize = (bufferSize + 0xff) & ~0xff;
+
+	void* mapped = nullptr;
+	_materialCB->Map(0, nullptr, &mapped);
+	memcpy(mapped, mats.data(), bufferSize);
+	_materialCB->Unmap(0, nullptr);
 }
 
 void DXRPipeLine::CreateMaterialCB()

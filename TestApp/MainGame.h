@@ -4,6 +4,7 @@
 #include <memory>
 #include <list>
 
+#include "Device/Raytracing/PhysicsBaseMaterial.h"
 
 class Camera;
 class Actor;
@@ -15,6 +16,7 @@ class ParticleEmitter;
 
 class CollisionTreeManager;
 class InkManager;
+class DXRMeshData;
 
 class MainGame
 	:public Game
@@ -36,4 +38,7 @@ private:
 	int _GenerateCount;
 
 	bool _IsGenerate;
+
+	PhysicsBaseMaterial _blenderMonkyMaterial;
+	std::shared_ptr<DXRMeshData> _blenderMonkey;
 };

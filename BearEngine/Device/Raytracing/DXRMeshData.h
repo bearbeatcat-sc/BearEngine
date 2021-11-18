@@ -15,6 +15,12 @@ public:
 	};
 	
 	~DXRMeshData() = default;
+
+	void UpdateMaterial(const PhysicsBaseMaterial& mat)
+	{
+		_Mat = mat;
+		DXRPipeLine::GetInstance().OnUpdateMaterial();
+	}
 	
 	D3D12_GPU_DESCRIPTOR_HANDLE m_vbView;
 	D3D12_GPU_DESCRIPTOR_HANDLE m_ibView;
