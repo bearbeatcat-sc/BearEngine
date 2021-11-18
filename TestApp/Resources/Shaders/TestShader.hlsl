@@ -309,7 +309,7 @@ bool isLightInRange(const in float lightDistance,const in float cutoffDistance)
 }
 
 // ポイントライトによる入射光を計算する
-void GetPointLightIrradiance(const in PointLight pointLight, float3 position, out IncidentLight light)
+void GetPointLightIrradiance(const in PointLight pointLight, float3 position,inout IncidentLight light)
 {
     float3 l = pointLight.position - position;
 
@@ -580,8 +580,8 @@ void chs(inout Payload payload, in MyAttribute attribs)
     IncidentLight light;
 	
     ReflectedLight reflected;
-    reflected.directDiffuse = float3(0, 0, 0);
-    reflected.directSpecular = float3(0, 0, 0);
+    reflected.directDiffuse = diffuseColor;
+    reflected.directSpecular = specularColor;
 
     const int pointLightCount = gSceneParam.pointLightCount;
 
@@ -602,8 +602,9 @@ void chs(inout Payload payload, in MyAttribute attribs)
 	// ディレクショナルライトの計算
 
     light.direction = -gSceneParam.lightDirection.xyz;
-    light.color = float3(1, 1, 1);
+    light.color = gSceneParam.lightColor;
     light.visible = true;
+
     CalculateLight(light, worldNormal, diffuseColor, specularColor, roughness, reflected);
 	
 
@@ -623,7 +624,7 @@ void chs(inout Payload payload, in MyAttribute attribs)
 
         isInShadow = ShotShadowRay(worldPosition, shadowRayDir);
 	
-        payload.color = reflected.directDiffuse + (reflected.directSpecular * (reflectionColor));
+        payload.color = reflected.directDiffuse + (reflected.directSpecular * reflectionColor);
 
 
         if (isInShadow)

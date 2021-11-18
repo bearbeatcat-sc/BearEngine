@@ -1178,7 +1178,7 @@ void DXRPipeLine::SceneCBUpdate()
 	m_sceneParam.mtxProjInv = XMMatrixInverse(nullptr, camera->GetProjectMat());
 
 	m_sceneParam.lightColor = XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f);
-	m_sceneParam.lightDirection = XMVector3Normalize(XMLoadFloat3(&lightDir));
+	m_sceneParam.lightDirection = SimpleMath::Vector4(lightDir.x, lightDir.y, lightDir.z, 1);
 	m_sceneParam.ambientColor = XMVectorSet(0.4f, 0.4f, 0.4f, 0.0f);
 	m_sceneParam.pointLightCount = LightManager::GetInstance().GetPointLightCount();
 

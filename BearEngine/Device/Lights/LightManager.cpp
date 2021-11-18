@@ -100,7 +100,10 @@ void LightManager::Draw()
 
 			for(int i = 0; i < m_PointLights.size(); ++i)
 			{
-				isUpdate = m_PointLights[i]->DebugRender();
+				if(m_PointLights[i]->DebugRender(i))
+				{
+					isUpdate = true;
+				}
 			}
 
 			ImGui::EndTabItem();
@@ -108,9 +111,16 @@ void LightManager::Draw()
 			auto vec3_dir = SimpleMath::Vector3(dir_);
 			vec3_dir.Normalize();
 			m_DirectionalLight->UpdateDirectionalLight(vec3_dir, SimpleMath::Color(1, 1, 1, 1));
+
+			if (ImGui::Button("Add PointLight", ImVec2(30, 30)))
+			{
+				auto spotLight = std::make_shared<PointLight>(SimpleMath::Vector3(0, 0, 0), SimpleMath::Color(1, 1, 1, 1), 10.0f, 1.0f);
+				AddPointLight(spotLight);
+
+				isUpdate = true;
+			}
+
 		}
-
-
 
 		if(isUpdate)
 		{

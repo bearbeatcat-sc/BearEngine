@@ -46,8 +46,8 @@ void MainGame::Init()
 	//sphereMeshData->SetTestMaterial(MeshData::TestMat{ true });
 
 
-	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "WhiteCube", PhysicsBaseMaterial(SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.5f), 0.1f));
-	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "GrayCube", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.5f), 0.1));
+	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "WhiteCube", PhysicsBaseMaterial(SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f), 0.1f));
+	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "GrayCube", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f), 0.1));
 
 	DXRPipeLine::GetInstance().AddMeshData(sphereMeshData, L"HitGroup", "Sphere", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.6f), 0.8f, 0.1f, 2.22f));
 	DXRPipeLine::GetInstance().AddMeshData(blenderMonkey, L"HitGroup", "Sphere2", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.6f), 0.8f, 0.2f,1.22f));
@@ -61,8 +61,11 @@ void MainGame::Init()
 	auto dir = SimpleMath::Vector3(-0.103f, -0.513f, -0.852f);
 	dirlight->UpdateDirectionalLight(dir, SimpleMath::Color(1, 1, 1, 1));
 
-	auto pointLight = std::make_shared<PointLight>(SimpleMath::Vector3(0, 0, 0), SimpleMath::Color(1, 1, 1, 1), 1.0f, 1.0f);
+	auto pointLight = std::make_shared<PointLight>(SimpleMath::Vector3(0, 0, 0), SimpleMath::Color(1, 1, 1, 1), 100.0f, 1.0f);
 	LightManager::GetInstance().AddPointLight(pointLight);
+
+	auto pointLight1 = std::make_shared<PointLight>(SimpleMath::Vector3(1, 0, 0), SimpleMath::Color(1, 1, 1, 1), 100.0f, 1.0f);
+	LightManager::GetInstance().AddPointLight(pointLight1);
 	
 	m_CameraAsistant = new CameraAsistant();
 
@@ -140,31 +143,31 @@ void MainGame::Init()
 	sphere2->SetRotation(Quaternion::CreateFromYawPitchRoll(-2.4f, 0.0f, 0.0f));
 	ActorManager::GetInstance().AddActor(sphere2);
 
-	for (int i = 0; i < 241; ++i)
-	{
-		auto pos_x = Random::GetRandom(-20.0f, 20.0f);
-		auto pos_z = Random::GetRandom(-5.0f, 10.0f);
-		float pos_y = 2.0f;
+	//for (int i = 0; i < 241; ++i)
+	//{
+	//	auto pos_x = Random::GetRandom(-20.0f, 20.0f);
+	//	auto pos_z = Random::GetRandom(-5.0f, 10.0f);
+	//	float pos_y = 2.0f;
 
-		float rotateX = Random::GetRandom(-1.0f, 1.0f);
-		float rotateY = Random::GetRandom(-1.0f, 1.0f);
-		float rotateZ = Random::GetRandom(-1.0f, 1.0f);
+	//	float rotateX = Random::GetRandom(-1.0f, 1.0f);
+	//	float rotateY = Random::GetRandom(-1.0f, 1.0f);
+	//	float rotateZ = Random::GetRandom(-1.0f, 1.0f);
 
-		float scale = 0.4f;
+	//	float scale = 0.4f;
 
-		//auto sphere = new Sphere(SimpleMath::Vector3((i / 8) * 1.0f, pos_y, (i % 8) * 1.0f), Sphere::SphereType_Normal);
-		auto sphere = new Sphere(SimpleMath::Vector3(pos_x,pos_y,pos_z), Sphere::SphereType_Normal);
-		sphere->SetScale(SimpleMath::Vector3(scale));
-		sphere->SetRotation(Quaternion::CreateFromYawPitchRoll(rotateX, rotateY, rotateZ));
-		ActorManager::GetInstance().AddActor(sphere);
+	//	//auto sphere = new Sphere(SimpleMath::Vector3((i / 8) * 1.0f, pos_y, (i % 8) * 1.0f), Sphere::SphereType_Normal);
+	//	auto sphere = new Sphere(SimpleMath::Vector3(pos_x,pos_y,pos_z), Sphere::SphereType_Normal);
+	//	sphere->SetScale(SimpleMath::Vector3(scale));
+	//	sphere->SetRotation(Quaternion::CreateFromYawPitchRoll(rotateX, rotateY, rotateZ));
+	//	ActorManager::GetInstance().AddActor(sphere);
 
-		//_GenerateCount++;
+	//	//_GenerateCount++;
 
-		//if (_GenerateCount >= _MaxGenerateCount)
-		//{
-		//	_IsGenerate = false;
-		//}
-	}
+	//	//if (_GenerateCount >= _MaxGenerateCount)
+	//	//{
+	//	//	_IsGenerate = false;
+	//	//}
+	//}
 
 }
 

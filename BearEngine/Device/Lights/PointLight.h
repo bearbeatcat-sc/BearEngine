@@ -23,7 +23,7 @@ public:
 	};
 
 	const ConstPointLightDatas CreateLightData();
-	bool DebugRender();
+	bool DebugRender(int index);
 
 private:
 
