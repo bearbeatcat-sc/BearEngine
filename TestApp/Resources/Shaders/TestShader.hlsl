@@ -579,6 +579,7 @@ void chs(inout Payload payload, in MyAttribute attribs)
     float transmission = matBuffer.transmission;
 	
     bool isRefract = (transmission < 1.0f) ? true : false;
+    bool isReflection = (metallic.w > 0.0f) ? true : false;
 		
     float3 diffuseColor = lerp(albedo.rgb, float3(0.0f, 0.0f, 0.0f), metallic.w);
     float3 specularColor = lerp(float3(0.04f, 0.04f, 0.04f), albedo.rgb, metallic.w);
@@ -620,7 +621,7 @@ void chs(inout Payload payload, in MyAttribute attribs)
         payload.color = lerp(reflected.directDiffuse + (reflected.directSpecular), reflractionColor + (reflected.directSpecular), 1.0f - transmission);
 
     }
-	else
+    else if (isReflection)
     {
         float3 reflectionColor = Reflection(vtx.pos, vtx.normal, payload.recursive, roughness);
         reflectionColor = lerp(float3(0.04f, 0.04f, 0.04f), reflectionColor.rgb, metallic.w);
@@ -641,6 +642,25 @@ void chs(inout Payload payload, in MyAttribute attribs)
         {
             payload.color.rgb *= 0.5;
         }
+    	
+        return;
+    }
+
+    bool isInShadow = false;
+    float3 shadowRayDir = -gSceneParam.lightDirection;
+    isInShadow = CheckShadow(shadowRayDir, worldPosition);
+
+    for (int i = 0; i < pointLightCount; ++i)
+    {
+        shadowRayDir = normalize(gPointLights[i].position.xyz - worldPosition.xyz);
+        isInShadow = CheckShadow(shadowRayDir, worldPosition);
+    }
+			
+    payload.color = reflected.directDiffuse + reflected.directSpecular;
+
+    if (isInShadow)
+    {
+        payload.color.rgb *= 0.5;
     }
 
 }

@@ -5,8 +5,8 @@
 #include "Utility/Time.h"
 #include "Utility/Timer.h"
 
-Cube::Cube(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& scale, float destroyTime, bool isWhite, bool moveFlag)
-	:_initScale(scale), _IsGenerate(false), _IsMove(moveFlag), _IsWhite(isWhite)
+Cube::Cube(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& scale, float destroyTime, const std::string& meshName, bool moveFlag)
+	:_initScale(scale), _IsGenerate(false), _IsMove(moveFlag), _DXRMeshName(meshName)
 {
 	SetPosition(pos);
 	SetScale(scale);
@@ -20,18 +20,18 @@ Cube::Cube(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& scale, flo
 void Cube::UpdateActor()
 {
 	if (!_IsMove)return;
-	
+
 	_Acc += SimpleMath::Vector3(0, -2.0f, 0) * Time::DeltaTime;
 	m_Position += Time::DeltaTime * _Acc;
 
-	if(!_IsGenerate)
+	if (!_IsGenerate)
 	{
 		Generate();
 		return;
 	}
-	
+
 	_DestroyTimer->Update();
-	if(_DestroyTimer->IsTime())
+	if (_DestroyTimer->IsTime())
 	{
 		_instance->Destroy();
 		Destroy();
@@ -46,8 +46,8 @@ void Cube::Generate()
 {
 	_GenerateTimer->Update();
 
-	if(_GenerateTimer->IsTime())
-	{		
+	if (_GenerateTimer->IsTime())
+	{
 		_GenerateTimer->Reset();
 		_IsGenerate = true;
 		return;
@@ -60,14 +60,8 @@ void Cube::Generate()
 
 void Cube::Init()
 {
-	if(_IsWhite)
-	{
-		_instance = DXRPipeLine::GetInstance().AddInstance("WhiteCube", 0);		
-	}
-	else
-	{
-		_instance = DXRPipeLine::GetInstance().AddInstance("GrayCube", 0);
-	}
+	_instance = DXRPipeLine::GetInstance().AddInstance(_DXRMeshName, 0);
+
 
 	auto mtx = SimpleMath::Matrix::CreateFromQuaternion(m_Rotation) * SimpleMath::Matrix::CreateScale(m_Scale) * SimpleMath::Matrix::CreateTranslation(m_Position);
 	_instance->SetMatrix(mtx);

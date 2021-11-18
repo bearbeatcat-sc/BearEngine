@@ -51,6 +51,7 @@ void MainGame::Init()
 
 	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "WhiteCube", PhysicsBaseMaterial(SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f), 0.1f));
 	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "GrayCube", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f), 0.1));
+	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "RoughCube", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.0f), 0.5f));
 
 	DXRPipeLine::GetInstance().AddMeshData(blenderMonkyMeshData, L"HitGroup", "Sphere", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f), 0.2f));
 	_blenderMonkey = DXRPipeLine::GetInstance().AddMeshData(blenderMonkyMeshData, L"HitGroup", "Sphere2", _blenderMonkyMaterial);
@@ -61,13 +62,13 @@ void MainGame::Init()
 
 
 	auto dirlight = LightManager::GetInstance().GetDirectionalLight();
-	auto dir = SimpleMath::Vector3(-0.103f, -0.513f, -0.852f);
+	auto dir = SimpleMath::Vector3(-0.169f, -0.840, -0.515);
 	dirlight->UpdateDirectionalLight(dir, SimpleMath::Color(1, 1, 1, 1));
 
-	auto pointLight = std::make_shared<PointLight>(SimpleMath::Vector3(0, 0, 0), SimpleMath::Color(1, 1, 1, 1), 100.0f, 1.0f);
+	auto pointLight = std::make_shared<PointLight>(SimpleMath::Vector3(5.520, 2.310, -2.160), SimpleMath::Color(0, 1, 0, 1), 100.0f, 1.0f);
 	LightManager::GetInstance().AddPointLight(pointLight);
 
-	auto pointLight1 = std::make_shared<PointLight>(SimpleMath::Vector3(1, 0, 0), SimpleMath::Color(1, 1, 1, 1), 100.0f, 1.0f);
+	auto pointLight1 = std::make_shared<PointLight>(SimpleMath::Vector3(-2.180, 2.470, -0.360), SimpleMath::Color(1, 1, 1, 1), 200.0f, 1.0f);
 	LightManager::GetInstance().AddPointLight(pointLight1);
 
 	m_CameraAsistant = new CameraAsistant();
@@ -126,22 +127,44 @@ void MainGame::Init()
 
 
 			bool flag = ((grid_size_x * z) + x) % 2;
-			auto cube = new Cube(basePos + (SimpleMath::Vector3(x, 0, z) * 2.0f), SimpleMath::Vector3(1.0f, 1, 1.0f), 300.0f, flag, false);
-			ActorManager::GetInstance().AddActor(cube);
+
+
+			if (flag)
+			{
+				auto cube = new Cube(basePos + (SimpleMath::Vector3(x, 0, z) * 2.0f), SimpleMath::Vector3(1.0f, 1, 1.0f), 300.0f, "WhiteCube", false);
+				ActorManager::GetInstance().AddActor(cube);
+			}
+			else
+			{
+				auto cube = new Cube(basePos + (SimpleMath::Vector3(x, 0, z) * 2.0f), SimpleMath::Vector3(1.0f, 1, 1.0f), 300.0f, "GrayCube", false);
+				ActorManager::GetInstance().AddActor(cube);
+			}
 		}
 
 
 	}
 
-	auto wall = new Cube(SimpleMath::Vector3(1.5f, 3.0f, 10.0f), SimpleMath::Vector3(grid_size_x, 6, 1), 300.0f, true, false);
+	auto wall = new Cube(SimpleMath::Vector3(1.5f, 3.0f, 9.0f), SimpleMath::Vector3(grid_size_x, 6, 1), 300.0f, "WhiteCube", false);
 	ActorManager::GetInstance().AddActor(wall);
 
-	auto sphere = new Sphere(SimpleMath::Vector3(0, 0.0f, 6.0f), Sphere::SphereType_Normal);
+	auto leftWall = new Cube(SimpleMath::Vector3(-7.0f, 3.0f, -0.0f), SimpleMath::Vector3(1, 6, grid_size_x), 300.0f, "RoughCube", false);
+	ActorManager::GetInstance().AddActor(leftWall);
+
+	auto rightWall = new Cube(SimpleMath::Vector3(7.0f, 3.0f, -0.0f), SimpleMath::Vector3(1, 6, grid_size_x), 300.0f, "RoughCube", false);
+	ActorManager::GetInstance().AddActor(rightWall);
+
+	auto topWall = new Cube(SimpleMath::Vector3(0.0f, 8, 0.0f), SimpleMath::Vector3(grid_size_x, 1, grid_size_x), 300.0f, "RoughCube", false);
+	ActorManager::GetInstance().AddActor(topWall);
+
+	auto backWall = new Cube(SimpleMath::Vector3(1.5f, 3.0f, -9.0f), SimpleMath::Vector3(grid_size_x, 6, 1), 300.0f, "RoughCube", false);
+	ActorManager::GetInstance().AddActor(backWall);
+
+	auto sphere = new Sphere(SimpleMath::Vector3(-2.0f, 0.0f, 6.0f), Sphere::SphereType_Normal);
 	sphere->SetScale(SimpleMath::Vector3(1.0f));
 	sphere->SetRotation(Quaternion::CreateFromYawPitchRoll(3.0f, 0.0f, 0.0f));
 	ActorManager::GetInstance().AddActor(sphere);
 
-	auto sphere2 = new Sphere(SimpleMath::Vector3(6.0f, 0.0f, 3.0f), Sphere::SphereType_NormalLowPoly);
+	auto sphere2 = new Sphere(SimpleMath::Vector3(3.0f, 0.0f, 3.0f), Sphere::SphereType_NormalLowPoly);
 	sphere2->SetScale(SimpleMath::Vector3(1.0f));
 	sphere2->SetRotation(Quaternion::CreateFromYawPitchRoll(-2.4f, 0.0f, 0.0f));
 	ActorManager::GetInstance().AddActor(sphere2);
@@ -178,7 +201,8 @@ void MainGame::Init()
 void MainGame::Update()
 {
 	m_CameraAsistant->Update();
-	
+
+#ifdef _DEBUG
 	ImGui::Begin("BlenderMonkeyMaterial", nullptr);
 	float transmission = _blenderMonkyMaterial._transmission;
 	float refract = _blenderMonkyMaterial._refract;
@@ -197,6 +221,8 @@ void MainGame::Update()
 	}
 
 	ImGui::End();
+
+#endif
 
 	if (!_IsGenerate)
 	{
