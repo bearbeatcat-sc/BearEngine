@@ -463,8 +463,6 @@ void CalculateLight(in IncidentLight incident_light, float3 normal, float3 diffu
 
 
 
-
-
 [shader("raygeneration")]
 void rayGen()
 {
@@ -533,6 +531,14 @@ bool ShotShadowRay(float3 origin, float3 direction)
 
     return payload.isHit;
 }
+
+
+bool CheckShadow(in float3 lightDir, in float3 worldPosition)
+{
+    return ShotShadowRay(worldPosition, lightDir);
+}
+
+
 
 [shader("miss")]
 void miss(inout Payload payload)
@@ -621,11 +627,15 @@ void chs(inout Payload payload, in MyAttribute attribs)
 
         bool isInShadow = false;
         float3 shadowRayDir = -gSceneParam.lightDirection;
+        isInShadow = CheckShadow(shadowRayDir, worldPosition);
 
-        isInShadow = ShotShadowRay(worldPosition, shadowRayDir);
-	
+        for (int i = 0; i < pointLightCount; ++i)
+        {        	
+            shadowRayDir = normalize(gPointLights[i].position.xyz - worldPosition.xyz);
+            isInShadow = CheckShadow(shadowRayDir, worldPosition);
+        }
+			
         payload.color = reflected.directDiffuse + (reflected.directSpecular * reflectionColor);
-
 
         if (isInShadow)
         {
