@@ -620,6 +620,7 @@ void chs(inout Payload payload, in MyAttribute attribs)
         float3 reflractionColor = Refraction(vtx.pos, vtx.normal, payload.recursive, roughness, refract);
         payload.color = lerp(reflected.directDiffuse + (reflected.directSpecular), reflractionColor + (reflected.directSpecular), 1.0f - transmission);
 
+        return;
     }
     else if (isReflection)
     {
