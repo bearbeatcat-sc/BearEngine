@@ -559,11 +559,6 @@ HRESULT DirectXGraphics::InitRenderTargetView()
 		&depthClearValue,
 		IID_PPV_ARGS(m_FluidDepthBuffer.ReleaseAndGetAddressOf()));
 
-
-	// シャドウマップ用
-	depthResDesc.Width = 1920;
-	depthResDesc.Height = 1080;
-
 	result = DirectXDevice::GetInstance().GetDevice()->CreateCommittedResource(
 		&depthHeapProp,
 		D3D12_HEAP_FLAG_NONE,

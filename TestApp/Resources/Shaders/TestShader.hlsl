@@ -622,7 +622,8 @@ void chs(inout Payload payload, in MyAttribute attribs)
 
         return;
     }
-    else if (isReflection)
+
+	if (isReflection)
     {
         float3 reflectionColor = Reflection(vtx.pos, vtx.normal, payload.recursive, roughness);
         reflectionColor = lerp(float3(0.04f, 0.04f, 0.04f), reflectionColor.rgb, metallic.w);

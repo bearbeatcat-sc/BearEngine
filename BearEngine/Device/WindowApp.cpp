@@ -32,7 +32,12 @@ HRESULT WindowApp::Run(Game* game)
 	game_ = game;
 	OutputDebugStringA("Hello,DirectX!!\n");
 
-	window_size_ = { game_->windowSize_X,game_->windowSize_Y };
+	int screenSize_Width = GetSystemMetrics(SM_CXSCREEN);
+	int screenSize_Height = GetSystemMetrics(SM_CYSCREEN);
+	
+	window_size_ = { std::clamp(game_->windowSize_X,0,screenSize_Width),std::clamp(game_->windowSize_Y,0,screenSize_Height) };
+
+
 
 	w_.cbSize = sizeof(WNDCLASSEX);
 	w_.lpfnWndProc = (WNDPROC)WindowProc;
@@ -43,6 +48,9 @@ HRESULT WindowApp::Run(Game* game)
 	RegisterClassEx(&w_);
 	RECT wrc = { 0,0,window_size_.window_Width,window_size_.window_Height };
 	AdjustWindowRect(&wrc, WS_OVERLAPPEDWINDOW, false);
+
+	window_size_.window_Width = wrc.right - wrc.left;
+	window_size_.window_Height = wrc.bottom - wrc.top;
 
 	hwnd_ = CreateWindow(
 		w_.lpszClassName,
