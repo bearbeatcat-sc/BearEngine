@@ -1,31 +1,31 @@
 ﻿#include "RenderingPipeline.h"
 
-#include "DirectX/DirectXDevice.h"
-#include "DirectX/DirectXGraphics.h"
-#include "../Device/WindowApp.h"
-#include "../imgui/imgui_impl_win32.h"
-#include "../imgui/imgui_impl_dx12.h"
-#include "DirectX/Core/ShaderManager.h"
-#include "../Utility/Math/MathUtility.h"
-#include "../Device/DirectX/Core/Model/MeshDrawer.h"
-#include "../Device/ParticleSystems/ParticleManager.h"
-#include "../Device/DirectX/Core/Model/DebugDrawer.h"
-#include "../Device/SpriteDrawer.h"
-#include "../Components/Collsions/CollisionManager.h"
-#include "../Utility/LogSystem.h"
-#include "../Device/Lights/LightManager.h"
-#include "../Utility/CameraManager.h"
-#include "../Utility/Camera.h"
-#include "SkyBox.h"
+#include "../DirectX/DirectXDevice.h"
+#include "../DirectX/DirectXGraphics.h"
+#include "../../Device/WindowApp.h"
+#include "../../imgui/imgui_impl_win32.h"
+#include "../../imgui/imgui_impl_dx12.h"
+#include "../DirectX/Core/ShaderManager.h"
+#include "../../Utility/Math/MathUtility.h"
+#include "../../Device/DirectX/Core/Model/MeshDrawer.h"
+#include "../../Device/ParticleSystems/ParticleManager.h"
+#include "../../Device/DirectX/Core/Model/DebugDrawer.h"
+#include "../../Device/SpriteDrawer.h"
+#include "../../Components/Collsions/CollisionManager.h"
+#include "../../Utility/LogSystem.h"
+#include "../../Device/Lights/LightManager.h"
+#include "../../Utility/CameraManager.h"
+#include "../../Utility/Camera.h"
+#include "../SkyBox.h"
 #include <array>
 
-#include "Raytracing/DXRPipeLine.h"
-#include "DirectX/Core/Buffer.h"
-#include "DirectX/Core/EffectManager.h"
-#include "DirectX/Core/ParticleSpriteEffect.h"
-#include "DirectX/Core/SpriteEffect.h"
-#include "DirectX/Core/Model/MeshManager.h"
-#include "Raytracing/DXRInstance.cpp"
+#include "../Raytracing/DXRPipeLine.h"
+#include "../DirectX/Core/Buffer.h"
+#include "../DirectX/Core/EffectManager.h"
+#include "../DirectX/Core/ParticleSpriteEffect.h"
+#include "../DirectX/Core/SpriteEffect.h"
+#include "../DirectX/Core/Model/MeshManager.h"
+#include "../Raytracing/DXRInstance.cpp"
 #include "Utility/Random.h"
 
 // シャドウマップ（深度バッファ）の解像度
@@ -39,93 +39,37 @@ RenderingPipeLine::RenderingPipeLine()
 
 RenderingPipeLine::~RenderingPipeLine()
 {
-
 	if (m_pSkyBox)
 	{
 		delete m_pSkyBox;
 	}
 }
 
+void RenderingPipeLine::CreateEffects()
+{
+	auto effect = std::shared_ptr<MeshEffect>(new MeshEffect());
+	effect->Init("ModelVertexShader", "ModelPixelShader", "");
+	EffectManager::GetInstance().AddEffect(effect, "NormalMeshEffect");
+
+	auto particleSpriteEffect = std::shared_ptr<ParticleSpriteEffect>(new ParticleSpriteEffect());
+	particleSpriteEffect->Init("GPUParticleVertexShader", "GPUParticlePixelShader", "GPUParticleGeometryShader");
+	EffectManager::GetInstance().AddEffect(particleSpriteEffect, "ParticleSpriteEffect");
+
+	auto particleCubeEffect = std::shared_ptr<ParticleSpriteEffect>(new ParticleSpriteEffect());
+	particleCubeEffect->Init("GPUParticleVertexShader", "GPUParticlePixelShader", "GPUParticleCubeGeometryShader");
+	EffectManager::GetInstance().AddEffect(particleCubeEffect, "ParticleCubeEffect");
+
+	auto spriteEffect = std::shared_ptr<SpriteEffect>(new SpriteEffect());
+	spriteEffect->Init("SpriteVertexShader", "SpritePixelShader", "");
+	EffectManager::GetInstance().AddEffect(spriteEffect, "NormalSpriteEffect");
+
+	auto cubemapMeshEffect = std::shared_ptr<MeshEffect>(new MeshEffect());
+	cubemapMeshEffect->Init("CubeMap_ModelVertexShader", "ModelPixelShader", "");
+	EffectManager::GetInstance().AddEffect(cubemapMeshEffect, "CubeMapMeshEffect");
+}
+
 HRESULT RenderingPipeLine::Init()
 {
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/BasicSpritePixelShader.hlsl", "ps_5_0", "BasicSpritePixelShader");
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/BasicSpriteVertexShader.hlsl", "vs_5_0", "BasicSpriteVertexShader");
-
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/BasicPixelShader.hlsl", "ps_5_0", "BasicPixelShader");
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/BasicVertexShader.hlsl", "vs_5_0", "BasicVertexShader");
-
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/ParticleComputeShader.hlsl", "cs_5_0", "ParticleUpdateComputeShader");
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/ParticleComputeShader.hlsl", "cs_5_0", "ParticleInitComputeShader", "init");
-
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/FluidParticleComputeShader.hlsl", "cs_5_0", "FluidParticleForceComputeShader", "CS_Force");
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/FluidParticleComputeShader.hlsl", "cs_5_0", "FluidParticleCollisionComputeShader", "CS_Collision");
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/FluidParticleComputeShader.hlsl", "cs_5_0", "FluidParticlePressureComputeShader", "CS_Pressure");
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/FluidParticleComputeShader.hlsl", "cs_5_0", "FluidParticlePressureGradientComputeShader", "CS_PressureGradient");
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/FluidParticleComputeShader.hlsl", "cs_5_0", "FluidParticleMoveParticleComputeShader", "CS_MoveParticle");
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/FluidParticleComputeShader.hlsl", "cs_5_0", "FluidParticleIntegrateComputeShader", "CS_Integrate");
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/FluidParticleComputeShader.hlsl", "cs_5_0", "FluidParticleInitComputeShader", "init");
-
-
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/BasicVertexShader.hlsl", "vs_5_0", "GPUParticleVertexShader");
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/Fluid_Wall_VertexShader.hlsl", "vs_5_0", "Fluid_Wall_VertexShader");
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/BasicPixelShader.hlsl", "ps_5_0", "GPUParticlePixelShader");
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/BasicGeometryShader.hlsl", "gs_5_0", "GPUParticleGeometryShader");
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/BasicGeometryShader.hlsl", "gs_5_0", "GPUParticleCubeGeometryShader", "Cubemain");
-
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/ModelVertexShader.hlsl", "vs_5_0", "ModelVertexShader");
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/ModelVertexShader.hlsl", "vs_5_0", "ShadowVertexShader", "shadowVS");
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/ModelPixelShader.hlsl", "ps_5_0", "ModelPixelShader");
-
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/BasicSpriteVertexShader.hlsl", "vs_5_0", "SpriteVertexShader");
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/BasicSpritePixelShader.hlsl", "ps_5_0", "SpritePixelShader");
-
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/PeraPolygonDrawPixelShader.hlsl", "ps_5_0", "PE_PeraPolygonPS");
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/PeraPolygonDrawVertexShader.hlsl", "vs_5_0", "PE_PeraPolygonVS");
-
-	// BLOOM
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/PostEffectBloomPixelShader.hlsl", "ps_5_0", "PEBloomPS");
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/PostEffectBloomVertexShader.hlsl", "vs_5_0", "PEBloomVS");
-
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/PostEffectBloomPixelShader.hlsl", "ps_5_0", "PEBloomBlur0", "VerticalBokehPS");
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/PostEffectBloomPixelShader.hlsl", "ps_5_0", "PEBloomBlur1", "BlurPS");
-
-	// DepthOfFeild
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/PostEffectDOFPixelShader.hlsl", "ps_5_0", "PE_DOF_HorizontalBlur", "Horizontal");
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/PostEffectDOFPixelShader.hlsl", "ps_5_0", "PE_DOF_Result", "DepthOfField");
-
-	// Fluid
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/FluidDepthVertexShader.hlsl", "vs_5_0", "FluidDepthVertexShader");
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/FluidDepthPixelShader.hlsl", "ps_5_0", "FluidDepthPixelShader");
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/FluidDepthGeometryShader.hlsl", "gs_5_0", "FluidDepthGeometryShader");
-
-	// CubeMap
-	ShaderManager::GetInstance().LoadShader(L"BasicResources/CubeMap_ModelVertexShader.hlsl", "vs_5_0", "CubeMap_ModelVertexShader");
-
-	// 各種デバイスの初期化
-//#ifdef _DEBUG
-//	DirectXDevice::GetInstance().EnableDebugLayer();
-//#endif
-
-	DirectXDevice::GetInstance().EnableDebugLayer();
-
-
-	DirectXDevice::GetInstance().InitDirectX();
-	DirectXGraphics::GetInstance().Init();
-	LightManager::GetInstance().Init();
-
-#ifdef _DEBUG
-	DebugDrawer::GetInstance().Init(L"BasicResources/SimpleVertexShader.hlsl", L"BasicResources/SimplePixelShader.hlsl");
-#endif
-	SpriteDrawer::GetInstance().Init();
-	DXRPipeLine::GetInstance().Init();
-	MeshManager::GetInstance().Init();
-	MeshDrawer::GetInstance().Init();
-
-	MeshManager::GetInstance().GetSpehereMesh(12, "NormalMeshEffect");
-	MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "blenderMonkey.obj", "BlenderMonkey");
-	MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "cube0.obj", "Cube0");
-
-
 	m_pCommandList = DirectXGraphics::GetInstance().GetCommandList();
 
 	//各種リソース生成
@@ -140,20 +84,11 @@ HRESULT RenderingPipeLine::Init()
 		return S_FALSE;
 	}
 
-	if (CreateDOFBuffer() != S_OK)
-	{
-		return S_FALSE;
-	}
-
 	if (CreateBlurWeightResource() != S_OK)
 	{
 		return S_FALSE;
 	}
 
-	if (CreateDofParameterResource() != S_OK)
-	{
-		return S_FALSE;
-	}
 
 	if (CreatePeraPolygon() != S_OK)
 	{
@@ -181,26 +116,7 @@ HRESULT RenderingPipeLine::Init()
 	}
 
 
-	auto effect = std::shared_ptr<MeshEffect>(new MeshEffect());
-	effect->Init("ModelVertexShader", "ModelPixelShader", "");
-	EffectManager::GetInstance().AddEffect(effect, "NormalMeshEffect");
-
-	auto particleSpriteEffect = std::shared_ptr<ParticleSpriteEffect>(new ParticleSpriteEffect());
-	particleSpriteEffect->Init("GPUParticleVertexShader", "GPUParticlePixelShader", "GPUParticleGeometryShader");
-	EffectManager::GetInstance().AddEffect(particleSpriteEffect, "ParticleSpriteEffect");
-
-	auto particleCubeEffect = std::shared_ptr<ParticleSpriteEffect>(new ParticleSpriteEffect());
-	particleCubeEffect->Init("GPUParticleVertexShader", "GPUParticlePixelShader", "GPUParticleCubeGeometryShader");
-	EffectManager::GetInstance().AddEffect(particleCubeEffect, "ParticleCubeEffect");
-
-	auto spriteEffect = std::shared_ptr<SpriteEffect>(new SpriteEffect());
-	spriteEffect->Init("SpriteVertexShader", "SpritePixelShader", "");
-	EffectManager::GetInstance().AddEffect(spriteEffect, "NormalSpriteEffect");
-
-	auto cubemapMeshEffect = std::shared_ptr<MeshEffect>(new MeshEffect());
-	cubemapMeshEffect->Init("CubeMap_ModelVertexShader", "ModelPixelShader", "");
-	EffectManager::GetInstance().AddEffect(cubemapMeshEffect, "CubeMapMeshEffect");
-
+	CreateEffects();
 }
 
 void RenderingPipeLine::SetSkyBox(const std::string& texturePath, const SimpleMath::Vector3& scale)
@@ -211,57 +127,54 @@ void RenderingPipeLine::SetSkyBox(const std::string& texturePath, const SimpleMa
 	m_pSkyBox->SetColor(SimpleMath::Color(1.0f, 1.0f, 1.0f, 1.0f));
 }
 
-void RenderingPipeLine::DrawBegin()
+void RenderingPipeLine::ProcessingPostEffect()
 {
-	DrawPostEffect();
-	DirectXGraphics::GetInstance().Begin();
+	// レイトレーシングでの描画結果を取得
+	DXRPipeLine::GetInstance().Render(m_RaytracingResource.Get(), m_pSkyBox);
 
-	DXRPipeLine::GetInstance().Render(m_result_bloom_resource.Get(), m_pSkyBox);
+	// 通常のレンダリング
+	DefaultRendering();
+
+	DrawPostEffect();
 }
 
 void RenderingPipeLine::Draw()
 {
 	// ポストエフェクト後の板ポリ描画
-	DrawPostEffectPolygon();
-	SpriteDrawer::GetInstance().Draw();
+	//DrawPostEffectPolygon();
 
 
 
 
 	// デバッグ表示用
-#ifdef _DEBUG
-	ImGui::Begin("Rendering_System", nullptr, ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysVerticalScrollbar);
-
-	CollisionManager::GetInstance().Draw();
-
-	ImGui::Dummy(ImVec2(0, 30));
-
-	ImGui::BeginTabBar("DebugTabs");
-	UpdateConstantBuffers();
-
-	LogSystem::DrawLog();
-	MeshDrawer::GetInstance().DrawDebug();
-	LightManager::GetInstance().Draw();
-	DXRPipeLine::GetInstance().DrawDebugGUI();
-
-	ImGui::EndTabBar();
-
-
-	ImGui::End();
-	DebugDrawer::GetInstance().Draw();
-
-
-#endif
+//#ifdef _DEBUG
+//	ImGui::Begin("Rendering_System", nullptr, ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysVerticalScrollbar);
+//
+//	CollisionManager::GetInstance().Draw();
+//
+//	ImGui::Dummy(ImVec2(0, 30));
+//
+//	ImGui::BeginTabBar("DebugTabs");
+//	UpdateConstantBuffers();
+//
+//	LogSystem::DrawLog();
+//	MeshDrawer::GetInstance().DrawDebug();
+//	LightManager::GetInstance().Draw();
+//	DXRPipeLine::GetInstance().DrawDebugGUI();
+//
+//	ImGui::EndTabBar();
+//
+//
+//	ImGui::End();
+//	DebugDrawer::GetInstance().Draw();
+//
+//
+//#endif
 }
 
 
 void RenderingPipeLine::DrawEnd()
 {
-	DirectXGraphics::GetInstance().FontSystemBegin();
-	DirectXGraphics::GetInstance().FontSystemEnd();
-	DirectXGraphics::GetInstance().End();
-	DirectXGraphics::GetInstance().Present();
-	ParticleManager::GetInstance().DeleteParticles();
 
 }
 
@@ -274,8 +187,7 @@ bool RenderingPipeLine::DefaultRenderingBegin()
 			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
 			D3D12_RESOURCE_STATE_RENDER_TARGET));
 
-	//　加工されていない状態を描画する
-	//
+	
 	DirectXGraphics::GetInstance().SetRenderTarget(m_peraRTVHeap->GetCPUDescriptorHandleForHeapStart());
 
 
@@ -287,7 +199,6 @@ bool RenderingPipeLine::DefaultRenderingBegin()
 
 bool RenderingPipeLine::DefaultRenderingEnd()
 {
-	// シェーダー用に変更
 	m_pCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_OutputRenderResource.Get(),
 		D3D12_RESOURCE_STATE_RENDER_TARGET,
 		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
@@ -298,6 +209,8 @@ bool RenderingPipeLine::DefaultRenderingEnd()
 // 最終的なリザルト結果を描画する
 void RenderingPipeLine::DrawPostEffectPolygon()
 {
+	// レイトレーシングを使用しない場合
+
 	m_pCommandList->SetGraphicsRootSignature(posteffect_result_pso.rootSignature.Get());
 	m_pCommandList->SetDescriptorHeaps(1, m_peraSRVHeap.GetAddressOf());
 
@@ -312,6 +225,28 @@ void RenderingPipeLine::DrawPostEffectPolygon()
 		D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	m_pCommandList->IASetVertexBuffers(0, 1, &m_PeraVBV);
 	m_pCommandList->DrawInstanced(4, 1, 0, 0);
+
+
+	// レイトレの場合
+	//m_pCommandList->SetGraphicsRootSignature(posteffect_result_pso.rootSignature.Get());
+	//m_pCommandList->SetDescriptorHeaps(1, m_peraSRVHeap.GetAddressOf());
+
+	//// 最終的なポストエフェクトの結果
+	//auto srvHandle = m_peraSRVHeap->GetGPUDescriptorHandleForHeapStart();
+	//srvHandle.ptr += DirectXDevice::GetInstance().GetDevice()
+	//	->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * (OutputRenderResouce + m_BlurWeights + m_BloomBufferCount);
+	//m_pCommandList->SetGraphicsRootDescriptorTable(0, srvHandle);
+
+	//srvHandle.ptr += DirectXDevice::GetInstance().GetDevice()
+	//	->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	//m_pCommandList->SetGraphicsRootDescriptorTable(1, srvHandle);
+
+
+	//m_pCommandList->SetPipelineState(posteffect_raytracingResult_pso.pso.Get());
+	//m_pCommandList->IASetPrimitiveTopology(
+	//	D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	//m_pCommandList->IASetVertexBuffers(0, 1, &m_PeraVBV);
+	//m_pCommandList->DrawInstanced(4, 1, 0, 0);
 }
 
 void RenderingPipeLine::EffectBloom()
@@ -414,8 +349,8 @@ void RenderingPipeLine::EffectBloom()
 	}
 
 	// 最終的なBloomのリザルトを描画
-	m_pCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_result_bloom_resource.Get(),
-		D3D12_RESOURCE_STATE_COPY_DEST,
+	m_pCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(_processed_resource.Get(),
+		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
 		D3D12_RESOURCE_STATE_RENDER_TARGET));
 
 	m_pCommandList->OMSetRenderTargets(1, &bloomBufferPointer, false, nullptr);
@@ -427,20 +362,9 @@ void RenderingPipeLine::EffectBloom()
 	m_pCommandList->SetGraphicsRootSignature(posteffect_bloom_hightLight_pso.rootSignature.Get());
 
 	srvHandle = m_peraSRVHeap->GetGPUDescriptorHandleForHeapStart();
-	//srvHandle.ptr += DirectXDevice::GetInstance().GetDevice()
-	//	->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * (OutputRenderResouce + m_BlurWeights + m_BloomBufferCount + ResultBloomResource + BlurTextureCount);
+	srvHandle.ptr += DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * (m_BloomBufferCount + m_BlurWeights + ResultBloomResource + RaytracingRenderResource);
 
-	// TODO:あとで状況によって切り替える。
-	// 現状は水のレンダリングしたテクスチャを使用
-	//auto fluidRendringSRVHeap = FluidRendringPipeLine::GetInstance().GetFluidRenderDescriptorHeaps();
-	//m_pCommandList->SetDescriptorHeaps(1, &fluidRendringSRVHeap);
-	//m_pCommandList->SetGraphicsRootDescriptorTable(0, fluidRendringSRVHeap->GetGPUDescriptorHandleForHeapStart());
-	//m_pCommandList->SetGraphicsRootDescriptorTable(Bloom_RootParamter_NormalColor, fluidRendringSRVHeap->GetGPUDescriptorHandleForHeapStart());
-
-	m_pCommandList->SetDescriptorHeaps(1, m_peraSRVHeap.GetAddressOf());
 	m_pCommandList->SetGraphicsRootDescriptorTable(Bloom_RootParamter_NormalColor, srvHandle);
-
-
 
 	m_pCommandList->SetDescriptorHeaps(1, m_peraSRVHeap.GetAddressOf());
 	srvHandle = m_peraSRVHeap->GetGPUDescriptorHandleForHeapStart();
@@ -455,147 +379,9 @@ void RenderingPipeLine::EffectBloom()
 	m_pCommandList->IASetVertexBuffers(0, 1, &m_PeraVBV);
 	m_pCommandList->DrawInstanced(4, 1, 0, 0);
 
-	m_pCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_result_bloom_resource.Get(),
-		D3D12_RESOURCE_STATE_RENDER_TARGET,
-		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
-}
-
-void RenderingPipeLine::EffectDepthOfField()
-{
-	// ブラーをかける
-	m_pCommandList->SetPipelineState(posteffect_dof_horizontal_pso.pso.Get());
-	m_pCommandList->SetGraphicsRootSignature(posteffect_dof_horizontal_pso.rootSignature.Get());
-
-	m_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	m_pCommandList->IASetVertexBuffers(0, 1, &m_PeraVBV);
-
-	// SHADER_RESOUCE -> RENDER_TARGET
-	m_pCommandList->ResourceBarrier(
-		1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			m_dof_texture0.Get(),
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-			D3D12_RESOURCE_STATE_RENDER_TARGET));
-
-	m_pCommandList->ResourceBarrier(
-		1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			m_dof_texture1.Get(),
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-			D3D12_RESOURCE_STATE_RENDER_TARGET));
-
-	auto dof_texture0_handle = m_peraRTVHeap->GetCPUDescriptorHandleForHeapStart();
-	dof_texture0_handle.ptr += DirectXDevice::GetInstance().GetDevice()
-		->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV) * (OutputRenderResouce + m_BloomBufferCount + ResultBloomResource);
-
-	auto dof_texture1_handle = dof_texture0_handle;
-	dof_texture1_handle.ptr += DirectXDevice::GetInstance().GetDevice()
-		->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-
-	D3D12_CPU_DESCRIPTOR_HANDLE rtvs[2] =
-	{
-		dof_texture0_handle,dof_texture1_handle
-	};
-
-	m_pCommandList->OMSetRenderTargets(2, rtvs, false, nullptr);
-
-	for (auto& rt : rtvs)
-	{
-		m_pCommandList->ClearRenderTargetView(rt, clerColorArray.data(), 0, nullptr);
-	}
-
-
-
-
-	// 通常の描画テクスチャ 
-	m_pCommandList->SetDescriptorHeaps(1, m_peraSRVHeap.GetAddressOf());
-	auto renderingTexture = m_peraSRVHeap.Get()->GetGPUDescriptorHandleForHeapStart();
-	m_pCommandList->SetGraphicsRootDescriptorTable(0, renderingTexture);
-
-
-
-	m_pCommandList->DrawInstanced(4, 1, 0, 0);
-
-
-	// RENDER_TARGET -> SHADER_RESOUCE
-	m_pCommandList->ResourceBarrier(
-		1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			m_dof_texture0.Get(),
-			D3D12_RESOURCE_STATE_RENDER_TARGET,
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
-
-	m_pCommandList->ResourceBarrier(
-		1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			m_dof_texture1.Get(),
-			D3D12_RESOURCE_STATE_RENDER_TARGET,
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
-
-
-
-
-
-
-	// 最終的なレンダリング
-	m_pCommandList->SetPipelineState(posteffect_dof_result_pso.pso.Get());
-	m_pCommandList->SetGraphicsRootSignature(posteffect_dof_horizontal_pso.rootSignature.Get());
-
-	m_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	m_pCommandList->IASetVertexBuffers(0, 1, &m_PeraVBV);
-
-
-	// SHADER_RESOUCE -> RENDER_TARGET
-	m_pCommandList->ResourceBarrier(
-		1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			m_result_dof_resource.Get(),
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-			D3D12_RESOURCE_STATE_RENDER_TARGET));
-
-	auto dof_resultTexture_handle = dof_texture1_handle;
-	dof_resultTexture_handle.ptr += DirectXDevice::GetInstance().GetDevice()
-		->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-
-
-	m_pCommandList->OMSetRenderTargets(1, &dof_resultTexture_handle, false, nullptr);
-	m_pCommandList->ClearRenderTargetView(dof_resultTexture_handle, clerColorArray.data(), 0, nullptr);
-
-	// 通常の描画テクスチャ
-	m_pCommandList->SetDescriptorHeaps(1, m_peraSRVHeap.GetAddressOf());
-	renderingTexture = m_peraSRVHeap.Get()->GetGPUDescriptorHandleForHeapStart();
-	m_pCommandList->SetGraphicsRootDescriptorTable(0, renderingTexture);
-
-	auto srvHandle = m_peraSRVHeap->GetGPUDescriptorHandleForHeapStart();
-
-	// Dofテクスチャ0
-	srvHandle.ptr += DirectXDevice::GetInstance().GetDevice()
-		->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * (OutputRenderResouce + m_BlurWeights + m_BloomBufferCount + ResultBloomResource);
-	m_pCommandList->SetGraphicsRootDescriptorTable(1, srvHandle);
-
-	// Dofテクスチャ1
-	srvHandle.ptr += DirectXDevice::GetInstance().GetDevice()
-		->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	m_pCommandList->SetGraphicsRootDescriptorTable(2, srvHandle);
-
-	srvHandle.ptr += DirectXDevice::GetInstance().GetDevice()
-		->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * 2;
-
-	// Dofパラメータ
-	m_pCommandList->SetGraphicsRootDescriptorTable(4, srvHandle);
-
-
-
-	// DepthTexture
-	auto depthHeap = DirectXGraphics::GetInstance().GetDepthSRVHeap();
-	auto depthHeapHandle = depthHeap->GetGPUDescriptorHandleForHeapStart();
-	m_pCommandList->SetDescriptorHeaps(1, &depthHeap);
-	m_pCommandList->SetGraphicsRootDescriptorTable(3, depthHeapHandle);
-
-	m_pCommandList->DrawInstanced(4, 1, 0, 0);
-
-
-	// RENDER_TARGET -> SHADER_RESOUCE
-	m_pCommandList->ResourceBarrier(
-		1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			m_result_dof_resource.Get(),
-			D3D12_RESOURCE_STATE_RENDER_TARGET,
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+	//m_pCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(_processed_resource.Get(),
+	//	D3D12_RESOURCE_STATE_RENDER_TARGET,
+	//	D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 }
 
 void RenderingPipeLine::SetDrawFluidFlag(bool flag)
@@ -603,7 +389,32 @@ void RenderingPipeLine::SetDrawFluidFlag(bool flag)
 	m_isDrawFluid = flag;
 }
 
-// 描画結果を渡すよう
+// ポストエフェクト後にレンダリングする際に使用する
+void RenderingPipeLine::BeginRenderResult()
+{
+	//m_pCommandList->ResourceBarrier(
+	//	1, &CD3DX12_RESOURCE_BARRIER::Transition(
+	//		_processed_resource.Get(),
+	//		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+	//		D3D12_RESOURCE_STATE_RENDER_TARGET));
+
+	//　加工されていない状態を描画する
+	//
+	DirectXGraphics::GetInstance().SetRenderTarget(_processed_resource_RTV_CPUHANDLE,false);
+
+
+	DirectXGraphics::GetInstance().SetScissorRect();
+	DirectXGraphics::GetInstance().SetViewPort();
+}
+
+void RenderingPipeLine::EndRenderResult()
+{
+	m_pCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(_processed_resource.Get(),
+		D3D12_RESOURCE_STATE_RENDER_TARGET,
+		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+}
+
+// 加工前の3Dレンダリング結果を渡すよう
 ID3D12Resource* RenderingPipeLine::GetOutputRenderResource()
 {
 	return m_OutputRenderResource.Get();
@@ -646,8 +457,7 @@ HRESULT RenderingPipeLine::CreateRTV()
 	auto heapDesc = DirectXGraphics::GetInstance().GetRTVHeap()->GetDesc();
 
 	// RTV用ヒープの作成
-	heapDesc.NumDescriptors = OutputRenderResouce + m_BloomBufferCount + ResultBloomResource
-		+ BlurTextureCount + ResultDOFResource; // Bloom 
+	heapDesc.NumDescriptors = OutputRenderResouce + m_BloomBufferCount + ResultBloomResource; // Bloom 
 	auto result = DirectXDevice::GetInstance().GetDevice()
 		->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(m_peraRTVHeap.ReleaseAndGetAddressOf()));
 
@@ -694,38 +504,10 @@ HRESULT RenderingPipeLine::CreateRTV()
 	handle.ptr += DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize
 	(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
-	DirectXDevice::GetInstance().GetDevice()->CreateRenderTargetView(
-		m_result_bloom_resource.Get(),
-		&rtvDesc,
-		handle
-	);
-
-	// 被写界深度用のブラーテクスチャ0
-	handle.ptr += DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize
-	(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	_processed_resource_RTV_CPUHANDLE = handle;
 
 	DirectXDevice::GetInstance().GetDevice()->CreateRenderTargetView(
-		m_dof_texture0.Get(),
-		&rtvDesc,
-		handle
-	);
-
-	// 被写界深度用のブラーテクスチャ1
-	handle.ptr += DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize
-	(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-
-	DirectXDevice::GetInstance().GetDevice()->CreateRenderTargetView(
-		m_dof_texture1.Get(),
-		&rtvDesc,
-		handle
-	);
-
-	// 被写界深度用の最終的な結果
-	handle.ptr += DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize
-	(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-
-	DirectXDevice::GetInstance().GetDevice()->CreateRenderTargetView(
-		m_result_dof_resource.Get(),
+		_processed_resource.Get(),
 		&rtvDesc,
 		handle
 	);
@@ -739,7 +521,7 @@ HRESULT RenderingPipeLine::CreateSRV()
 	auto heapDesc = DirectXGraphics::GetInstance().GetRTVHeap()->GetDesc();
 
 	// SRV用ヒープの作成
-	heapDesc.NumDescriptors = OutputRenderResouce + m_BloomBufferCount + m_BlurWeights + ResultBloomResource + BlurTextureCount + ResultDOFResource + DofParamterCount;
+	heapDesc.NumDescriptors = OutputRenderResouce + m_BloomBufferCount + m_BlurWeights + ResultBloomResource + RaytracingRenderResource;
 	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
@@ -802,45 +584,17 @@ HRESULT RenderingPipeLine::CreateSRV()
 	handle.ptr += DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize
 	(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	DirectXDevice::GetInstance().GetDevice()->CreateShaderResourceView(
-		m_result_bloom_resource.Get(),
+		_processed_resource.Get(),
 		&srvDesc,
 		handle);
 
-	// 被写界深度用のブラーテクスチャ0
+
+	// レイトレーシングでの描画結果
 	handle.ptr += DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize
 	(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	DirectXDevice::GetInstance().GetDevice()->CreateShaderResourceView(
-		m_dof_texture0.Get(),
+		m_RaytracingResource.Get(),
 		&srvDesc,
-		handle);
-
-	// 被写界深度用のブラーテクスチャ1
-	handle.ptr += DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize
-	(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	DirectXDevice::GetInstance().GetDevice()->CreateShaderResourceView(
-		m_dof_texture1.Get(),
-		&srvDesc,
-		handle);
-
-	// 最終的なDOFの結果
-	handle.ptr += DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize
-	(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	DirectXDevice::GetInstance().GetDevice()->CreateShaderResourceView(
-		m_result_dof_resource.Get(),
-		&srvDesc,
-		handle);
-
-
-	// Dof用のParameter
-	handle.ptr += DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize
-	(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-	auto dofParamsBuffer = mDofParameterResource->getBuffer();
-	cbvDesc.BufferLocation = dofParamsBuffer->GetGPUVirtualAddress();
-	cbvDesc.SizeInBytes = dofParamsBuffer->GetDesc().Width;
-
-	DirectXDevice::GetInstance().GetDevice()->CreateConstantBufferView(
-		&cbvDesc,
 		handle);
 
 	return result;
@@ -880,17 +634,25 @@ HRESULT RenderingPipeLine::CreateRenderResource()
 			&claeValue,
 			IID_PPV_ARGS(m_OutputRenderResource.ReleaseAndGetAddressOf()));
 
-	// 現状、最終結果のリソースをDXRようにコピー状態に
 	result = DirectXDevice::GetInstance().GetDevice()
 		->CreateCommittedResource(&heapProp,
 			D3D12_HEAP_FLAG_NONE,
 			&resDesc,
-			D3D12_RESOURCE_STATE_COPY_DEST,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
 			&claeValue,
-			IID_PPV_ARGS(m_result_bloom_resource.ReleaseAndGetAddressOf()));
+			IID_PPV_ARGS(_processed_resource.ReleaseAndGetAddressOf()));
+
+	result = DirectXDevice::GetInstance().GetDevice()
+		->CreateCommittedResource(&heapProp,
+			D3D12_HEAP_FLAG_NONE,
+			&resDesc,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+			&claeValue,
+			IID_PPV_ARGS(m_RaytracingResource.ReleaseAndGetAddressOf()));
 
 	m_OutputRenderResource->SetName(L"OutputRenderResource");
-	m_result_bloom_resource->SetName(L"ResultBloomResource");
+	_processed_resource->SetName(L"ProcessedResource");
+	m_RaytracingResource->SetName(L"RaytracingResource");
 
 	return result;
 }
@@ -955,22 +717,6 @@ HRESULT RenderingPipeLine::CreateBlurWeightResource()
 	return S_OK;
 }
 
-HRESULT RenderingPipeLine::CreateDofParameterResource()
-{
-	mDofParameterResource = std::make_shared<Buffer>();
-	UINT buffSize = (sizeof(mDofParameterResource) + 0xff) & ~0xff;
-	mDofParameterResource->init(D3D12_HEAP_TYPE_UPLOAD, buffSize, D3D12_RESOURCE_STATE_GENERIC_READ);
-
-	auto dofParamasBuffer = mDofParameterResource->getBuffer();
-
-	DOF_Parameters* dofParams = nullptr;
-	dofParamasBuffer->Map(0, nullptr, (void**)&dofParams);
-	dofParams->Pint = 0.16f;
-	dofParamasBuffer->Unmap(0, nullptr);
-
-	return S_OK;
-}
-
 HRESULT RenderingPipeLine::CreatePipeLines()
 {
 	// あとで　ここに並べていく
@@ -978,18 +724,16 @@ HRESULT RenderingPipeLine::CreatePipeLines()
 	// Bloom
 	if (CreateBloomPSO() != S_OK)
 	{
-		assert(0);
+		throw std::runtime_error("PSOの生成が出来ませんでした。");
 	}
 
-	// 被写界深度
-	if (CreateDOFPSO() != S_OK)
+	if(CreateResultPSO() != S_OK)
 	{
-		assert(0);
+		throw std::runtime_error("PSOの生成が出来ませんでした。");
 	}
-
 
 	// 最終的なリザルト結果
-	return CreateResultPSO();
+	return S_OK;
 }
 
 HRESULT RenderingPipeLine::CreateBloomPSO()
@@ -1185,7 +929,6 @@ HRESULT RenderingPipeLine::CreateResultPSO()
 	rp[0].DescriptorTable.pDescriptorRanges = &range[0];
 	rp[0].DescriptorTable.NumDescriptorRanges = 1;
 
-
 	D3D12_STATIC_SAMPLER_DESC sampler = CD3DX12_STATIC_SAMPLER_DESC(0);
 	sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 	sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
@@ -1239,151 +982,6 @@ HRESULT RenderingPipeLine::CreateResultPSO()
 	return result;
 }
 
-HRESULT RenderingPipeLine::CreateDOFPSO()
-{
-	// パイプラインの作成
-	D3D12_INPUT_ELEMENT_DESC layout[2] =
-	{
-		{
-			"POSITION",
-			0,
-			DXGI_FORMAT_R32G32B32_FLOAT,
-			0,
-			D3D12_APPEND_ALIGNED_ELEMENT,
-			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
-			0
-		},
-		{
-			"TEXCOORD",
-			0,
-			DXGI_FORMAT_R32G32_FLOAT,
-			0,
-			D3D12_APPEND_ALIGNED_ELEMENT,
-			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
-			0
-		},
-	};
-
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC gpsDesc = {};
-	gpsDesc.InputLayout.NumElements = _countof(layout);
-	gpsDesc.InputLayout.pInputElementDescs = layout;
-
-	D3D12_DESCRIPTOR_RANGE range[5] = {};
-
-	// レンダリング結果
-	range[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-	range[0].BaseShaderRegister = 0;
-	range[0].NumDescriptors = 1;
-
-	// ブラーテクスチャ0
-	range[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-	range[1].BaseShaderRegister = 1;
-	range[1].NumDescriptors = 1;
-
-	// ブラーテクスチャ1
-	range[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-	range[2].BaseShaderRegister = 2;
-	range[2].NumDescriptors = 1;
-
-	// 深度テクスチャ
-	range[3].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-	range[3].BaseShaderRegister = 3;
-	range[3].NumDescriptors = 1;
-
-	// パラメータ
-	range[4].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-	range[4].BaseShaderRegister = 0;
-	range[4].NumDescriptors = 1;
-
-	D3D12_ROOT_PARAMETER rp[5] = {};
-
-	rp[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	rp[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-	rp[0].DescriptorTable.pDescriptorRanges = &range[0];
-	rp[0].DescriptorTable.NumDescriptorRanges = 1;
-
-	rp[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	rp[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-	rp[1].DescriptorTable.pDescriptorRanges = &range[1];
-	rp[1].DescriptorTable.NumDescriptorRanges = 1;
-
-	rp[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	rp[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-	rp[2].DescriptorTable.pDescriptorRanges = &range[2];
-	rp[2].DescriptorTable.NumDescriptorRanges = 1;
-
-	rp[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	rp[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-	rp[3].DescriptorTable.pDescriptorRanges = &range[3];
-	rp[3].DescriptorTable.NumDescriptorRanges = 1;
-
-	rp[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	rp[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-	rp[4].DescriptorTable.pDescriptorRanges = &range[4];
-	rp[4].DescriptorTable.NumDescriptorRanges = 1;
-
-	D3D12_STATIC_SAMPLER_DESC sampler = CD3DX12_STATIC_SAMPLER_DESC(0);
-	sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-	sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-
-
-	D3D12_ROOT_SIGNATURE_DESC rsDesc = {};
-	rsDesc.NumParameters = _countof(rp);
-	rsDesc.pParameters = rp;
-	rsDesc.pStaticSamplers = &sampler;
-	rsDesc.NumStaticSamplers = 1;
-	rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-
-
-	ComPtr<ID3DBlob> rsBlob;
-	ComPtr<ID3DBlob> errBlob;
-
-	auto result = D3D12SerializeRootSignature(
-		&rsDesc,
-		D3D_ROOT_SIGNATURE_VERSION_1,
-		rsBlob.ReleaseAndGetAddressOf(),
-		errBlob.ReleaseAndGetAddressOf());
-
-	result = DirectXDevice::GetInstance().GetDevice()->CreateRootSignature(
-		0,
-		rsBlob->GetBufferPointer(),
-		rsBlob->GetBufferSize(),
-		IID_PPV_ARGS(posteffect_dof_horizontal_pso.rootSignature.ReleaseAndGetAddressOf()));
-
-	// シェーダー
-	// 頂点シェーダーはBloomを再利用
-	auto vs = ShaderManager::GetInstance().GetShader("PE_PeraPolygonVS");
-	auto ps = ShaderManager::GetInstance().GetShader("PE_DOF_HorizontalBlur");
-
-	gpsDesc.VS = CD3DX12_SHADER_BYTECODE(vs);
-	gpsDesc.PS = CD3DX12_SHADER_BYTECODE(ps);
-	gpsDesc.DepthStencilState.DepthEnable = false;
-	gpsDesc.DepthStencilState.StencilEnable = false;
-	gpsDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-	gpsDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-	gpsDesc.NumRenderTargets = 2;
-	gpsDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM; // ブラー0
-	gpsDesc.RTVFormats[1] = DXGI_FORMAT_R8G8B8A8_UNORM; // ブラー1
-	gpsDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-	gpsDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
-	gpsDesc.SampleDesc.Count = 1;
-	gpsDesc.SampleDesc.Quality = 0;
-	gpsDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
-	gpsDesc.pRootSignature = posteffect_dof_horizontal_pso.rootSignature.Get();
-	result = DirectXDevice::GetInstance().GetDevice()->CreateGraphicsPipelineState(
-		&gpsDesc, IID_PPV_ARGS(posteffect_dof_horizontal_pso.pso.ReleaseAndGetAddressOf()));
-
-	ps = ShaderManager::GetInstance().GetShader("PE_DOF_Result");
-	gpsDesc.PS = CD3DX12_SHADER_BYTECODE(ps);
-
-	result = DirectXDevice::GetInstance().GetDevice()->CreateGraphicsPipelineState(
-		&gpsDesc, IID_PPV_ARGS(posteffect_dof_result_pso.pso.ReleaseAndGetAddressOf()));
-
-
-	return result;
-}
-
-
 
 HRESULT RenderingPipeLine::CreatePeraPolygon()
 {
@@ -1424,55 +1022,6 @@ HRESULT RenderingPipeLine::CreatePeraPolygon()
 	return result;
 }
 
-HRESULT RenderingPipeLine::CreateDOFBuffer()
-{
-	// バッファの生成
-	auto& bbuff = DirectXGraphics::GetInstance().GetBackBuffers()[0];
-	auto resDesc = bbuff->GetDesc();
-
-	auto clearColor = DirectXGraphics::GetInstance().GetClearColor();
-	D3D12_HEAP_PROPERTIES heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-	D3D12_CLEAR_VALUE clearValue = {};
-	clearValue.Color[0] = clearColor[0];
-	clearValue.Color[1] = clearColor[1];
-	clearValue.Color[2] = clearColor[2];
-	clearValue.Color[3] = clearColor[3];
-
-	clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-
-	DirectXDevice::GetInstance().GetDevice()->CreateCommittedResource(
-		&heapProp,
-		D3D12_HEAP_FLAG_NONE,
-		&resDesc,
-		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-		&clearValue,
-		IID_PPV_ARGS(m_dof_texture0.ReleaseAndGetAddressOf()));
-
-	m_dof_texture0->SetName(L"DOF_Texture0");
-
-	DirectXDevice::GetInstance().GetDevice()->CreateCommittedResource(
-		&heapProp,
-		D3D12_HEAP_FLAG_NONE,
-		&resDesc,
-		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-		&clearValue,
-		IID_PPV_ARGS(m_dof_texture1.ReleaseAndGetAddressOf()));
-
-	m_dof_texture1->SetName(L"DOF_Texture0");
-
-	DirectXDevice::GetInstance().GetDevice()->CreateCommittedResource(
-		&heapProp,
-		D3D12_HEAP_FLAG_NONE,
-		&resDesc,
-		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-		&clearValue,
-		IID_PPV_ARGS(m_result_dof_resource.ReleaseAndGetAddressOf()));
-
-	m_result_dof_resource->SetName(L"DOF_RESULT");
-
-	return S_OK;
-}
-
 void RenderingPipeLine::RenderingHighLight()
 {
 	// 高輝度
@@ -1481,6 +1030,12 @@ void RenderingPipeLine::RenderingHighLight()
 			m_BloomBuffer[0].Get(),
 			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
 			D3D12_RESOURCE_STATE_RENDER_TARGET));
+
+	m_pCommandList->ResourceBarrier(
+		1, &CD3DX12_RESOURCE_BARRIER::Transition(
+			m_RaytracingResource.Get(),
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 
 
 	auto bloomBufferPointer = m_peraRTVHeap->GetCPUDescriptorHandleForHeapStart();
@@ -1498,11 +1053,25 @@ void RenderingPipeLine::RenderingHighLight()
 	m_pCommandList->IASetVertexBuffers(0, 1, &m_PeraVBV);
 
 	auto srvHandle = m_peraSRVHeap->GetGPUDescriptorHandleForHeapStart();
+	srvHandle.ptr += DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * (m_BloomBufferCount + m_BlurWeights + ResultBloomResource + RaytracingRenderResource);
+
 	m_pCommandList->SetDescriptorHeaps(1, m_peraSRVHeap.GetAddressOf());
 	// 生リソースをセット
 	m_pCommandList->SetGraphicsRootDescriptorTable(0, srvHandle);
 	m_pCommandList->DrawInstanced(4, 1, 0, 0);
 
+}
+
+void RenderingPipeLine::DefaultRendering()
+{
+	DefaultRenderingBegin();
+	if (m_pSkyBox)
+	{
+		m_pSkyBox->Draw();
+	}
+	MeshDrawer::GetInstance().Draw();
+	ParticleManager::GetInstance().Draw();
+	DefaultRenderingEnd();
 }
 
 void RenderingPipeLine::DrawPostEffect()
@@ -1512,14 +1081,6 @@ void RenderingPipeLine::DrawPostEffect()
 	//BeginDrawShadow();
 	//MeshDrawer::GetInstance().ShadowDraw();
 
-	DefaultRenderingBegin();
-	if (m_pSkyBox)
-	{
-		m_pSkyBox->Draw();
-	}
-	MeshDrawer::GetInstance().Draw();
-	ParticleManager::GetInstance().Draw();
-	DefaultRenderingEnd();
 
 	//// 深度だけ書き込み
 	//auto dsvHeaps = DirectXGraphics::GetInstance().GetDSVHeap();
@@ -1535,6 +1096,7 @@ void RenderingPipeLine::DrawPostEffect()
 	// DOF 被写界深度
 	//EffectDepthOfField();
 	//Bloom
+	
 	EffectBloom();
 }
 
@@ -1788,28 +1350,3 @@ void RenderingPipeLine::UpdateCubeMapCameraTargets(const SimpleMath::Vector3& ca
 
 }
 
-void RenderingPipeLine::UpdateConstantBuffers()
-{
-	if (ImGui::BeginTabItem("PostEffectParameter", nullptr))
-	{
-		UpdareDofParameterBuffer();
-		ImGui::EndTabItem();
-	}
-}
-
-void RenderingPipeLine::UpdareDofParameterBuffer()
-{
-	bool changeFlag = false;
-
-	changeFlag = ImGui::DragFloat("Pint", &mDofPint, 0.01f, -1.0f, 1.0f);
-
-	if (!changeFlag)return;
-
-	auto dofParamasBuffer = mDofParameterResource->getBuffer();
-
-	DOF_Parameters* dofParams = nullptr;
-	dofParamasBuffer->Map(0, nullptr, (void**)&dofParams);
-	dofParams->Pint = mDofPint;
-	dofParamasBuffer->Unmap(0, nullptr);
-
-}

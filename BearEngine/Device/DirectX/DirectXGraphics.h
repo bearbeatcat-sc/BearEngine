@@ -27,6 +27,7 @@ class DirectXGraphics :
 {
 public:
 	friend class Singleton<DirectXGraphics>;
+	void CreateGuiResourceView();
 	HRESULT Init();
 
 	bool Begin();
@@ -63,6 +64,7 @@ public:
 
 	ID3D12GraphicsCommandList5* GetCommandList();
 	IDXGISwapChain4* GetSwapChain();
+	D3D12_GPU_DESCRIPTOR_HANDLE AllocateImGuiResource(ComPtr<ID3D12Resource> resource);
 
 	void ResourceBarrier(ID3D12Resource* pResource, D3D12_RESOURCE_STATES stateBefore, D3D12_RESOURCE_STATES stateAfter);
 
@@ -142,10 +144,11 @@ private:
 	ComPtr<ID3D12DescriptorHeap> m_peraSRVHeap; // SRVヒープ
 
 	ComPtr<ID3D12DescriptorHeap> m_DepthSRVHeap; // 深度値テクスチャ用
-
 	ComPtr<ID3D12Resource> m_LightDepthBuffer;
-
 	ComPtr<ID3D12Resource> m_FluidDepthBuffer;
+
+	std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> _RenderResouceSRV_Handles;
+	UINT _GUIHeapsAllocateIndex;
 
 };
 

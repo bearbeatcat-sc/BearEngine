@@ -93,8 +93,16 @@ void LightManager::Draw()
 		
 		if (ImGui::BeginTabItem("LightProperties"))
 		{
+			ImGui::Text("DirectionalLight");
+			ImGui::DragFloat3("LightDirection X", dir_, 0.01f, -1.0f, 1.0f);
+			if (ImGui::Button("Add PointLight", ImVec2(30, 30)))
+			{
+				auto spotLight = std::make_shared<PointLight>(SimpleMath::Vector3(0, 0, 0), SimpleMath::Color(1, 1, 1, 1), 10.0f, 1.0f);
+				AddPointLight(spotLight);
+
+				isUpdate = true;
+			}
 			
-			ImGui::DragFloat3("LightDirection X", dir_, 0.01f, -1.0f, 1.0f);		
 			ImGui::Text("PointLights");
 
 
@@ -112,13 +120,7 @@ void LightManager::Draw()
 			vec3_dir.Normalize();
 			m_DirectionalLight->UpdateDirectionalLight(vec3_dir, SimpleMath::Color(1, 1, 1, 1));
 
-			if (ImGui::Button("Add PointLight", ImVec2(30, 30)))
-			{
-				auto spotLight = std::make_shared<PointLight>(SimpleMath::Vector3(0, 0, 0), SimpleMath::Color(1, 1, 1, 1), 10.0f, 1.0f);
-				AddPointLight(spotLight);
 
-				isUpdate = true;
-			}
 
 		}
 

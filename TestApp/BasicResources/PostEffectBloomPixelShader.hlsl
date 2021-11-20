@@ -110,9 +110,8 @@ float4 VerticalBokehPS(Output input) : SV_TARGET
 	
     //Get5x5GaussianBlur(texHighLum, smp, input.uv, dx, dy, float4(uvOfst, uvOfst + uvSize)) +
     //saturate(bloomAccum);
-                  
-    //return tex.Sample(smp, input.uv) + saturate(bloomAccum);
-    return tex.Sample(smp, input.uv);
+                      
+    return tex.Sample(smp, input.uv) + saturate(bloomAccum);
 
 }
 
@@ -136,8 +135,7 @@ float4 BlurPS(Output input) : SV_Target
     
     float4 ret = float4(0, 0, 0, 0);
     
-    //float4 col = texHighLum.Sample(smp, input.uv);
-    //return HorizontalBluer(texHighLum, smp, input.uv, dx, dy);
+    
     return HorizontalBlur(texHighLum, input.uv, dx, 8, 0.112f);
 }
 
@@ -155,6 +153,6 @@ float4 main(Output input) : SV_Target
     
     float contribution = max(0, brightness - 0.8f);
     contribution /= max(brightness, 0.00001);
-    
+        
     return col * contribution;
 }

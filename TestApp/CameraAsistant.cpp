@@ -11,15 +11,15 @@
 CameraAsistant::CameraAsistant()
 {
 	m_Camera = CameraManager::GetInstance().GetMainCamera();
-	m_Camera->SetPosition(SimpleMath::Vector3(0, 0, 0));
-	m_Camera->SetTarget(SimpleMath::Vector3(0.0f, 0.0f, 1.0f));
+	m_Camera->SetPosition(SimpleMath::Vector3(-3.589, 2.828, -2.984));
+	m_Camera->SetTarget(SimpleMath::Vector3(-3.115, 2.532, -2.154));
 	m_Camera->SetNear(0.1f);
 	m_Camera->SetFar(100.0f);
 
 	_Pitch = 0.0f;
 	_Yaw = 3.2f;
 
-	ViewMove(SimpleMath::Vector3(0.0f));
+	//ViewMove(SimpleMath::Vector3(0.0f));
 }
 
 CameraAsistant::~CameraAsistant()

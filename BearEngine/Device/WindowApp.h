@@ -26,6 +26,8 @@ public:
 	const std::string FileOpen();
 	void MsgBox(const std::string&& msg, const std::string& caption);
 
+	static WindowSize window_size;
+
 protected:
 	WindowApp();
 	virtual ~WindowApp();
@@ -34,7 +36,6 @@ protected:
 private:
 	HWND hwnd_;
 	WNDCLASSEX w_;
-	WindowSize window_size_;
 	Game* game_;
 	BearEngine* bear_engine_;
 

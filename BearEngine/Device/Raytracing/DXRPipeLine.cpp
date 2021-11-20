@@ -364,6 +364,13 @@ void DXRPipeLine::UpdateMaterial()
 void DXRPipeLine::Render(ID3D12Resource* pRenderResource, SkyBox* pSkyBox)
 {
 	auto commandList = DirectXGraphics::GetInstance().GetCommandList();
+	
+	DirectXGraphics::GetInstance().ResourceBarrier(
+		_OutPutResource.Get(),
+		D3D12_RESOURCE_STATE_COPY_SOURCE,
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS
+	);
+	
 	UpdateTLAS();
 
 	// カメラ用のCBの更新
@@ -400,12 +407,6 @@ void DXRPipeLine::Render(ID3D12Resource* pRenderResource, SkyBox* pSkyBox)
 	// カメラCBのセット
 	commandList->SetComputeRootConstantBufferView(GlobalRootParamter_SceneParams, _SceneCB->GetGPUVirtualAddress());
 	commandList->DispatchRays(&_dispathRaysDesc);
-
-	DirectXGraphics::GetInstance().ResourceBarrier(
-		_OutPutResource.Get(),
-		D3D12_RESOURCE_STATE_COPY_SOURCE,
-		D3D12_RESOURCE_STATE_UNORDERED_ACCESS
-	);
 
 	DirectXGraphics::GetInstance().ResourceBarrier(
 		_OutPutResource.Get(),

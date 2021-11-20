@@ -16,7 +16,7 @@
 #include <time.h>
 #include <Device/Lights/LightManager.h>
 #include <Device/DirectX/Core/Sounds/SoundManager.h>
-#include <Device/RenderingPipeline.h>
+#include <Device/Rendering/RenderingPipeline.h>
 
 #include "Device/Raytracing/DXRMeshData.h"
 
@@ -34,6 +34,10 @@ MainGame::~MainGame()
 void MainGame::Init()
 {
 	DirectXGraphics::GetInstance().InitFontSystem(L"font/fonttest.spritefont");
+
+	MeshManager::GetInstance().GetSpehereMesh(12, "NormalMeshEffect");
+	MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "blenderMonkey.obj", "BlenderMonkey");
+	MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "cube0.obj", "Cube0");
 
 	auto cubeMeshData = MeshManager::GetInstance().GetMeshData("CubeModelData");
 	cubeMeshData->SetPhysicsBaseMaterial(PhysicsBaseMaterial(SimpleMath::Vector4(1.0f, 0.0f, 0.0f, 1.0f), SimpleMath::Vector4(1.0f, 10.0f, 1.0f, 0.5f), 0.5f));
@@ -85,19 +89,6 @@ void MainGame::Init()
 	_AddTimer = std::make_shared<Timer>(3.0f);
 	_GenerateTimer = std::make_shared<Timer>(0.0001f);
 	_IsGenerate = false;
-
-
-	//float floorsize = 30 / 6;
-
-	//for(int z = 0; z < 6; ++z)
-	//{
-	//	for(int x = 0; x < 6; ++x)
-	//	{
-	//		auto floor = new Sphere(SimpleMath::Vector3(x, 0, z), Sphere::SphereType_Normal);
-	//		floor->SetScale(SimpleMath::Vector3(floorsize, 1, floorsize));
-	//		ActorManager::GetInstance().AddActor(floor);
-	//	}
-	//}
 
 
 	const int grid_size_x = 8;
@@ -201,28 +192,6 @@ void MainGame::Init()
 void MainGame::Update()
 {
 	m_CameraAsistant->Update();
-
-#ifdef _DEBUG
-	ImGui::Begin("BlenderMonkeyMaterial", nullptr);
-	float transmission = _blenderMonkyMaterial._transmission;
-	float refract = _blenderMonkyMaterial._refract;
-
-	if (ImGui::DragFloat("Transmission", &transmission, 0.01f, 0.0f, 1.0f))
-	{
-		_blenderMonkyMaterial._transmission = transmission;
-
-		_blenderMonkey->UpdateMaterial(_blenderMonkyMaterial);
-	}
-	if (ImGui::DragFloat("Refract", &refract, 0.01f, 1.0f, 3.0f))
-	{
-		_blenderMonkyMaterial._refract = refract;
-
-		_blenderMonkey->UpdateMaterial(_blenderMonkyMaterial);
-	}
-
-	ImGui::End();
-
-#endif
 
 	if (!_IsGenerate)
 	{

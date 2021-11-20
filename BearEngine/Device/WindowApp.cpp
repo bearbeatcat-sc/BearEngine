@@ -11,8 +11,10 @@
 #include "../imgui/imgui.h"
 #include "../imgui/imgui_impl_win32.h"
 #include "../imgui/imgui_impl_dx12.h"
+#include "Device/GUISystem.h"
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND, UINT, WPARAM, LPARAM);
+WindowSize WindowApp::window_size;
 
 LRESULT WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
@@ -20,6 +22,11 @@ LRESULT WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	{
 	case WM_DESTROY:
 		PostQuitMessage(0);
+		return 0;
+
+	case WM_SIZE:
+		WindowApp::window_size.window_Width = LOWORD(lparam);
+		WindowApp::window_size.window_Height = HIWORD(lparam);
 		return 0;
 	}
 
@@ -31,12 +38,8 @@ HRESULT WindowApp::Run(Game* game)
 {
 	game_ = game;
 	OutputDebugStringA("Hello,DirectX!!\n");
-
-	int screenSize_Width = GetSystemMetrics(SM_CXSCREEN);
-	int screenSize_Height = GetSystemMetrics(SM_CYSCREEN);
 	
-	window_size_ = { std::clamp(game_->windowSize_X,0,screenSize_Width),std::clamp(game_->windowSize_Y,0,screenSize_Height) };
-
+	window_size = { game_->windowSize_X,game->windowSize_Y };
 
 
 	w_.cbSize = sizeof(WNDCLASSEX);
@@ -46,11 +49,9 @@ HRESULT WindowApp::Run(Game* game)
 	w_.hCursor = LoadCursor(NULL, IDC_ARROW);
 
 	RegisterClassEx(&w_);
-	RECT wrc = { 0,0,window_size_.window_Width,window_size_.window_Height };
+	RECT wrc = { 0,0,window_size.window_Width,window_size.window_Height };
 	AdjustWindowRect(&wrc, WS_OVERLAPPEDWINDOW, false);
 
-	window_size_.window_Width = wrc.right - wrc.left;
-	window_size_.window_Height = wrc.bottom - wrc.top;
 
 	hwnd_ = CreateWindow(
 		w_.lpszClassName,
@@ -66,7 +67,15 @@ HRESULT WindowApp::Run(Game* game)
 		nullptr
 	);
 
+
+
 	ShowWindow(hwnd_, SW_SHOW);
+
+	// クライアントサイズに補正する
+	RECT clientSize;
+	GetClientRect(hwnd_, &clientSize);
+	window_size.window_Width = clientSize.right - clientSize.left;
+	window_size.window_Height = clientSize.bottom - clientSize.top;
 
 	bear_engine_ = new BearEngine();
 	bear_engine_->InitEngine();
@@ -95,7 +104,6 @@ HRESULT WindowApp::Run(Game* game)
 	MSG msg{};
 
 
-
 	while (true)
 	{
 		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
@@ -109,11 +117,13 @@ HRESULT WindowApp::Run(Game* game)
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
 
+#ifdef _DEBUG
+		GUISystem::GetInstance().BeginGUI();
+#endif	
 		bear_engine_->EngineUpdate();
-		bear_engine_->EngineDrawBegin();
-		bear_engine_->EngineDraw();
+		bear_engine_->BeginRender();
 		game_->Update();
-		bear_engine_->EngineDrawEnd();
+		bear_engine_->EndRender();
 
 		if (msg.message == WM_QUIT)
 		{
@@ -136,7 +146,7 @@ HWND WindowApp::GetHWND()
 
 WindowSize WindowApp::GetWindowSize()
 {
-	return window_size_;
+	return window_size;
 }
 
 WNDCLASSEX WindowApp::GetWndClassEx()
@@ -146,7 +156,7 @@ WNDCLASSEX WindowApp::GetWndClassEx()
 
 float WindowApp::GetAspect()
 {
-	return static_cast<float>(window_size_.window_Height) / static_cast<float>(window_size_.window_Width);
+	return static_cast<float>(window_size.window_Height) / static_cast<float>(window_size.window_Width);
 }
 
 const std::string WindowApp::FileOpen()

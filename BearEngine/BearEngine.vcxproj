@@ -228,6 +228,7 @@
     <ClCompile Include="Device\DirectX\DirectXGraphics.cpp" />
     <ClCompile Include="Device\DirectX\DirectXInput.cpp" />
     <ClCompile Include="Device\DirectX\FontSystem.cpp" />
+    <ClCompile Include="Device\GUISystem.cpp" />
     <ClCompile Include="Device\Lights\PointLight.cpp" />
     <ClCompile Include="Device\Raytracing\DXRInstance.cpp" />
     <ClCompile Include="Device\Raytracing\DXRPipeLine.cpp" />
@@ -238,7 +239,8 @@
     <ClCompile Include="Device\Lights\DirectionalLight.cpp" />
     <ClCompile Include="Device\Lights\LightManager.cpp" />
     <ClCompile Include="Device\ParticleSystems\ParticleEmitter.cpp" />
-    <ClCompile Include="Device\RenderingPipeline.cpp" />
+    <ClCompile Include="Device\Rendering\RenderingPipeline.cpp" />
+    <ClCompile Include="Device\Rendering\SystemRenderingPipeLine.cpp" />
     <ClCompile Include="Device\SkyBox.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
@@ -327,6 +329,7 @@
     <ClInclude Include="Device\DirectX\DirectXGraphics.h" />
     <ClInclude Include="Device\DirectX\DirectXInput.h" />
     <ClInclude Include="Device\DirectX\FontSystem.h" />
+    <ClInclude Include="Device\GUISystem.h" />
     <ClInclude Include="Device\Lights\PointLight.h" />
     <ClInclude Include="Device\Raytracing\DXRInstance.h" />
     <ClInclude Include="Device\Raytracing\DXRMeshData.h" />
@@ -341,7 +344,8 @@
     <ClInclude Include="Device\ParticleSystems\ParticleEmitter.h" />
     <ClInclude Include="Device\ParticleSystems\ParticleAction.h" />
     <ClInclude Include="Device\Raytracing\PhysicsBaseMaterial.h" />
-    <ClInclude Include="Device\RenderingPipeline.h" />
+    <ClInclude Include="Device\Rendering\RenderingPipeline.h" />
+    <ClInclude Include="Device\Rendering\SystemRenderingPipeLine.h" />
     <ClInclude Include="Device\Singleton.h" />
     <ClInclude Include="Device\SkyBox.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>

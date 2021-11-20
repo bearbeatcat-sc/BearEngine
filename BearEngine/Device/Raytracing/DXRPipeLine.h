@@ -262,6 +262,8 @@ private:
 	ComPtr<ID3D12RootSignature> _EmptyRootSig;
 
 	ComPtr<ID3D12Resource> _OutPutResource;
+
+	
 	ComPtr<ID3D12DescriptorHeap> _SrvUavHeap;
 	ComPtr<ID3D12DescriptorHeap> _MeshSrvHeap;
 	const uint32_t kSrvUavHeapSize = 2;

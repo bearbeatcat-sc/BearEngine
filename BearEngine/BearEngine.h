@@ -9,11 +9,12 @@ public:
 	~BearEngine();
 	void InitEngine();
 	void EngineUpdate();
-	void EngineDrawBegin();
-	void EngineDraw();
-	void EngineDrawEnd();
+	void BeginRender();
+	void EndRender();
 
 private:
+	void RenderApplication();
+
 	BearEngine(const BearEngine& b);
 	BearEngine& operator= (const BearEngine& b);
 

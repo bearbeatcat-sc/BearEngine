@@ -15,6 +15,7 @@ constexpr uint32_t shadow_difinition = 1024;
 
 
 DirectXGraphics::DirectXGraphics()
+	:_GUIHeapsAllocateIndex(1)
 {
 	m_ClearColor[0] = 0.0f;
 	m_ClearColor[1] = 0.0f;
@@ -29,6 +30,17 @@ DirectXGraphics::~DirectXGraphics()
 	for (auto itr = m_BackBuffers.begin(); itr != m_BackBuffers.end(); itr++)
 	{
 		(*itr)->Release();
+	}
+
+}
+
+void DirectXGraphics::CreateGuiResourceView()
+{
+	_RenderResouceSRV_Handles.resize(2);
+	
+	for (int i = 0; i < 2; i++)
+	{
+		_RenderResouceSRV_Handles[i] = AllocateImGuiResource(m_BackBuffers[i]);
 	}
 
 }
@@ -79,6 +91,7 @@ HRESULT DirectXGraphics::Init()
 
 	CreateImGUIDescriptrHeap();
 	GenerateDepthResource();
+	CreateGuiResourceView();
 
 	//if (InitBloom() != S_OK)
 	//{
@@ -222,7 +235,7 @@ ID3D12CommandQueue* DirectXGraphics::GetCmdQueue()
 	return m_CommandQueue.Get();
 }
 
-
+// 最終的な描画結果を行うための準備
 bool DirectXGraphics::Begin()
 {
 	UINT bbIndex = m_Swapchain.Get()->GetCurrentBackBufferIndex();
@@ -253,6 +266,15 @@ bool DirectXGraphics::Begin()
 
 bool DirectXGraphics::End()
 {
+//#ifdef _DEBUG
+//	UINT bbIndex = m_Swapchain.Get()->GetCurrentBackBufferIndex();
+//	
+//	auto windowsize = WindowApp::GetInstance().GetWindowSize();
+//	ImGui::Begin("Game", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize);;
+//	ImGui::Image((ImTextureID)_RenderResouceSRV_Handles[bbIndex].ptr, ImVec2(1280, 720));
+//	ImGui::End();
+//#endif
+	
 	ImGui::Render();
 
 	m_CommandList->SetDescriptorHeaps(
@@ -260,7 +282,7 @@ bool DirectXGraphics::End()
 	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), m_CommandList.Get());
 
 
-	UINT bbIndex = m_Swapchain.Get()->GetCurrentBackBufferIndex();
+	//UINT bbIndex = m_Swapchain.Get()->GetCurrentBackBufferIndex();
 	m_BarrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	m_BarrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 
@@ -386,7 +408,7 @@ void DirectXGraphics::CreateImGUIDescriptrHeap()
 	D3D12_DESCRIPTOR_HEAP_DESC desc = {};
 	desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	desc.NodeMask = 0;
-	desc.NumDescriptors = 1;
+	desc.NumDescriptors = 3; // 後で特定の個数に
 	desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 
 	DirectXDevice::GetInstance().GetDevice()->CreateDescriptorHeap(&desc, IID_PPV_ARGS(m_ImGUIHeaps.GetAddressOf()));
@@ -435,8 +457,43 @@ IDXGISwapChain4* DirectXGraphics::GetSwapChain()
 	return m_Swapchain.Get();
 }
 
+D3D12_GPU_DESCRIPTOR_HANDLE DirectXGraphics::AllocateImGuiResource(ComPtr<ID3D12Resource> resource)
+{
+
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	srvDesc.Texture2D.MipLevels = 1;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+
+	auto incSize = DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	
+	auto cpu_StartHandle = m_ImGUIHeaps->GetCPUDescriptorHandleForHeapStart();
+
+	auto cpuHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(
+		cpu_StartHandle,
+		_GUIHeapsAllocateIndex, 
+		incSize
+	);
+
+	auto gpu_StartHandle = m_ImGUIHeaps->GetGPUDescriptorHandleForHeapStart();
+	auto gpuHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(
+		gpu_StartHandle,
+		_GUIHeapsAllocateIndex, 
+		incSize
+	);
+
+
+	DirectXDevice::GetInstance().GetDevice()->CreateShaderResourceView(resource.Get(), &srvDesc, cpuHandle);
+
+	_GUIHeapsAllocateIndex++;
+	
+	return gpuHandle;
+}
+
 void DirectXGraphics::ResourceBarrier(ID3D12Resource* pResource, D3D12_RESOURCE_STATES stateBefore,
-	D3D12_RESOURCE_STATES stateAfter)
+                                      D3D12_RESOURCE_STATES stateAfter)
 {
 	D3D12_RESOURCE_BARRIER barrier = {};
 	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
