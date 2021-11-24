@@ -5,21 +5,20 @@
 #include "../../Utility/Time.h"
 
 CollisionComponent::CollisionComponent(Actor* user, CollisionType collType, const std::string& collisonTag, int upadeteOredr)
-	:Component(user, upadeteOredr), m_CollisionType(collType), m_CollisonTag(collisonTag), m_TreeObject(nullptr),
-	m_IsRigid(false), m_m(0.1f)
+	:Component(user, upadeteOredr), _collisionType(collType), _collisionTag(collisonTag), _treeObject(nullptr),_isDrawDebug(true)
 {
-	m_CollisionIndex = CollisionTagManagaer::GetInstance().GetTagIndex(collisonTag);
+	_collisionIndex = CollisionTagManagaer::GetInstance().GetTagIndex(collisonTag);
 }
 
 CollisionComponent::~CollisionComponent()
 {
-	if (m_TreeObject != nullptr)
+	if (_treeObject != nullptr)
 	{
-		delete m_TreeObject;
-		m_TreeObject = nullptr;
+		delete _treeObject;
+		_treeObject = nullptr;
 	}
 
-	m_User = nullptr;
+	_user = nullptr;
 }
 
 void CollisionComponent::Update()
@@ -27,69 +26,51 @@ void CollisionComponent::Update()
 	return;
 }
 
-DirectX::SimpleMath::Vector3 CollisionComponent::GetUserPosition()
+const DirectX::SimpleMath::Vector3& CollisionComponent::GetUserPosition()
 {
-	return m_User->GetPosition();
+	return _user->GetPosition();
 }
 
 CollisionType CollisionComponent::GetCollisionType()
 {
-	return m_CollisionType;
+	return _collisionType;
+}
+
+void CollisionComponent::OnDrawDebug()
+{
+	_isDrawDebug = true;
+}
+
+void CollisionComponent::OffDrawDebug()
+{
+	_isDrawDebug = false;
 }
 
 const std::string& CollisionComponent::GetCollsionTag()
 {
-	return m_CollisonTag;
+	return _collisionTag;
 }
 
-void CollisionComponent::SetRigidFlag(bool flag)
-{
-	m_IsRigid = flag;
-}
+
 
 void CollisionComponent::SetCollisionTag(const std::string&  tag)
 {
-	m_CollisonTag = tag;
+	_collisionTag = tag;
 }
 
 int CollisionComponent::GetCollisionIndex()
 {
-	return m_CollisionIndex;
+	return _collisionIndex;
 }
 
-const SimpleMath::Vector3& CollisionComponent::GetVelocity()
+void CollisionComponent::SetTreeObject(CollisionTreeObject* treeobj)
 {
-	return m_Vel;
-}
-
-const SimpleMath::Vector3& CollisionComponent::GetAcc()
-{
-	return m_Acc;
-}
-
-const float& CollisionComponent::GetMass()
-{
-	return m_m;
-}
-
-void CollisionComponent::SetVelocity(DirectX::SimpleMath::Vector3 vec)
-{
-	m_Vel = vec;
-}
-
-void CollisionComponent::SetAcc(DirectX::SimpleMath::Vector3 acc)
-{
-	m_Acc = acc;
-}
-
-void CollisionComponent::SetMass(float mass)
-{
-	m_m = mass;
+	_treeObject = treeobj;
 }
 
 Actor* CollisionComponent::GetUser()
 {
-	return m_User;
+	return _user;
 }
 
 void CollisionComponent::UserOnCollision(Actor* other, CollisionComponent* collisionComponent)
@@ -100,17 +81,17 @@ void CollisionComponent::UserOnCollision(Actor* other, CollisionComponent* colli
 	//	RigidUpdate(collisionComponent);
 	//}
 
-	m_User->OnCollsion(other);
+	_user->OnCollsion(other);
 }
 
 void CollisionComponent::Delete()
 {
-	m_DeleteFlag = true;
+	_deleteFlag = true;
 }
 
 bool CollisionComponent::IsDelete()
 {
-	return m_DeleteFlag;
+	return _deleteFlag;
 }
 
 //void CollisionComponent::OnAction(Actor* other, CollisionComponent* collisionComponent)
@@ -125,30 +106,6 @@ bool CollisionComponent::IsDelete()
 
 CollisionTreeObject* CollisionComponent::GetCollisionTreeObject()
 {
-	return m_TreeObject;
+	return _treeObject;
 }
-
-void CollisionComponent::Rebound(CollisionComponent* collisionComponent)
-{
-	SimpleMath::Vector3 n = (collisionComponent->GetUserPosition() - m_User->GetPosition());
-	n.Normalize();
-
-	SimpleMath::Vector3 v = m_Vel;
-	SimpleMath::Vector3 V = collisionComponent->GetVelocity();
-
-	m_Vel = -(((V - v).Dot(n)) * n) + V;
-	auto vel = -(((v - V).Dot(n)) * n) + V;
-
-	collisionComponent->SetVelocity(vel);
-}
-
-void CollisionComponent::RigidUpdate(CollisionComponent* collisionComponent)
-{
-	Rebound(collisionComponent);
-
-	m_Vel += m_Acc * Time::DeltaTime;
-	auto pos = m_User->GetPosition() + m_Vel * Time::DeltaTime;
-	m_User->SetPosition(pos);
-}
-
 

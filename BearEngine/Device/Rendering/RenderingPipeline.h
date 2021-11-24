@@ -39,6 +39,7 @@ public:
 	bool DefaultRenderingEnd();
 	
 	void DrawPostEffectPolygon();
+	void RenderGUIImage();
 	void EffectBloom();
 	void SetDrawFluidFlag(bool flag);
 	void BeginRenderResult();
@@ -139,6 +140,7 @@ private:
 	PSO posteffect_result_pso; //　最終的なレンダリング結果を表示
 
 	D3D12_CPU_DESCRIPTOR_HANDLE _processed_resource_RTV_CPUHANDLE;
+	D3D12_GPU_DESCRIPTOR_HANDLE _processed_resource_guiImage_Handle;
 
 
 	SkyBox* m_pSkyBox;

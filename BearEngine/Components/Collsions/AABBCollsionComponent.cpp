@@ -5,7 +5,7 @@
 #include "../../Device/DirectX/Core/Model/DebugDrawer.h"
 
 AABBCollisionComponent::AABBCollisionComponent(Actor* actor, SimpleMath::Vector3 center, SimpleMath::Vector3 size, std::string collisonTag)
-	:CollisionComponent(actor, CollisionType::CollisionType_AABB, collisonTag),m_Center(center),m_Size(size), m_IsDrawDebug(true), m_IsSetPosition(false)
+	:CollisionComponent(actor, CollisionType::CollisionType_AABB, collisonTag),_center(center),_size(size), _isSetPosition(false)
 {
 }
 
@@ -14,63 +14,55 @@ AABBCollisionComponent::~AABBCollisionComponent()
 
 }
 
-void AABBCollisionComponent::SetDebug(bool flag)
+const SimpleMath::Vector3& AABBCollisionComponent::GetCenter()
 {
-	m_IsDrawDebug = flag;
+	return _center + _adjustPos;
 }
 
-SimpleMath::Vector3 AABBCollisionComponent::GetCenter()
+const SimpleMath::Vector3& AABBCollisionComponent::GetSize()
 {
-	return m_Center + m_AdjustPos;
+	return _size;
 }
 
-SimpleMath::Vector3 AABBCollisionComponent::GetSize()
+const SimpleMath::Vector3 AABBCollisionComponent::GetMin()
 {
-	return m_Size;
+	return _center - _size;
 }
 
-SimpleMath::Vector3 AABBCollisionComponent::GetMin()
+const SimpleMath::Vector3 AABBCollisionComponent::GetMax()
 {
-	return m_Center - m_Size;
-}
-
-SimpleMath::Vector3 AABBCollisionComponent::GetMax()
-{
-	return m_Center + m_Size;
+	return _center + _size;
 }
 
 void AABBCollisionComponent::SetCenterPosition(const SimpleMath::Vector3& pos)
 {
-	m_Center = pos;
-	m_IsSetPosition = true;
+	_center = pos;
+	_isSetPosition = true;
 }
 
 void AABBCollisionComponent::SetSize(const SimpleMath::Vector3& size)
 {
-	m_Size = size;
+	_size = size;
 }
 
 void AABBCollisionComponent::SetAdjustPos(SimpleMath::Vector3 pos)
 {
-	m_AdjustPos = pos;
-}
-
-void AABBCollisionComponent::SetTreeObject(CollisionTreeObject* treeobj)
-{	
-	m_TreeObject = treeobj;
+	_adjustPos = pos;
 }
 
 bool AABBCollisionComponent::IsInterSect(CollisionComponent* collisionComponent)
 {
+	auto otherCollisionType = collisionComponent->GetCollisionType();
+	
 	// 当たり判定のタイプによって分岐
-	if (collisionComponent->GetCollisionType() == CollisionType::CollisionType_AABB)
+	if (otherCollisionType == CollisionType_AABB)
 	{
 		auto otherCol = static_cast<AABBCollisionComponent*>(collisionComponent);
 		SimpleMath::Vector3 otherMin = otherCol->GetCenter() - otherCol->GetSize();
 		SimpleMath::Vector3 otherMax = otherCol->GetCenter() + otherCol->GetSize();
 
-		SimpleMath::Vector3 min = m_Center - m_Size;
-		SimpleMath::Vector3 max = m_Center + m_Size;
+		SimpleMath::Vector3 min = _center - _size;
+		SimpleMath::Vector3 max = _center + _size;
 
 		if (min.x > otherMax.x) return false;
 		if (max.x < otherMin.x) return false;
@@ -88,15 +80,15 @@ bool AABBCollisionComponent::IsInterSect(CollisionComponent* collisionComponent)
 void AABBCollisionComponent::Update()
 {
 	// 位置を手動でセットしていない場合は、セットする。
-	if (!m_IsSetPosition) 
+	if (!_isSetPosition) 
 	{
-		m_Center = m_User->GetPosition() + m_AdjustPos;
-		m_IsSetPosition = false;
+		_center = _user->GetPosition() + _adjustPos;
+		_isSetPosition = false;
 	}
 
 #ifdef _DEBUG
-	if (m_IsDrawDebug)
-		DebugDrawer::GetInstance().DrawCube(m_Size, m_Center);
+	if (_isDrawDebug)
+		DebugDrawer::GetInstance().DrawCube(_size, _center,SimpleMath::Matrix::Identity);
 #endif
 }
 

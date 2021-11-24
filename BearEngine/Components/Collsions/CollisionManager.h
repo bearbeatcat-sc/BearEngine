@@ -15,13 +15,13 @@ class CollisionManager
 public:
 	friend class Singleton<CollisionManager>;
 	void AddComponent(CollisionComponent* component);
-	void AddRegistTree(AABBCollisionComponent* component);
-	void UpdateRegistTree(AABBCollisionComponent* component,CollisionTreeObject* object);
+	void AddRegistTree(CollisionComponent* component);
+	void UpdateRegistTree(CollisionComponent* component,CollisionTreeObject* object);
 	void Update();
 	void SetDebugMode(bool flag);
 	void InterSect();
 	void Delete();
-	void Delete(AABBCollisionComponent* component);
+	void Delete(CollisionComponent* component);
 	void Reset();
 	void Draw();
 	void Init(int level,const SimpleMath::Vector3& min, const SimpleMath::Vector3& max);

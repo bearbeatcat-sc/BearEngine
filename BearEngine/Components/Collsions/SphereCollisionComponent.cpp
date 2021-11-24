@@ -1,14 +1,15 @@
 ﻿#include "SphereCollisionComponent.h"
+
+#include "CollisionInterSect.h"
 #include "CollisionType.h"
+#include "Game_Object/Actor.h"
+#include "OBBCollisionComponent.h"
+#include "Device/DirectX/Core/Model/DebugDrawer.h"
 
 SphereCollisionComponent::SphereCollisionComponent(Actor* actor,float radius, std::string collisonTag)
 	:m_Radius(radius),CollisionComponent(actor,CollisionType::CollisionType_Sphere,collisonTag), m_AdjustPos(DirectX::SimpleMath::Vector3(0,0,0))
 {
 
-}
-
-SphereCollisionComponent::~SphereCollisionComponent()
-{
 }
 
 float SphereCollisionComponent::GetRadius()
@@ -26,9 +27,14 @@ void SphereCollisionComponent::SetAdjustPos(DirectX::SimpleMath::Vector3 pos)
 	m_AdjustPos = pos;
 }
 
-DirectX::SimpleMath::Vector3 SphereCollisionComponent::GetAdjustPos()
+const DirectX::SimpleMath::Vector3& SphereCollisionComponent::GetAdjustPos()
 {
 	return m_AdjustPos;
+}
+
+const DirectX::SimpleMath::Vector3& SphereCollisionComponent::GetPosition()
+{
+	return _user->GetPosition() + m_AdjustPos;
 }
 
 bool SphereCollisionComponent::IsInterSect(CollisionComponent* collisionComponent)
@@ -39,19 +45,40 @@ bool SphereCollisionComponent::IsInterSect(CollisionComponent* collisionComponen
 
 	//return distance <= (sumRadius * sumRadius);
 
-	DirectX::SimpleMath::Vector3 thisPos = GetUserPosition();
-	DirectX::SimpleMath::Vector3 otherPos = collisionComponent->GetUserPosition();
-	float thisRadius = m_Radius;
-	float otherRadius = static_cast<SphereCollisionComponent*>(collisionComponent)->GetRadius();
+	auto otherCollisionType = collisionComponent->GetCollisionType();
 
+	if(otherCollisionType == CollisionType_Sphere)
+	{
+		return CollisionInterSect::SphereToSphereInterSect(this, static_cast<SphereCollisionComponent*>(collisionComponent));
+	}
 
-	DirectX::SimpleMath::Vector3 temp = otherPos - thisPos;
+	if (otherCollisionType == CollisionType_OBB)
+	{
+		// 今は使わないかも
+		SimpleMath::Vector3 point;
+		return CollisionInterSect::SphereToOBBInterSect(this, static_cast<OBBCollisionComponent*>(collisionComponent), point);
+	}
 
+	
+	return false;
 
-	float sum_Radius = thisRadius + otherRadius;
+}
 
+void SphereCollisionComponent::Update()
+{
 
+#ifdef _DEBUG
+	if (_isDrawDebug)
+		DebugDrawer::GetInstance().DrawSphere(m_Radius, GetPosition());
+#endif
+}
 
+const DirectX::SimpleMath::Vector3 SphereCollisionComponent::GetMin()
+{
+	return _user->GetPosition() - DirectX::SimpleMath::Vector3(m_Radius);
+}
 
-	return (temp.x * temp.x) + (temp.y * temp.y) + (temp.z * temp.z) <= ((thisRadius + otherRadius) * (thisRadius + otherRadius));
+const DirectX::SimpleMath::Vector3 SphereCollisionComponent::GetMax()
+{
+	return _user->GetPosition() + DirectX::SimpleMath::Vector3(m_Radius);
 }

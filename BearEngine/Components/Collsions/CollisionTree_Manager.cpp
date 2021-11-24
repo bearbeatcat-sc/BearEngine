@@ -70,7 +70,7 @@ void CollisionTreeManager::SetTreeProperties(const SimpleMath::Vector3& min, con
 
 }
 
-bool CollisionTreeManager::Regist(AABBCollisionComponent* coll, CollisionTreeObject* obj)
+bool CollisionTreeManager::Regist(CollisionComponent* coll, CollisionTreeObject* obj)
 {
 	int elem = GetMortonNumber(coll->GetMin(), coll->GetMax());
 
@@ -86,14 +86,14 @@ bool CollisionTreeManager::Regist(AABBCollisionComponent* coll, CollisionTreeObj
 	return false;
 }
 
-int CollisionTreeManager::GetAllCollisionList(std::vector<AABBCollisionComponent*>& colVector)
+int CollisionTreeManager::GetAllCollisionList(std::vector<CollisionComponent*>& colVector)
 {
 	colVector.clear();
 
 	if (m_Cells[0] == nullptr)
 		return 0;
 
-	std::list<AABBCollisionComponent*> colStac;
+	std::list<CollisionComponent*> colStac;
 	GetCollisionList(0, colVector, colStac);
 
 	return colVector.size();
@@ -174,9 +174,9 @@ int CollisionTreeManager::GetPointElem(const SimpleMath::Vector3& p)
 	return Get3DMortonNumber(x, y, z);
 }
 
-bool CollisionTreeManager::GetCollisionList(int elem, std::vector<AABBCollisionComponent*>& cols, std::list<AABBCollisionComponent*>& colStac)
+bool CollisionTreeManager::GetCollisionList(int elem, std::vector<CollisionComponent*>& cols, std::list<CollisionComponent*>& colStac)
 {
-	std::list<AABBCollisionComponent*>::iterator it;
+	std::list<CollisionComponent*>::iterator it;
 
 	CollisionTreeObject* to = m_Cells[elem]->GetFirstObject();
 

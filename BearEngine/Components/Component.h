@@ -13,8 +13,8 @@ public:
 	int GetUpdateOrder() const;
 
 protected:
-	Actor* m_User;
-	int mUpdateOrder;	
+	Actor* _user;
+	int _upderOrder;	
 };
 
 #endif

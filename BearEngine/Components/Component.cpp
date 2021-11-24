@@ -2,7 +2,7 @@
 #include "../Game_Object/Actor.h"
 
 Component::Component(Actor* user, int updateOrder)
-	:m_User(user),mUpdateOrder(updateOrder)
+	:_user(user), _upderOrder(updateOrder)
 {
 	//m_User->AddComponent(this);
 }
@@ -14,5 +14,5 @@ Component::~Component()
 
 int Component::GetUpdateOrder() const
 {
-	return mUpdateOrder;
+	return _upderOrder;
 }

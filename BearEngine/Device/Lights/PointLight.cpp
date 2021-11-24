@@ -54,7 +54,7 @@ bool PointLight::DebugRender(int index)
 		isUpdate = true;
 	}
 	
-	DebugDrawer::GetInstance().DrawCube(SimpleMath::Vector3(1.0f), _position);
+	DebugDrawer::GetInstance().DrawCube(SimpleMath::Vector3(1.0f), _position,SimpleMath::Matrix::Identity);
 
 	
 	

@@ -17,8 +17,10 @@
 #include <Device/Lights/LightManager.h>
 #include <Device/DirectX/Core/Sounds/SoundManager.h>
 #include <Device/Rendering/RenderingPipeline.h>
+#include <Components/Collsions/CollisionTagManager.h>
 
 #include "Device/Raytracing/DXRMeshData.h"
+#include "GameObjects/Flor.h"
 
 
 MainGame::MainGame()
@@ -84,6 +86,13 @@ void MainGame::Init()
 	RenderingPipeLine::GetInstance().SetDrawFluidFlag(false);
 
 
+	std::vector<bool> ObjectCollTable =
+	{
+		true,
+	};
+	CollisionTagManagaer::GetInstance().AddTag("Object", ObjectCollTable);
+
+
 	//auto meshData = MeshManager::GetInstance().FindSpehere(6);
 
 	_AddTimer = std::make_shared<Timer>(3.0f);
@@ -98,42 +107,9 @@ void MainGame::Init()
 	const SimpleMath::Vector3 basePos = SimpleMath::Vector3(-5.5f, -2.5f, -5.5f);
 
 
-	for (int z = 0; z < grid_size_z; ++z)
-	{
-		//const float x = i % grid_size_x;
-		//const float z = i / grid_size_z;
-
-		//float rand_x = Random::GetRandom(-1.0f, 1.0f);
-		//float rand_z = Random::GetRandom(-1.0f, 1.0f);
-		//float rand_y = Random::GetRandom(-1.0f, 1.0f);
-
-		for (int x = 0; x < grid_size_x; ++x)
-		{
-
-
-
-			float pos_x = Random::GetRandom(-10.0f, 10.0f);
-			float pos_y = Random::GetRandom(-10.0f, 10.0f);
-			float pos_z = Random::GetRandom(-10.0f, 10.0f);
-
-
-			bool flag = ((grid_size_x * z) + x) % 2;
-
-
-			if (flag)
-			{
-				auto cube = new Cube(basePos + (SimpleMath::Vector3(x, 0, z) * 2.0f), SimpleMath::Vector3(1.0f, 1, 1.0f), 300.0f, "WhiteCube", false);
-				ActorManager::GetInstance().AddActor(cube);
-			}
-			else
-			{
-				auto cube = new Cube(basePos + (SimpleMath::Vector3(x, 0, z) * 2.0f), SimpleMath::Vector3(1.0f, 1, 1.0f), 300.0f, "GrayCube", false);
-				ActorManager::GetInstance().AddActor(cube);
-			}
-		}
-
-
-	}
+	auto floor = new Flor(basePos,SimpleMath::Vector3(1));
+	floor->SetScale(SimpleMath::Vector3(1,1,1));
+	ActorManager::GetInstance().AddActor(floor);
 
 	auto wall = new Cube(SimpleMath::Vector3(1.5f, 3.0f, 9.0f), SimpleMath::Vector3(grid_size_x, 6, 1), 300.0f, "WhiteCube", false);
 	ActorManager::GetInstance().AddActor(wall);
@@ -152,12 +128,12 @@ void MainGame::Init()
 
 	auto sphere = new Sphere(SimpleMath::Vector3(-2.0f, 0.0f, 6.0f), Sphere::SphereType_Normal);
 	sphere->SetScale(SimpleMath::Vector3(1.0f));
-	sphere->SetRotation(Quaternion::CreateFromYawPitchRoll(3.0f, 0.0f, 0.0f));
+	sphere->SetRotation(SimpleMath::Vector3(3.0f, 0.0f, 0.0f));
 	ActorManager::GetInstance().AddActor(sphere);
 
 	auto sphere2 = new Sphere(SimpleMath::Vector3(3.0f, 0.0f, 3.0f), Sphere::SphereType_NormalLowPoly);
 	sphere2->SetScale(SimpleMath::Vector3(1.0f));
-	sphere2->SetRotation(Quaternion::CreateFromYawPitchRoll(-2.4f, 0.0f, 0.0f));
+	sphere2->SetRotation(SimpleMath::Vector3(-2.4f, 0.0f, 0.0f));
 	ActorManager::GetInstance().AddActor(sphere2);
 
 	//for (int i = 0; i < 241; ++i)

@@ -91,7 +91,7 @@ HRESULT DirectXGraphics::Init()
 
 	CreateImGUIDescriptrHeap();
 	GenerateDepthResource();
-	CreateGuiResourceView();
+	//CreateGuiResourceView();
 
 	//if (InitBloom() != S_OK)
 	//{
@@ -265,16 +265,7 @@ bool DirectXGraphics::Begin()
 }
 
 bool DirectXGraphics::End()
-{
-//#ifdef _DEBUG
-//	UINT bbIndex = m_Swapchain.Get()->GetCurrentBackBufferIndex();
-//	
-//	auto windowsize = WindowApp::GetInstance().GetWindowSize();
-//	ImGui::Begin("Game", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize);;
-//	ImGui::Image((ImTextureID)_RenderResouceSRV_Handles[bbIndex].ptr, ImVec2(1280, 720));
-//	ImGui::End();
-//#endif
-	
+{	
 	ImGui::Render();
 
 	m_CommandList->SetDescriptorHeaps(

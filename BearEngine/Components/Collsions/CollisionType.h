@@ -5,6 +5,7 @@ enum CollisionType
 {
 	CollisionType_Sphere,
 	CollisionType_AABB,
+	CollisionType_OBB,
 };
 
 #endif

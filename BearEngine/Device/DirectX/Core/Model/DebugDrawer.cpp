@@ -4,6 +4,7 @@
 #include "Device/DirectX/DirectXDevice.h"
 #include "Device/DirectX/DirectXGraphics.h"
 #include "GeomtryGenerater.h"
+#include "MeshManager.h"
 #include "../Buffer.h"
 #include "Utility/Camera.h"
 
@@ -13,13 +14,122 @@ DebugDrawer::DebugDrawer()
 
 DebugDrawer::~DebugDrawer()
 {
-	m_ConstantBuffers.clear();
+	_constantBuffers.clear();
 }
 
 bool DebugDrawer::Init(const wchar_t* vertexShaderPath, const wchar_t* pixelShaderPath)
 {
-	m_Camera = CameraManager::GetInstance().GetMainCamera();
+	_camera = CameraManager::GetInstance().GetMainCamera();
 
+
+
+	GenerateCubeData();
+	GenerateSphereData();
+	GeneratePipeline(vertexShaderPath, pixelShaderPath);
+
+	return true;
+}
+
+bool DebugDrawer::GenerateVertexBuffer(std::vector<XMFLOAT3>& vertices, ComPtr<ID3D12Resource> vertexBuffer, D3D12_VERTEX_BUFFER_VIEW& vertex_buffer_view)
+{
+
+
+	auto vertBuff = vertexBuffer;
+
+	// バッファ生成失敗
+	if (vertBuff == nullptr)
+	{
+		return false;
+	}
+
+	XMFLOAT3* vertMap = nullptr;
+
+	if (FAILED(vertBuff->Map(0, nullptr, (void**)&vertMap)))
+	{
+		return false;
+	}
+
+	std::copy(vertices.begin(), vertices.end(), vertMap);
+
+
+	vertBuff->Unmap(0, nullptr);
+
+
+	vertex_buffer_view.BufferLocation = vertBuff->GetGPUVirtualAddress();
+	vertex_buffer_view.SizeInBytes = sizeof(vertices[0]) * vertices.size();
+	vertex_buffer_view.StrideInBytes = sizeof(vertices[0]);
+
+	return true;
+}
+
+bool DebugDrawer::GenerateIndexBuffer(const std::vector<UINT>& indices, ComPtr<ID3D12Resource> indexBuffer, const int indexCount, D3D12_INDEX_BUFFER_VIEW& index_buffer_view)
+{
+
+	auto indexBuff = indexBuffer;
+
+	unsigned short* indexMap = nullptr;
+
+	indexBuff->Map(0, nullptr, (void**)&indexMap);
+
+	std::copy(indices.begin(), indices.end(), indexMap);
+
+
+	indexBuff->Unmap(0, nullptr);
+
+
+	index_buffer_view.BufferLocation = indexBuff->GetGPUVirtualAddress();
+	index_buffer_view.Format = DXGI_FORMAT_R16_UINT;
+	index_buffer_view.SizeInBytes = sizeof(indices[0]) * indices.size();
+
+	return true;
+}
+
+void DebugDrawer::GenerateCubeData()
+{
+	std::vector<XMFLOAT3> vertices;
+	std::vector<UINT> indicies;
+
+	GeometryGenerator::GenerateCubeDatas(vertices, indicies, DirectX::SimpleMath::Vector3(1, 1, 1));
+	_cubeIndexCount = indicies.size();
+
+	// VertexBuffer
+	_cubeVertexBuffer = std::make_shared<Buffer>();
+	int size = sizeof(XMFLOAT3) * vertices.size();
+	_cubeVertexBuffer->init(D3D12_HEAP_TYPE_UPLOAD, size, D3D12_RESOURCE_STATE_GENERIC_READ);
+
+
+	// IndexBuffer
+	_cubeIndexBuffer = std::make_shared<Buffer>();
+	size = sizeof(int) * _cubeIndexCount;
+	_cubeIndexBuffer->init(D3D12_HEAP_TYPE_UPLOAD, size, D3D12_RESOURCE_STATE_GENERIC_READ);
+
+	if (!GenerateVertexBuffer(vertices, _cubeVertexBuffer->getBuffer(), _cubeVertexBufferView))
+	{
+		return;
+	}
+
+	if (!GenerateIndexBuffer(indicies, _cubeIndexBuffer->getBuffer(), _cubeIndexCount, _cubeIndexBufferView))
+	{
+		return;
+	}
+
+}
+
+void DebugDrawer::GenerateSphereData()
+{
+	auto meshData = MeshManager::GetInstance().GetSpehereMeshData(12);
+
+	_sphereVertexBuffer = meshData->GetVertexBuffer();
+	_sphereIndexBuffer = meshData->GetIndexBuffer();
+
+	meshData->CopyIndexBufferView(_sphereIndexBufferView);
+	meshData->CopyVertexBufferView(_sphereVertexBufferView);
+
+	_sphereIndexCount = _sphereIndexBufferView.SizeInBytes / sizeof(UINT);
+}
+
+void DebugDrawer::GeneratePipeline(const wchar_t* vertexShaderPath, const wchar_t* pixelShaderPath)
+{
 	D3D12_DESCRIPTOR_RANGE descTblRange{};
 	descTblRange.NumDescriptors = 1;
 	descTblRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
@@ -65,96 +175,8 @@ bool DebugDrawer::Init(const wchar_t* vertexShaderPath, const wchar_t* pixelShad
 	rootSignatureDesc.NumStaticSamplers = 0;
 	rootSignatureDesc.pStaticSamplers = nullptr;
 
-
-
-
-
-	if (!PSOManager::GetInstance().CreatePSO(m_PSO, vertexShaderPath, pixelShaderPath, &inputLayout[0], _countof(inputLayout),
+	if (!PSOManager::GetInstance().CreatePSO(_pso, vertexShaderPath, pixelShaderPath, &inputLayout[0], _countof(inputLayout),
 		rasterizeDesc, blendDesc, rootSignatureDesc))
-	{
-		return false;
-	}
-
-	GenerateCubeData();
-
-
-	return true;
-}
-
-bool DebugDrawer::GenerateVertexBuffer(std::vector<XMFLOAT3>& vertices)
-{
-
-	m_VertexBuffer = std::make_shared<Buffer>();
-	int size = sizeof(XMFLOAT3) * vertices.size();
-	m_VertexBuffer->init(D3D12_HEAP_TYPE_UPLOAD, size, D3D12_RESOURCE_STATE_GENERIC_READ);
-	auto vertBuff = m_VertexBuffer->getBuffer();
-
-	// バッファ生成失敗
-	if (vertBuff == nullptr)
-	{
-		return false;
-	}
-
-	XMFLOAT3* vertMap = nullptr;
-
-	if (FAILED(vertBuff->Map(0, nullptr, (void**)&vertMap)))
-	{
-		return false;
-	}
-
-	std::copy(vertices.begin(), vertices.end(), vertMap);
-
-
-	vertBuff->Unmap(0, nullptr);
-
-
-	m_vbView.BufferLocation = vertBuff->GetGPUVirtualAddress();
-	m_vbView.SizeInBytes = sizeof(vertices[0]) * vertices.size();
-	m_vbView.StrideInBytes = sizeof(vertices[0]);
-
-	return true;
-}
-
-bool DebugDrawer::GenerateIndexBuffer(const std::vector<UINT>& indices)
-{
-	m_IndexCount = indices.size();
-
-	// indexを設定
-	m_IndexBuffer = std::make_shared<Buffer>();
-	int size = sizeof(int) * m_IndexCount;
-	m_IndexBuffer->init(D3D12_HEAP_TYPE_UPLOAD, size, D3D12_RESOURCE_STATE_GENERIC_READ);
-	auto indexBuff = m_IndexBuffer->getBuffer();
-
-	unsigned short* indexMap = nullptr;
-
-	indexBuff->Map(0, nullptr, (void**)&indexMap);
-
-	std::copy(indices.begin(), indices.end(), indexMap);
-
-
-	indexBuff->Unmap(0, nullptr);
-
-
-	m_ibView.BufferLocation = indexBuff->GetGPUVirtualAddress();
-	m_ibView.Format = DXGI_FORMAT_R16_UINT;
-	m_ibView.SizeInBytes = sizeof(indices[0]) * indices.size();
-
-	return true;
-}
-
-void DebugDrawer::GenerateCubeData()
-{
-	std::vector<XMFLOAT3> vertices;
-	std::vector<UINT> indicies;
-
-	GeometryGenerator::GenerateCubeDatas(vertices, indicies, DirectX::SimpleMath::Vector3(1, 1, 1));
-
-	if (!GenerateVertexBuffer(vertices))
-	{
-		return;
-	}
-
-	if (!GenerateIndexBuffer(indicies))
 	{
 		return;
 	}
@@ -180,11 +202,11 @@ bool DebugDrawer::GenerateConstantView()
 	UINT descHandleInc = DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(
 		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-	auto handle = m_ConstDescHeap->GetCPUDescriptorHandleForHeapStart();
+	auto handle = _constDescHeap->GetCPUDescriptorHandleForHeapStart();
 
-	for (int i = 0; i < m_ConstantBuffers.size(); i++)
+	for (int i = 0; i < _constantBuffers.size(); i++)
 	{
-		auto constBuff = m_ConstantBuffers[i]->getBuffer();
+		auto constBuff = _constantBuffers[i]->getBuffer();
 
 		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc{};
 		cbvDesc.BufferLocation = constBuff->GetGPUVirtualAddress();
@@ -208,7 +230,7 @@ bool DebugDrawer::InitConstantHeaps()
 	descHeapDesc.NumDescriptors = 1 * m_DrawObjectCount;
 
 	if (FAILED(DirectXDevice::GetInstance().GetDevice()->CreateDescriptorHeap(&descHeapDesc,
-		IID_PPV_ARGS(&m_ConstDescHeap))))
+		IID_PPV_ARGS(&_constDescHeap))))
 	{
 		return false;
 	}
@@ -230,17 +252,17 @@ bool DebugDrawer::GenerateConstantBuffers()
 		constBuff->Map(0, nullptr, (void**)&constMap);
 		constBuff->Unmap(0, nullptr);
 
-		m_ConstantBuffers.push_back(constBuff_);
+		_constantBuffers.push_back(constBuff_);
 	}
 
 	return true;
 }
 
-void DebugDrawer::SetConstantBuff(int index, DebugDrawer::DrawCubeCommand cube)
+void DebugDrawer::SetCubeConstantBuffer(int index, DebugDrawer::DrawCubeCommand cube)
 {
-	auto vpMat = m_Camera->GetViewMat() * m_Camera->GetProjectMat();
-	auto worldMat = DirectX::SimpleMath::Matrix::CreateScale(cube.size) * DirectX::SimpleMath::Matrix::CreateTranslation(cube.pos);
-	auto constBuff = m_ConstantBuffers[index]->getBuffer();
+	auto vpMat = _camera->GetViewMat() * _camera->GetProjectMat();
+	auto worldMat = cube.rotation * DirectX::SimpleMath::Matrix::CreateScale(cube.size) * DirectX::SimpleMath::Matrix::CreateTranslation(cube.pos);
+	auto constBuff = _constantBuffers[index]->getBuffer();
 
 	ConstBufferData* constMap = nullptr;
 	constBuff->Map(0, nullptr, (void**)&constMap);
@@ -249,44 +271,115 @@ void DebugDrawer::SetConstantBuff(int index, DebugDrawer::DrawCubeCommand cube)
 	constBuff->Unmap(0, nullptr);
 }
 
-void DebugDrawer::DrawCube(SimpleMath::Vector3 size, SimpleMath::Vector3 pos)
+void DebugDrawer::SetSphereConstantBuffer(int index, DebugDrawer::DrawSpehereCommand sphere)
 {
-	if (m_CubeCommand.size() >= m_DrawObjectCount)return;
+	auto vpMat = _camera->GetViewMat() * _camera->GetProjectMat();
+	auto worldMat = DirectX::SimpleMath::Matrix::CreateScale(sphere.radius) * DirectX::SimpleMath::Matrix::CreateTranslation(sphere.pos);
+	auto constBuff = _constantBuffers[index]->getBuffer();
+
+	ConstBufferData* constMap = nullptr;
+	constBuff->Map(0, nullptr, (void**)&constMap);
+	constMap->worldMat = worldMat;
+	constMap->vpMat = vpMat;
+	constBuff->Unmap(0, nullptr);
+}
+
+
+void DebugDrawer::DrawCube(const SimpleMath::Vector3 size, const SimpleMath::Vector3 pos, const SimpleMath::Matrix rotateMat)
+{
+	if (!IsAddCommand())return;
 
 	DebugDrawer::DrawCubeCommand command{};
 	command.size = size;
 	command.pos = pos;
+	command.rotation = rotateMat;
 
-	m_CubeCommand.push_back(command);
+	_draw_cube_commands.push_back(command);
 }
+
+bool DebugDrawer::IsAddCommand()
+{
+	return _draw_cube_commands.size() + _draw_sphere_commands.size() <= m_DrawObjectCount;
+}
+
+void DebugDrawer::DrawCube(const SimpleMath::Vector3 size, const SimpleMath::Vector3 pos, const SimpleMath::Quaternion rotate_qu)
+{
+	if (!IsAddCommand())return;
+
+	DebugDrawer::DrawCubeCommand command{};
+	command.size = size;
+	command.pos = pos;
+	command.rotation = SimpleMath::Matrix::CreateFromQuaternion(rotate_qu);
+
+	_draw_cube_commands.push_back(command);
+}
+
+void DebugDrawer::DrawSphere(const float radius, const SimpleMath::Vector3 pos)
+{
+	if (!IsAddCommand())return;
+
+	DrawSpehereCommand command{};
+	command.radius = radius;
+	command.pos = pos;
+
+	_draw_sphere_commands.push_back(command);
+}
+
+const int DebugDrawer::RenderCube(ID3D12GraphicsCommandList* tempCommand, UINT matIncSize, D3D12_GPU_DESCRIPTOR_HANDLE& handle, const int offset)
+{
+	for (int i = 0; i < _draw_cube_commands.size(); i++)
+	{
+		SetCubeConstantBuffer(i + offset, _draw_cube_commands[i]);
+		tempCommand->SetGraphicsRootDescriptorTable(0, handle);
+
+		tempCommand->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		tempCommand->IASetVertexBuffers(0, 1, &_cubeVertexBufferView);
+		tempCommand->IASetIndexBuffer(&_cubeIndexBufferView);
+		tempCommand->DrawIndexedInstanced(_cubeIndexCount, 1, 0, 0, 0);
+
+		handle.ptr += matIncSize;
+	}
+
+	return _draw_cube_commands.size();
+}
+
+const int DebugDrawer::RenderSphere(ID3D12GraphicsCommandList* tempCommand, UINT matIncSize, D3D12_GPU_DESCRIPTOR_HANDLE& handle, const int offset)
+{
+	for (int i = 0; i < _draw_sphere_commands.size(); i++)
+	{
+		SetSphereConstantBuffer(i + offset, _draw_sphere_commands[i]);
+		tempCommand->SetGraphicsRootDescriptorTable(0, handle);
+
+		tempCommand->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		tempCommand->IASetVertexBuffers(0, 1, &_sphereVertexBufferView);
+		tempCommand->IASetIndexBuffer(&_sphereIndexBufferView);
+		tempCommand->DrawIndexedInstanced(_sphereIndexCount, 1, 0, 0, 0);
+
+		handle.ptr += matIncSize;
+	}
+
+	return _draw_sphere_commands.size();
+}
+
 
 void DebugDrawer::Draw()
 {
 	ID3D12GraphicsCommandList* tempCommand = DirectXGraphics::GetInstance().GetCommandList();
 
-	tempCommand->SetPipelineState(m_PSO.pso.Get());
-	tempCommand->SetGraphicsRootSignature(m_PSO.rootSignature.Get());
+	tempCommand->SetPipelineState(_pso.pso.Get());
+	tempCommand->SetGraphicsRootSignature(_pso.rootSignature.Get());
 	auto matIncSize = DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(
 		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
 	);
 
-	auto handle = m_ConstDescHeap->GetGPUDescriptorHandleForHeapStart();
-	auto heap = m_ConstDescHeap.Get();
+	auto handle = _constDescHeap->GetGPUDescriptorHandleForHeapStart();
+	auto heap = _constDescHeap.Get();
 	tempCommand->SetDescriptorHeaps(1, &heap);
 
-	for (int i = 0; i < m_CubeCommand.size(); i++)
-	{
-		SetConstantBuff(i, m_CubeCommand[i]);
-		tempCommand->SetGraphicsRootDescriptorTable(0, handle);
+	int offset = RenderCube(tempCommand, matIncSize, handle, 0);
+	RenderSphere(tempCommand, matIncSize, handle, offset);
 
-		tempCommand->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		tempCommand->IASetVertexBuffers(0, 1, &m_vbView);
-		tempCommand->IASetIndexBuffer(&m_ibView);
-		tempCommand->DrawIndexedInstanced(m_IndexCount, 1, 0, 0, 0);
-
-		handle.ptr += matIncSize;
-	}
-
-	m_CubeCommand.clear();
+	_draw_cube_commands.clear();
+	_draw_sphere_commands.clear();
 }
 

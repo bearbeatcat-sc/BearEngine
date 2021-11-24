@@ -65,6 +65,32 @@ std::shared_ptr<Mesh> MeshManager::GetCubeMesh(const std::string& effectName)
 	return mesh;
 }
 
+std::shared_ptr<MeshData> MeshManager::GetSpehereMeshData(const int tesselation)
+{
+	auto result = FindSpehere(tesselation);
+
+	// ‚·‚Å‚É“¯‚¶•ªŠ„”‚ÌSPHERE‚ª‚ ‚éê‡‚ÍAÄ—˜—p
+	if (result == nullptr)
+	{
+		MeshData::ModelData model;
+		GeometryGenerator::GenerateSphereMeshData(model, 1.0f, tesselation);
+
+
+		std::shared_ptr <MeshData> data = std::make_shared<MeshData>();
+
+		std::string modelName = "SphereMesh_" + std::to_string(tesselation);
+		std::wstring wst_modelName = StringUtil::GetWideStringFromString(modelName);
+
+		data->GenerateMesh(wst_modelName, model.vertices, model.m_Indices, model.m_MaterialDatas);
+		m_SpehereModelDatas.emplace(tesselation, data);
+
+		//DXRPipeLine::GetInstance().CreateResourceView(data);
+		result = data;
+	}
+
+	return result;
+}
+
 std::shared_ptr<Mesh> MeshManager::GetSpehereMesh(int tesselation, const std::string& effectName)
 {
 	auto result = FindSpehere(tesselation);
@@ -73,7 +99,7 @@ std::shared_ptr<Mesh> MeshManager::GetSpehereMesh(int tesselation, const std::st
 	if (result == nullptr)
 	{
 		MeshData::ModelData model;
-		GeometryGenerator::GenerateSpehereMesh(model, 1.0f, tesselation);
+		GeometryGenerator::GenerateSphereMeshData(model, 1.0f, tesselation);
 
 
 		std::shared_ptr <MeshData> data = std::make_shared<MeshData>();
@@ -89,7 +115,7 @@ std::shared_ptr<Mesh> MeshManager::GetSpehereMesh(int tesselation, const std::st
 	}
 
 	//MeshData::ModelData model;
-	// GeometryGenerator::GenerateSpehereMesh(model,1.0f, tesselation);
+	// GeometryGenerator::GenerateSphereMeshData(model,1.0f, tesselation);
 	//std::shared_ptr <MeshData> data = std::make_shared<MeshData>();
 	//data->GenerateMesh(model.vertices, model.m_Indices, model.m_MaterialDatas);
 	//std::shared_ptr<Mesh> mesh = std::shared_ptr<Mesh>(new Mesh(result, effectName));
@@ -100,7 +126,7 @@ std::shared_ptr<Mesh> MeshManager::GetSpehereMesh(int tesselation, const std::st
 std::shared_ptr<Mesh> MeshManager::GetTriangleMesh(const SimpleMath::Vector3* points, const std::string& effectName)
 {
 	MeshData::ModelData model;
-	GeometryGenerator::GenerateTriangleMesh(model, points);
+	GeometryGenerator::GenerateTriangleMeshData(model, points);
 	std::shared_ptr <MeshData> data = std::make_shared<MeshData>();
 	
 	std::wstring modelName = L"TriangleMesh";
@@ -115,7 +141,7 @@ std::shared_ptr<Mesh> MeshManager::GetTriangleMesh(const SimpleMath::Vector3* po
 std::shared_ptr<Mesh> MeshManager::GetPlaneMesh(const std::string& effectName)
 {
 	MeshData::ModelData model;
-	GeometryGenerator::GenerateSquareMesh(model);
+	GeometryGenerator::GenerateSquareMeshData(model);
 	std::shared_ptr <MeshData> data = std::make_shared<MeshData>();
 
 	std::wstring modelName = L"PlaneMesh";

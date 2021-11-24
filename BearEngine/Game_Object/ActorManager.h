@@ -17,6 +17,11 @@ public:
 	void Update();
 	void Shutdown();
 	void AddActor(Actor* actor);
+
+//#ifdef _DEBUG
+	void RenderDebug();
+//#endif
+	
 	void DeleteActor(Actor* actor);
 	void DeleteActor();
 	std::vector<Actor*>& GetActors();

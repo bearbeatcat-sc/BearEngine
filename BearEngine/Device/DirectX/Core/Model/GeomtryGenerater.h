@@ -17,10 +17,12 @@ public:
 	//};
 
 	static void GenerateCubeMesh(MeshData::ModelData& modelData, DirectX::SimpleMath::Vector3 size);
-	static void GenerateCubeMeshDatas(MeshData::ModelData& modelData, DirectX::SimpleMath::Vector3 size);
-	static void GenerateSpehereMesh(MeshData::ModelData& modelData, float diametro, size_t tessellation);
-	static void GenerateSquareMesh(MeshData::ModelData& modelData);
-	static void GenerateTriangleMesh(MeshData::ModelData& modelData, const DirectX::SimpleMath::Vector3* points);
+	static void GenerateCubeMeshData(MeshData::ModelData& modelData, DirectX::SimpleMath::Vector3 size);
+	static void GenerateSphereMeshData(MeshData::ModelData& modelData, float diametro, size_t tessellation);
+	
+	static void GenerateSquareMeshData(MeshData::ModelData& modelData);
+	static void GenerateTriangleMeshData(MeshData::ModelData& modelData, const DirectX::SimpleMath::Vector3* points);
+	
 	static void GenerateCubeDatas(std::vector<XMFLOAT3>& positions, std::vector<UINT>& indices, DirectX::SimpleMath::Vector3 size);
 
 private:

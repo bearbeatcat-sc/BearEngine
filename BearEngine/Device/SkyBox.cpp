@@ -13,13 +13,13 @@ SkyBox::SkyBox(std::string filePath,std::shared_ptr<Camera> camera)
 	:m_TextureName(filePath), m_Color(SimpleMath::Color(1,1,1,1)),m_Camera(camera),
 	basicVertexShaderPath(L"BasicResources/SkyBoxVertexShader.hlsl"), basicPixelShaderPath(L"BasicResources/SkyBoxPixelShader.hlsl")
 {	
-	 GeometryGenerator::GenerateCubeMeshDatas(m_MeshDatas,SimpleMath::Vector3(10, 10, 10));
+	 GeometryGenerator::GenerateCubeMeshData(m_MeshDatas,SimpleMath::Vector3(10, 10, 10));
 	 m_Scale = SimpleMath::Vector3(1, 1, 1);
 }
 
 SkyBox::SkyBox(std::string filePath, std::shared_ptr<Camera> camera, SimpleMath::Vector3 cubeScale)
 {
-	GeometryGenerator::GenerateCubeMeshDatas(m_MeshDatas, cubeScale);
+	GeometryGenerator::GenerateCubeMeshData(m_MeshDatas, cubeScale);
 	m_Scale = SimpleMath::Vector3(1, 1, 1);
 }
 

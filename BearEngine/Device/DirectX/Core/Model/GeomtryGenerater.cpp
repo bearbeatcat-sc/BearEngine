@@ -165,7 +165,7 @@ void GeometryGenerator::GenerateCubeMesh(MeshData::ModelData& modelData,DirectX:
 	return;
 }
 
-void GeometryGenerator::GenerateCubeMeshDatas(MeshData::ModelData& modelData,DirectX::SimpleMath::Vector3 size)
+void GeometryGenerator::GenerateCubeMeshData(MeshData::ModelData& modelData,DirectX::SimpleMath::Vector3 size)
 {
 	std::vector<MeshData::Vertex> vertices;
 	std::vector<UINT> indices;
@@ -283,7 +283,7 @@ void GeometryGenerator::GenerateCubeMeshDatas(MeshData::ModelData& modelData,Dir
 	modelData.texCords = _uvs;
 }
 
-void GeometryGenerator::GenerateSpehereMesh(MeshData::ModelData& modelData,float diametro, size_t tessellation)
+void GeometryGenerator::GenerateSphereMeshData(MeshData::ModelData& modelData,float diametro, size_t tessellation)
 {
 	//MeshData* mesh = new Mesh();
 	std::vector<MeshData::Vertex> vertices;
@@ -389,7 +389,7 @@ void GeometryGenerator::GenerateSpehereMesh(MeshData::ModelData& modelData,float
 	return ;
 }
 
-void GeometryGenerator::GenerateSquareMesh(MeshData::ModelData& modelData)
+void GeometryGenerator::GenerateSquareMeshData(MeshData::ModelData& modelData)
 {
 	std::vector<MeshData::Vertex> vertices;
 	std::vector<UINT> indices;
@@ -435,7 +435,7 @@ void GeometryGenerator::GenerateSquareMesh(MeshData::ModelData& modelData)
 	return;
 }
 
-void GeometryGenerator::GenerateTriangleMesh(MeshData::ModelData& modelData, const DirectX::SimpleMath::Vector3* points)
+void GeometryGenerator::GenerateTriangleMeshData(MeshData::ModelData& modelData, const DirectX::SimpleMath::Vector3* points)
 {
 	std::vector<MeshData::Vertex> vertices;
 	std::vector<UINT> indices;

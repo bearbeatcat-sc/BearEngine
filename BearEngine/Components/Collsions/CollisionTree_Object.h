@@ -9,13 +9,13 @@ class CollisionTreeCell;
 class CollisionTreeObject
 {
 public:
-	CollisionTreeObject(AABBCollisionComponent* coll);
+	CollisionTreeObject(CollisionComponent* coll);
 	~CollisionTreeObject();
 	bool Remove();
 	void RegisterCell(CollisionTreeCell* cell);
 
 public:
-	AABBCollisionComponent* m_UserCol;
+	CollisionComponent* m_UserCol;
 
 	CollisionTreeObject* m_Previous;
 	CollisionTreeObject* m_Next;

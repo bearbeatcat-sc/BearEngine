@@ -1,6 +1,8 @@
 ﻿#include "ActorManager.h"
 #include "Actor.h"
 
+#include <imgui/imgui.h>
+
 ActorManager::ActorManager()
 {
 }
@@ -58,6 +60,28 @@ void ActorManager::AddActor(Actor* actor)
 {
 	m_AddActors.push_back(actor);
 }
+
+//#ifdef _DEBUG
+void ActorManager::RenderDebug()
+{
+	ImGui::Begin("Actors", nullptr);
+	ImGui::Text("ActorCount : %i", m_Actos.size());
+	ImGui::AlignTextToFramePadding();
+	ImGui::BeginChild("Actors");
+
+	static int selected = -1;
+	int index = 0;
+	
+	for(int i = 0; i < m_Actos.size(); ++i)
+	{
+		m_Actos[i]->RenderDebug(index,selected);
+		
+	}
+	ImGui::EndChild();
+
+	ImGui::End();
+}
+//#endif
 
 void ActorManager::DeleteActor(Actor* actor)
 {

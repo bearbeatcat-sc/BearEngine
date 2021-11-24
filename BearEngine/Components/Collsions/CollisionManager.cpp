@@ -26,7 +26,7 @@ void CollisionManager::AddComponent(CollisionComponent* component)
 	m_components.push_back(component);
 }
 
-void CollisionManager::AddRegistTree(AABBCollisionComponent* component)
+void CollisionManager::AddRegistTree(CollisionComponent* component)
 {
 	CollisionTreeObject* m_Obj = new CollisionTreeObject(component);
 
@@ -45,7 +45,7 @@ void CollisionManager::AddRegistTree(AABBCollisionComponent* component)
 	component->SetTreeObject(m_Obj);
 }
 
-void CollisionManager::UpdateRegistTree(AABBCollisionComponent* component, CollisionTreeObject* object)
+void CollisionManager::UpdateRegistTree(CollisionComponent* component, CollisionTreeObject* object)
 {
 	if (object == nullptr)
 	{
@@ -91,7 +91,7 @@ void CollisionManager::SetDebugMode(bool flag)
 void CollisionManager::InterSect()
 {
 	auto collisionTable = CollisionTagManagaer::GetInstance().GetCollisionTable();
-	std::vector<AABBCollisionComponent*> collisonList;
+	std::vector<CollisionComponent*> collisonList;
 
 	// 当たり判定のツリーからリストを取得
 	int count = m_CollisionTreeManager->GetAllCollisionList(collisonList);
@@ -132,7 +132,7 @@ void CollisionManager::Delete()
 	}
 }
 
-void CollisionManager::Delete(AABBCollisionComponent* component)
+void CollisionManager::Delete(CollisionComponent* component)
 {
 	auto result = std::find(m_components.begin(), m_components.end(), component);
 

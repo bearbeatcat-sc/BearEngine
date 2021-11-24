@@ -30,19 +30,14 @@ void LogSystem::DrawLog()
 {
 #ifdef _DEBUG
 
-	if (ImGui::BeginTabItem("OutputLog"))
+	ImGui::BeginChild("Scrolling");
+	int size = m_Logs.size();
+
+	for (int i = size - 1; i >= 0; --i)
 	{
-		ImGui::BeginChild("Scrolling");
-		int size = m_Logs.size();
-
-		for (int i = size - 1; i >= 0; --i)
-		{
-			ImGui::Text(m_Logs[i].c_str());
-		}
-		ImGui::EndChild();
-		ImGui::EndTabItem();
+		ImGui::Text(m_Logs[i].c_str());
 	}
-
+	ImGui::EndChild();
 
 #endif
 }

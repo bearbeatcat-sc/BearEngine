@@ -97,13 +97,13 @@ bool MeshData::GenerateMesh(std::wstring& modelName, std::vector<Vertex>& positi
 	{
 		return false;
 	}
-	
+
 	wchar_t indexBufferName[40] = L"IndexBuffer_";
 	wcscat_s(indexBufferName, modelName.data());
 	indexBuff->SetName(indexBufferName);
 
 
-	
+
 	UINT* indexMap = nullptr;
 
 	indexBuff->Map(0, nullptr, (void**)&indexMap);
@@ -231,7 +231,7 @@ std::vector<MaterialData>& MeshData::GetDrawMaterialDatas()
 	return m_DrawMaterialDatas;
 }
 
-std::unordered_map<std::string,MaterialData>& MeshData::GetMaterialDatas()
+std::unordered_map<std::string, MaterialData>& MeshData::GetMaterialDatas()
 {
 	return m_MaterialDatas;
 }
@@ -250,6 +250,21 @@ const MeshData::MeshAABB& MeshData::GetMeshAABB()
 {
 	return m_MeshAABB;
 }
+
+void MeshData::CopyVertexBufferView(D3D12_VERTEX_BUFFER_VIEW& vertex_buffer_view)
+{
+	vertex_buffer_view.BufferLocation = m_vbView.BufferLocation;
+	vertex_buffer_view.SizeInBytes = m_vbView.SizeInBytes;
+	vertex_buffer_view.StrideInBytes = m_vbView.StrideInBytes;
+}
+
+void MeshData::CopyIndexBufferView(D3D12_INDEX_BUFFER_VIEW& index_buffer_view)
+{
+	index_buffer_view.BufferLocation = m_ibView.BufferLocation;
+	index_buffer_view.Format = DXGI_FORMAT_R32_UINT;
+	index_buffer_view.SizeInBytes = m_ibView.SizeInBytes;
+}
+
 std::shared_ptr<Buffer> MeshData::GetVertexBuffer()
 {
 	return m_VertexBuffer;

@@ -1,7 +1,7 @@
 #include "CollisionTree_Object.h"
 #include "CollisionTree_Cell.h"
 
-CollisionTreeObject::CollisionTreeObject(AABBCollisionComponent* coll)
+CollisionTreeObject::CollisionTreeObject(CollisionComponent* coll)
 	:m_UserCol(coll)
 {
 	//m_UserCol->SetTreeObject(this);

@@ -3,19 +3,18 @@
 #include "ActorManager.h"
 #include <DirectXMath.h>
 #include "../Utility/Timer.h"
+#include <imgui/imgui.h>
 
-Actor::Actor()
-	:m_first(true), m_Rotation(DirectX::SimpleMath::Quaternion::Identity), m_IsActive(true)
+Actor::Actor(const std::string& actorName)
+	:m_Position(DirectX::SimpleMath::Vector3::Zero), m_Scale(DirectX::SimpleMath::Vector3::One), m_Rotation(DirectX::SimpleMath::Vector3::Zero), _ActoName(actorName), m_first(true), m_WorldMatrix(DirectX::SimpleMath::Matrix::Identity), m_IsActive(true),
+	_isShowHierarchy(false)
 {
-	m_WorldMatrix = DirectX::SimpleMath::Matrix::Identity;
 
 }
 
 Actor::~Actor()
 {
-	if (m_DetroyTimer) {
-		delete m_DetroyTimer;
-	}
+
 }
 
 void Actor::Update()
@@ -37,7 +36,7 @@ void Actor::Update()
 	if (!m_IsActive)return;
 	UpdateComponents();
 	UpdateActor();
-
+	UpdateChild();
 }
 
 void Actor::UpdateComponents()
@@ -55,7 +54,7 @@ void Actor::Destroy()
 
 void Actor::Destroy(float time)
 {
-	m_DetroyTimer = new Timer(time);
+	m_DetroyTimer = std::make_shared<Timer>(time);
 }
 
 void Actor::SetParent(Actor* parent)
@@ -68,7 +67,7 @@ void Actor::SetChild(Actor* child)
 {
 	m_Children.push_back(child);
 	child->SetParent(this);
-	ActorManager::GetInstance().AddActor(child);
+	//ActorManager::GetInstance().AddActor(child);
 }
 
 std::vector<Actor*>& Actor::GetChildren()
@@ -92,14 +91,19 @@ const DirectX::SimpleMath::Vector3& Actor::GetScale() const
 	return m_Scale;
 }
 
-const DirectX::SimpleMath::Quaternion& Actor::GetRotation() const
+const DirectX::SimpleMath::Quaternion Actor::GetRotation() const
+{
+	return DirectX::SimpleMath::Quaternion::CreateFromYawPitchRoll(m_Rotation.x, m_Rotation.y, m_Rotation.z);
+}
+
+const DirectX::SimpleMath::Vector3& Actor::GetVecRotation() const
 {
 	return m_Rotation;
 }
 
-void Actor::SetRotation(const DirectX::SimpleMath::Quaternion& rotation)
+void Actor::SetRotation(const DirectX::SimpleMath::Vector3 rotate)
 {
-	m_Rotation = rotation;
+	m_Rotation = rotate;
 	SetWorldMatrix();
 }
 
@@ -112,20 +116,21 @@ void Actor::SetScale(const DirectX::SimpleMath::Vector3& scale)
 
 const  DirectX::SimpleMath::Matrix& Actor::GetWorldMatrix()
 {
-	//if (m_Parent == nullptr || m_Parent->GetDestroyFlag())
-	//{
-	//	return m_WorldMatrix;
-	//}
+	SetWorldMatrix();
 
-	//return m_WorldMatrix * m_Parent->GetWorldMatrix();
+	if (m_Parent == nullptr || m_Parent->GetDestroyFlag())
+	{
+		return m_WorldMatrix;
+	}
 
-	return m_WorldMatrix;
+	// 今回は同じ用に扱う。	
+	return m_WorldMatrix * m_Parent->GetWorldMatrix();
 }
 
 void Actor::SetWorldMatrix()
 {
 	//m_WorldMatrix = Matrix4::CreateScale(m_Scale) * Matrix4::CreateFromQuaternion(Quaternion(m_Axis,m_Angle)) * Matrix4::CreateTranslation(m_Position);
-	m_WorldMatrix = DirectX::SimpleMath::Matrix::CreateScale(m_Scale) * DirectX::SimpleMath::Matrix::CreateFromQuaternion(m_Rotation) * DirectX::SimpleMath::Matrix::CreateTranslation(m_Position);
+	m_WorldMatrix = DirectX::SimpleMath::Matrix::CreateScale(m_Scale) * DirectX::SimpleMath::Matrix::CreateFromQuaternion(GetRotation()) * DirectX::SimpleMath::Matrix::CreateTranslation(m_Position);
 }
 
 void Actor::SetWorldMatrix(const DirectX::SimpleMath::Matrix& mat)
@@ -135,13 +140,13 @@ void Actor::SetWorldMatrix(const DirectX::SimpleMath::Matrix& mat)
 
 DirectX::SimpleMath::Vector3 Actor::GetForward()
 {
-	return DirectX::SimpleMath::Vector3::Transform(DirectX::SimpleMath::Vector3::Forward, m_Rotation);
+	return DirectX::SimpleMath::Vector3::Transform(DirectX::SimpleMath::Vector3::Forward, GetRotation());
 	//return DirectX::SimpleMath::Vector3::Backward;
 }
 
 DirectX::SimpleMath::Vector3 Actor::GetBackward()
 {
-	return DirectX::SimpleMath::Vector3::Transform(DirectX::SimpleMath::Vector3::Backward, m_Rotation);
+	return DirectX::SimpleMath::Vector3::Transform(DirectX::SimpleMath::Vector3::Backward, GetRotation());
 }
 
 void Actor::AddComponent(std::shared_ptr<Component> component)
@@ -188,13 +193,82 @@ void Actor::RemoveComponent()
 
 void Actor::RemoveChild()
 {
-	for (auto itr = m_Children.begin(); itr != m_Children.end(); itr++)
+	for (auto itr = m_Children.begin(); itr != m_Children.end();)
 	{
-		//delete (*itr);
-		(*itr)->Destroy();
-		m_Children.erase(itr);
+		(*itr)->Clean();
+		delete (*itr);
+		(*itr) = nullptr;
+		itr = m_Children.erase(itr);
 	}
 }
+
+void Actor::UpdateChild()
+{
+	for (auto itr = m_Children.begin(); itr != m_Children.end(); itr++)
+	{
+		(*itr)->Update();
+	}
+}
+
+//#ifdef _DEBUG
+void Actor::RenderChildDebug(int& index,int& selected)
+{
+	for (auto itr = m_Children.begin(); itr != m_Children.end(); itr++)
+	{
+		(*itr)->RenderDebug(index,selected);
+	}
+}
+
+void Actor::RenderHierarchy(int index)
+{
+	if (!_isShowHierarchy)return;
+	
+	float f_position[3] =
+	{
+		m_Position.x,
+		m_Position.y,
+		m_Position.z
+	};
+
+	float f_scale[3] =
+	{
+		m_Scale.x,
+		m_Scale.y,
+		m_Scale.z
+	};
+
+	float f_rotation[3] =
+	{
+		m_Rotation.x,
+		m_Rotation.y,
+		m_Rotation.z
+	};
+
+	bool isChange = false;
+
+	std::string windowName = "Hierarchy:" + _ActoName;
+	
+	ImGui::Begin(windowName.c_str(), &_isShowHierarchy);
+
+	if (ImGui::DragFloat3("Position", f_position, 0.01f))
+		isChange = true;
+
+	if (ImGui::DragFloat3("Scale", f_scale, 0.01f))
+		isChange = true;
+
+	if (ImGui::DragFloat3("Rotation", f_rotation, 0.01f))
+		isChange = true;
+
+	if (isChange)
+	{
+		m_Position = DirectX::SimpleMath::Vector3(f_position);
+		m_Rotation = DirectX::SimpleMath::Vector3(f_rotation);
+		m_Scale = DirectX::SimpleMath::Vector3(f_scale);
+	}
+	ImGui::End();
+}
+
+//#endif
 
 void Actor::SetActive(bool flag)
 {
@@ -232,6 +306,43 @@ void Actor::Clean()
 	RemoveChild();
 	RemoveComponent();
 }
+
+void Actor::SetActorName(const std::string& actoName)
+{
+	_ActoName = actoName;
+}
+
+//#ifdef _DEBUG
+void Actor::RenderDebug(int& index,int& selected)
+{
+	index++;
+
+	ImGui::PushID((_ActoName + std::to_string(index)).c_str());
+	
+	if (ImGui::Selectable(_ActoName.c_str(), selected == index, ImGuiSelectableFlags_SpanAllColumns))
+	{
+		selected = index;
+		_isShowHierarchy = true;
+	}
+
+	if (m_Children.size() > 0)
+	{
+		if (ImGui::TreeNode("Child"))
+		{
+			RenderChildDebug(index,selected);
+			ImGui::TreePop();
+		}
+	}
+
+	if(selected == index)
+	{
+		RenderHierarchy(index);
+	}
+	
+	ImGui::PopID();
+
+}
+//#endif
 
 bool Actor::DeathTimerUpdate()
 {

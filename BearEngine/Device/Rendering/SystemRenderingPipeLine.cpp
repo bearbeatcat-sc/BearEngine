@@ -20,9 +20,8 @@ void SystemRenderingPipeLine::InitPipeLine()
 	DirectXGraphics::GetInstance().Init();
 	LightManager::GetInstance().Init();
 
-#ifdef _DEBUG
 	DebugDrawer::GetInstance().Init(L"BasicResources/SimpleVertexShader.hlsl", L"BasicResources/SimplePixelShader.hlsl");
-#endif
+	
 	SpriteDrawer::GetInstance().Init();
 	DXRPipeLine::GetInstance().Init();
 	MeshManager::GetInstance().Init();

@@ -13,7 +13,7 @@ class Timer;
 class Actor
 {
 public:
-	Actor();
+	Actor(const std::string& actorName = "Actor");
 	virtual ~Actor();
 
 	void Update();
@@ -27,7 +27,7 @@ public:
 	virtual void OnCollsion(Actor* other) = 0;
 
 	void SetParent(Actor* parent);
-	void SetChild(Actor* child);
+	void SetChild(Actor* child);	
 	std::vector<Actor*>& GetChildren();
 
 	const DirectX::SimpleMath::Vector3& GetPosition() const;
@@ -36,8 +36,10 @@ public:
 	const DirectX::SimpleMath::Vector3& GetScale() const;
 	void SetScale(const DirectX::SimpleMath::Vector3& scale);
 
-	const DirectX::SimpleMath::Quaternion& GetRotation() const;
-	void SetRotation(const DirectX::SimpleMath::Quaternion& axis);
+	const DirectX::SimpleMath::Quaternion GetRotation() const;
+	const DirectX::SimpleMath::Vector3& GetVecRotation() const;
+	
+	void SetRotation(const DirectX::SimpleMath::Vector3 rotate);
 
 	const DirectX::SimpleMath::Matrix& GetWorldMatrix();
 	void SetWorldMatrix();
@@ -50,12 +52,23 @@ public:
 	void RemoveComponent(std::shared_ptr<Component> component);
 	void RemoveComponent();
 	void RemoveChild();
+	void UpdateChild();
+
 	void SetActive(bool flag);
 	bool GetDestroyFlag();
 	void SetTag(const std::string& tagName);
 	std::string GetTag();
 	bool IsContainsTag(const std::string& key);
 	void Clean();
+	void SetActorName(const std::string& actoName);
+
+	//#ifdef _DEBUG
+
+	void RenderDebug(int& index, int& selected);
+
+	void RenderChildDebug(int& index, int& selected);
+	void RenderHierarchy(int index);
+//#endif
 
 private:
 	bool DeathTimerUpdate();
@@ -63,11 +76,13 @@ private:
 protected:
 	DirectX::SimpleMath::Vector3 m_Position;
 	DirectX::SimpleMath::Vector3 m_Scale;
-	DirectX::SimpleMath::Quaternion m_Rotation;
+	DirectX::SimpleMath::Vector3 m_Rotation;
+	
 	bool destroyFlag;
 	std::string m_Tag;
 	Actor* m_Parent;
-	Timer* m_DetroyTimer;
+	std::shared_ptr<Timer> m_DetroyTimer;
+	std::string _ActoName;
 
 private:
 	std::vector<std::shared_ptr<Component>> m_Components;
@@ -76,6 +91,8 @@ private:
 
 	DirectX::SimpleMath::Matrix m_WorldMatrix;
 	bool m_IsActive;
+
+	bool _isShowHierarchy;
 };
 
 #endif

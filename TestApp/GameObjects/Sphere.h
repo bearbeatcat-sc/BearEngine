@@ -10,6 +10,8 @@
 using namespace DirectX::SimpleMath;
 
 class MeshComponent;
+class SphereCollisionComponent;
+class OBBCollisionComponent;
 
 class Sphere
 	:public Actor
@@ -48,7 +50,10 @@ private:
 
 private:
 	//std::shared_ptr<MeshComponent> m_pMeshComponent;
+	
 	std::shared_ptr<DXRInstance> _instance;
+	SphereCollisionComponent* _sphereCollisionComponent;
+	OBBCollisionComponent* _obbCollisionComponent;
 	
 	ActionType m_ActionType;
 	SphereType m_Type;

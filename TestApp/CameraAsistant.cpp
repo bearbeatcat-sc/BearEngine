@@ -33,7 +33,6 @@ void CameraAsistant::Update()
 	auto target = m_Camera->GetTarget();
 	float _near = m_Camera->GetNear();
 	float _far = m_Camera->GetFar();
-	float _scale = m_Camera->GetSpriteScale();
 	
 	float temp_pos[]
 	{
@@ -55,7 +54,6 @@ void CameraAsistant::Update()
 	ImGui::DragFloat3("Target", temp_target, 0.001f);
 	ImGui::DragFloat("Near", &_near, 0.001f,0.1f);
 	ImGui::DragFloat("Far", &_far, 0.001f);
-	ImGui::DragFloat("SpriteScale", &_scale, 0.0001f);
 	ImGui::End();
 
 	_near = MathUtility::Clamp(_near, 0.001f, _far);
@@ -63,7 +61,6 @@ void CameraAsistant::Update()
 	m_Camera->SetPosition(SimpleMath::Vector3(temp_pos));
 	m_Camera->SetTarget(SimpleMath::Vector3(temp_target));
 	m_Camera->SetNear(_near);
-	m_Camera->SetSpriteScale(_scale);
 	m_Camera->SetFar(_far);
 #endif
 

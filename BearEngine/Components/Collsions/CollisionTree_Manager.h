@@ -19,8 +19,8 @@ public:
 	~CollisionTreeManager();
 	bool Init(int level, const SimpleMath::Vector3& min, const SimpleMath::Vector3& max);
 	void SetTreeProperties(const SimpleMath::Vector3& min, const SimpleMath::Vector3& max);
-	bool Regist(AABBCollisionComponent* coll, CollisionTreeObject* obj);
-	int GetAllCollisionList(std::vector<AABBCollisionComponent*>& colVector);
+	bool Regist(CollisionComponent* coll, CollisionTreeObject* obj);
+	int GetAllCollisionList(std::vector<CollisionComponent*>& colVector);
 
 private:
 	int GetMortonNumber(const SimpleMath::Vector3& minPos, const  SimpleMath::Vector3& maxPos);
@@ -28,7 +28,7 @@ private:
 	int BitSeparete3D(int n);
 	int Get3DMortonNumber(int x, int y, int z);
 	int GetPointElem(const SimpleMath::Vector3& p);
-	bool GetCollisionList(int elem, std::vector<AABBCollisionComponent*>& cols, std::list<AABBCollisionComponent*>& colStac);
+	bool GetCollisionList(int elem, std::vector<CollisionComponent*>& cols, std::list<CollisionComponent*>& colStac);
 
 private:
 	SimpleMath::Vector3 m_RangeMin; // 領域の最小値

@@ -209,7 +209,6 @@ bool RenderingPipeLine::DefaultRenderingEnd()
 // 最終的なリザルト結果を描画する
 void RenderingPipeLine::DrawPostEffectPolygon()
 {
-	// レイトレーシングを使用しない場合
 
 	m_pCommandList->SetGraphicsRootSignature(posteffect_result_pso.rootSignature.Get());
 	m_pCommandList->SetDescriptorHeaps(1, m_peraSRVHeap.GetAddressOf());
@@ -227,26 +226,13 @@ void RenderingPipeLine::DrawPostEffectPolygon()
 	m_pCommandList->DrawInstanced(4, 1, 0, 0);
 
 
-	// レイトレの場合
-	//m_pCommandList->SetGraphicsRootSignature(posteffect_result_pso.rootSignature.Get());
-	//m_pCommandList->SetDescriptorHeaps(1, m_peraSRVHeap.GetAddressOf());
+}
 
-	//// 最終的なポストエフェクトの結果
-	//auto srvHandle = m_peraSRVHeap->GetGPUDescriptorHandleForHeapStart();
-	//srvHandle.ptr += DirectXDevice::GetInstance().GetDevice()
-	//	->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * (OutputRenderResouce + m_BlurWeights + m_BloomBufferCount);
-	//m_pCommandList->SetGraphicsRootDescriptorTable(0, srvHandle);
-
-	//srvHandle.ptr += DirectXDevice::GetInstance().GetDevice()
-	//	->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	//m_pCommandList->SetGraphicsRootDescriptorTable(1, srvHandle);
-
-
-	//m_pCommandList->SetPipelineState(posteffect_raytracingResult_pso.pso.Get());
-	//m_pCommandList->IASetPrimitiveTopology(
-	//	D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	//m_pCommandList->IASetVertexBuffers(0, 1, &m_PeraVBV);
-	//m_pCommandList->DrawInstanced(4, 1, 0, 0);
+void RenderingPipeLine::RenderGUIImage()
+{
+	ImGui::Begin("Game");
+	ImGui::Image((ImTextureID)_processed_resource_guiImage_Handle.ptr, ImVec2(1280, 720));
+	ImGui::End();
 }
 
 void RenderingPipeLine::EffectBloom()
@@ -596,6 +582,9 @@ HRESULT RenderingPipeLine::CreateSRV()
 		m_RaytracingResource.Get(),
 		&srvDesc,
 		handle);
+
+
+	_processed_resource_guiImage_Handle = DirectXGraphics::GetInstance().AllocateImGuiResource(_processed_resource);
 
 	return result;
 }

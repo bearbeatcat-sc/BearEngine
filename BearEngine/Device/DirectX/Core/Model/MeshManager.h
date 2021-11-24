@@ -25,6 +25,7 @@ public:
 	std::shared_ptr<Mesh> GetMesh(const std::string& modelname, const std::string& effectName);
 	//bool LoadPrimitive(MeshData::ModelData model, std::string modelName);
 	std::shared_ptr<Mesh> GetCubeMesh(const std::string& effectName);
+	std::shared_ptr<MeshData> GetSpehereMeshData(const int tesselation);
 	std::shared_ptr<Mesh> GetSpehereMesh(int tesselation, const std::string& effectName);
 	std::shared_ptr<Mesh> GetTriangleMesh(const SimpleMath::Vector3* points, const std::string& effectName);	
 	std::shared_ptr<Mesh> GetPlaneMesh(const std::string& effectName);

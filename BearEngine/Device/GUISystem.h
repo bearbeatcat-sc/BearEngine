@@ -16,8 +16,13 @@ public:
 
 	void BeginGUI();
 	void DrawGUI();
+	void RenderRenderingDebugWindow();
+	void DrawDebug();
 	void EndGUI();
 
 private:
 	void DrawMenuBar();
+
+	bool _isShowDebugRenderingWindow;
+	bool _isShowLog;
 };

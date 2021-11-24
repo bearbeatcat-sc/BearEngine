@@ -4,8 +4,12 @@
 #include <Utility/CameraManager.h>
 #include <Utility/Time.h>
 #include <Utility/Random.h>
+#include <Components/Collsions/SphereCollisionComponent.h>
+#include <Components/Collsions/OBBCollisionComponent.h>
 
+#include "Components/Collsions/CollisionManager.h"
 #include "Device/Raytracing/DXRPipeLine.h"
+#include "Utility/LogSystem.h"
 
 
 Sphere::Sphere(Vector3 pos, SphereType type)
@@ -27,6 +31,9 @@ void Sphere::UpdateActor()
 {
 	//Move();
 	//m_pMeshComponent->SetMatrix(GetWorldMatrix());
+	auto mtx = GetWorldMatrix();
+	_instance->SetMatrix(mtx);
+
 }
 
 void Sphere::Init()
@@ -90,17 +97,25 @@ void Sphere::Init()
 	}
 	
 
-	auto mtx = SimpleMath::Matrix::CreateFromQuaternion(m_Rotation) * SimpleMath::Matrix::CreateScale(m_Scale) * SimpleMath::Matrix::CreateTranslation(m_Position);
+	auto mtx = GetWorldMatrix();
 	_instance->SetMatrix(mtx);
 	_instance->CreateRaytracingInstanceDesc();
+
+	//_sphereCollisionComponent = new SphereCollisionComponent(this, m_Scale.x, "Object");
+	_obbCollisionComponent = new OBBCollisionComponent(this, GetPosition(), m_Scale, "Object");
+	
+	CollisionManager::GetInstance().AddComponent(_obbCollisionComponent);
+	CollisionManager::GetInstance().AddRegistTree(_obbCollisionComponent);
 }
 
 void Sphere::Shutdown()
 {
+	_obbCollisionComponent->Delete();
 }
 
 void Sphere::OnCollsion(Actor* other)
 {
+	LogSystem::AddLog("Hit");
 }
 
 void Sphere::UpDown()
