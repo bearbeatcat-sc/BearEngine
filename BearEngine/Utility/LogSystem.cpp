@@ -29,7 +29,6 @@ void LogSystem::AddLog(const std::string & text)
 void LogSystem::DrawLog()
 {
 #ifdef _DEBUG
-
 	ImGui::BeginChild("Scrolling");
 	int size = m_Logs.size();
 

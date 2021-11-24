@@ -61,7 +61,10 @@ void BearEngine::RenderApplication()
 	// スプライトの描画を行う
 	RenderingPipeLine::GetInstance().BeginRenderResult();
 	SpriteDrawer::GetInstance().Draw();
+
+#ifndef _DEBUG
 	DebugDrawer::GetInstance().Draw();
+#endif
 
 	RenderingPipeLine::GetInstance().EndRenderResult();
 
@@ -74,9 +77,9 @@ void BearEngine::RenderApplication()
 	RenderingPipeLine::GetInstance().DrawPostEffectPolygon();
 #else  
 	RenderingPipeLine::GetInstance().RenderGUIImage();
+	GUISystem::GetInstance().DrawDebug();
 #endif
 
-	GUISystem::GetInstance().DrawDebug();
 	
 }
 

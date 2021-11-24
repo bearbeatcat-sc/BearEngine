@@ -61,7 +61,6 @@ void ActorManager::AddActor(Actor* actor)
 	m_AddActors.push_back(actor);
 }
 
-//#ifdef _DEBUG
 void ActorManager::RenderDebug()
 {
 	ImGui::Begin("Actors", nullptr);
@@ -81,7 +80,6 @@ void ActorManager::RenderDebug()
 
 	ImGui::End();
 }
-//#endif
 
 void ActorManager::DeleteActor(Actor* actor)
 {

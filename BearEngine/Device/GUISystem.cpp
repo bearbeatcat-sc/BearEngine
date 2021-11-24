@@ -50,8 +50,7 @@ void GUISystem::RenderRenderingDebugWindow()
 void GUISystem::DrawDebug()
 {
 
-	RenderRenderingDebugWindow();
-	
+	RenderRenderingDebugWindow();	
 	ActorManager::GetInstance().RenderDebug();
 	
 	if (_isShowLog)
