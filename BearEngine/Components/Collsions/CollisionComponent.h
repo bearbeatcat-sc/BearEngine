@@ -48,6 +48,7 @@ protected:
 	std::string _collisionTag;
 	bool _deleteFlag;
 	int _collisionIndex;
+	
 };
 
 #endif

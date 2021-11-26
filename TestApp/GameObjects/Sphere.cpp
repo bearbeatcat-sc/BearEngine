@@ -88,12 +88,17 @@ void Sphere::Init()
 	if(m_Type == SphereType_NormalLowPoly)
 	{
 		_instance = DXRPipeLine::GetInstance().AddInstance("Sphere2", 0);
+		_sphereCollisionComponent = new SphereCollisionComponent(this, m_Scale.x, "Object");
+		CollisionManager::GetInstance().AddComponent(_sphereCollisionComponent);
+		CollisionManager::GetInstance().AddRegistTree(_sphereCollisionComponent);
 
 	}
 	else
 	{
 		_instance = DXRPipeLine::GetInstance().AddInstance("Sphere", 0);
-
+		_obbCollisionComponent = new OBBCollisionComponent(this, GetPosition(), m_Scale, "Object");
+		CollisionManager::GetInstance().AddComponent(_obbCollisionComponent);
+		CollisionManager::GetInstance().AddRegistTree(_obbCollisionComponent);
 	}
 	
 
@@ -101,16 +106,17 @@ void Sphere::Init()
 	_instance->SetMatrix(mtx);
 	_instance->CreateRaytracingInstanceDesc();
 
-	//_sphereCollisionComponent = new SphereCollisionComponent(this, m_Scale.x, "Object");
-	_obbCollisionComponent = new OBBCollisionComponent(this, GetPosition(), m_Scale, "Object");
 	
-	CollisionManager::GetInstance().AddComponent(_obbCollisionComponent);
-	CollisionManager::GetInstance().AddRegistTree(_obbCollisionComponent);
+
 }
 
 void Sphere::Shutdown()
 {
-	_obbCollisionComponent->Delete();
+	if(_obbCollisionComponent != nullptr)
+		_obbCollisionComponent->Delete();
+
+	if (_sphereCollisionComponent != nullptr)
+		_sphereCollisionComponent->Delete();
 }
 
 void Sphere::OnCollsion(Actor* other)

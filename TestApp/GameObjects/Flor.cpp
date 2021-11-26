@@ -54,17 +54,18 @@ void Flor::Init()
 
 			if (flag)
 			{
-				auto cube = new Cube( (SimpleMath::Vector3(x, 0, z) * 2.0f), SimpleMath::Vector3(1.0f, 1, 1.0f), 300.0f, "WhiteCube", false);
+				auto cube = new Cube(basePos + (SimpleMath::Vector3(x, 0, z) * 2.0f), SimpleMath::Vector3(1.0f, 1, 1.0f), 300.0f, "WhiteCube", false);
 				cube->SetActorName("Cube");
-				SetChild(cube);
+				ActorManager::GetInstance().AddActor(cube);
+				//SetChild(cube);
 			}
 			else
 			{
-				auto cube = new Cube( (SimpleMath::Vector3(x, 0, z) * 2.0f), SimpleMath::Vector3(1.0f, 1, 1.0f), 300.0f, "GrayCube", false);
+				auto cube = new Cube(basePos + (SimpleMath::Vector3(x, 0, z) * 2.0f), SimpleMath::Vector3(1.0f, 1, 1.0f), 300.0f, "GrayCube", false);
 				cube->SetActorName("Cube");
-				//ActorManager::GetInstance().AddActor(cube);
+				ActorManager::GetInstance().AddActor(cube);
 
-				SetChild(cube);
+				//SetChild(cube);
 			}
 		}
 

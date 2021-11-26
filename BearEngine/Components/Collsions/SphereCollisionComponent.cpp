@@ -69,7 +69,7 @@ void SphereCollisionComponent::Update()
 
 #ifdef _DEBUG
 	if (_isDrawDebug)
-		DebugDrawer::GetInstance().DrawSphere(m_Radius, GetPosition());
+		DebugDrawer::GetInstance().DrawSphere(m_Radius * 2.0f, GetPosition());
 #endif
 }
 

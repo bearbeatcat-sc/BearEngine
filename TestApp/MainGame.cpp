@@ -114,17 +114,17 @@ void MainGame::Init()
 	auto wall = new Cube(SimpleMath::Vector3(1.5f, 3.0f, 9.0f), SimpleMath::Vector3(grid_size_x, 6, 1), 300.0f, "WhiteCube", false);
 	ActorManager::GetInstance().AddActor(wall);
 
-	auto leftWall = new Cube(SimpleMath::Vector3(-7.0f, 3.0f, -0.0f), SimpleMath::Vector3(1, 6, grid_size_x), 300.0f, "RoughCube", false);
-	ActorManager::GetInstance().AddActor(leftWall);
+	//auto leftWall = new Cube(SimpleMath::Vector3(-7.0f, 3.0f, -0.0f), SimpleMath::Vector3(1, 6, grid_size_x), 300.0f, "RoughCube", false);
+	//ActorManager::GetInstance().AddActor(leftWall);
 
-	auto rightWall = new Cube(SimpleMath::Vector3(7.0f, 3.0f, -0.0f), SimpleMath::Vector3(1, 6, grid_size_x), 300.0f, "RoughCube", false);
-	ActorManager::GetInstance().AddActor(rightWall);
+	//auto rightWall = new Cube(SimpleMath::Vector3(7.0f, 3.0f, -0.0f), SimpleMath::Vector3(1, 6, grid_size_x), 300.0f, "RoughCube", false);
+	//ActorManager::GetInstance().AddActor(rightWall);
 
-	auto topWall = new Cube(SimpleMath::Vector3(0.0f, 8, 0.0f), SimpleMath::Vector3(grid_size_x, 1, grid_size_x), 300.0f, "RoughCube", false);
-	ActorManager::GetInstance().AddActor(topWall);
+	//auto topWall = new Cube(SimpleMath::Vector3(0.0f, 8, 0.0f), SimpleMath::Vector3(grid_size_x, 1, grid_size_x), 300.0f, "RoughCube", false);
+	//ActorManager::GetInstance().AddActor(topWall);
 
-	auto backWall = new Cube(SimpleMath::Vector3(1.5f, 3.0f, -9.0f), SimpleMath::Vector3(grid_size_x, 6, 1), 300.0f, "RoughCube", false);
-	ActorManager::GetInstance().AddActor(backWall);
+	//auto backWall = new Cube(SimpleMath::Vector3(1.5f, 3.0f, -9.0f), SimpleMath::Vector3(grid_size_x, 6, 1), 300.0f, "RoughCube", false);
+	//ActorManager::GetInstance().AddActor(backWall);
 
 	auto sphere = new Sphere(SimpleMath::Vector3(-2.0f, 0.0f, 6.0f), Sphere::SphereType_Normal);
 	sphere->SetScale(SimpleMath::Vector3(1.0f));
@@ -136,22 +136,22 @@ void MainGame::Init()
 	sphere2->SetRotation(SimpleMath::Vector3(-2.4f, 0.0f, 0.0f));
 	ActorManager::GetInstance().AddActor(sphere2);
 
-	//for (int i = 0; i < 241; ++i)
+	//for (int i = 0; i < 200; ++i)
 	//{
-	//	auto pos_x = Random::GetRandom(-20.0f, 20.0f);
-	//	auto pos_z = Random::GetRandom(-5.0f, 10.0f);
+	//	auto pos_x = Random::GetRandom(-6.0f, 6.0f);
+	//	auto pos_z = Random::GetRandom(-8.0f, 8.0f);
 	//	float pos_y = 2.0f;
 
 	//	float rotateX = Random::GetRandom(-1.0f, 1.0f);
 	//	float rotateY = Random::GetRandom(-1.0f, 1.0f);
 	//	float rotateZ = Random::GetRandom(-1.0f, 1.0f);
 
-	//	float scale = 0.4f;
+	//	float scale = 0.1f;
 
 	//	//auto sphere = new Sphere(SimpleMath::Vector3((i / 8) * 1.0f, pos_y, (i % 8) * 1.0f), Sphere::SphereType_Normal);
 	//	auto sphere = new Sphere(SimpleMath::Vector3(pos_x,pos_y,pos_z), Sphere::SphereType_Normal);
 	//	sphere->SetScale(SimpleMath::Vector3(scale));
-	//	sphere->SetRotation(Quaternion::CreateFromYawPitchRoll(rotateX, rotateY, rotateZ));
+	//	sphere->SetRotation(SimpleMath::Vector3(rotateX, rotateY, rotateZ));
 	//	ActorManager::GetInstance().AddActor(sphere);
 
 	//	//_GenerateCount++;

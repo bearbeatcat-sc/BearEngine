@@ -8,9 +8,13 @@ const bool CollisionInterSect::SphereToOBBInterSect(SphereCollisionComponent* sp
 	auto pos = sphere->GetPosition();
 	ClosetPtPointOBB(pos, obb, point);
 
+	float radius = sphere->GetRadius();
+
 	SimpleMath::Vector3 v = point - pos;
 
-	return v.Dot(v) <= sphere->GetRadius() * sphere->GetRadius();
+	float dot = v.Dot(v);
+
+	return dot <= radius * radius;
 }
 
 // http://marupeke296.com/COL_3D_No13_OBBvsOBB.html

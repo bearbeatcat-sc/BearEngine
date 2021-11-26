@@ -62,7 +62,7 @@ void BearEngine::RenderApplication()
 	RenderingPipeLine::GetInstance().BeginRenderResult();
 	SpriteDrawer::GetInstance().Draw();
 
-#ifndef _DEBUG
+#ifdef _DEBUG
 	DebugDrawer::GetInstance().Draw();
 #endif
 
