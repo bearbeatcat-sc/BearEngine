@@ -1,12 +1,12 @@
 ﻿#include "Flor.h"
 
-#include <algorithm>
 
 #include "Cube.h"
 #include "Plane.h"
 #include "Components/Collsions/CollisionManager.h"
-#include "Game_Object/ActorManager.h"
 #include "Utility/Random.h"
+#include "Components/Collsions/OBBCollisionComponent.h"
+#include "Components/Physics/RigidBodyComponent.h"
 
 Flor::Flor(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& scale)
 	:Actor()
@@ -54,18 +54,18 @@ void Flor::Init()
 
 			if (flag)
 			{
-				auto cube = new Cube(basePos + (SimpleMath::Vector3(x, 0, z) * 2.0f), SimpleMath::Vector3(1.0f, 1, 1.0f), 300.0f, "WhiteCube", false);
+				auto cube = new Cube( (SimpleMath::Vector3(x, 0, z) * 2.0f), SimpleMath::Vector3(1.0f, 1, 1.0f), 300.0f, "WhiteCube", false);
 				cube->SetActorName("Cube");
-				ActorManager::GetInstance().AddActor(cube);
-				//SetChild(cube);
+				//ActorManager::GetInstance().AddActor(cube);
+				SetChild(cube);
 			}
 			else
 			{
-				auto cube = new Cube(basePos + (SimpleMath::Vector3(x, 0, z) * 2.0f), SimpleMath::Vector3(1.0f, 1, 1.0f), 300.0f, "GrayCube", false);
+				auto cube = new Cube( (SimpleMath::Vector3(x, 0, z) * 2.0f), SimpleMath::Vector3(1.0f, 1, 1.0f), 300.0f, "GrayCube", false);
 				cube->SetActorName("Cube");
-				ActorManager::GetInstance().AddActor(cube);
+				//ActorManager::GetInstance().AddActor(cube);
 
-				//SetChild(cube);
+				SetChild(cube);
 			}
 		}
 
@@ -73,6 +73,14 @@ void Flor::Init()
 	}
 
 	SetTag("Object");
+
+	m_pCollisionComponent = new OBBCollisionComponent(this,basePos,SimpleMath::Vector3(2.0f * grid_size_x, 1, 2.0f * grid_size_z), "Object");
+	CollisionManager::GetInstance().AddComponent(m_pCollisionComponent);
+	CollisionManager::GetInstance().AddRegistTree(m_pCollisionComponent);
+	_rigidBodyComponent = std::make_shared<RigidBodyComponent>(this);
+	AddComponent(_rigidBodyComponent);
+	m_pCollisionComponent->RegistRigidBody(_rigidBodyComponent);
+	_rigidBodyComponent->_AddGravity = SimpleMath::Vector3::Zero;
 	
 }
 
@@ -83,6 +91,7 @@ void Flor::UpdateActor()
 
 void Flor::Shutdown()
 {
+	m_pCollisionComponent->Delete();
 }
 
 void Flor::OnCollsion(Actor* other)

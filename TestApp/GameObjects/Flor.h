@@ -8,8 +8,9 @@
 
 using namespace DirectX;
 
-class AABBCollisionComponent;
+class OBBCollisionComponent;
 class InkManager;
+class RigidBodyComponent;
 
 class Flor
 	:public Actor
@@ -25,8 +26,9 @@ private:
 	virtual void OnCollsion(Actor* other) override;
 
 private:
-	AABBCollisionComponent* m_pCollisionComponent;
+	OBBCollisionComponent* m_pCollisionComponent;
 	InkManager* m_pInkManager;
+	std::shared_ptr<RigidBodyComponent> _rigidBodyComponent;
 };
 
 #endif

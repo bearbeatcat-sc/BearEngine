@@ -55,7 +55,7 @@ void OBBCollisionComponent::SetAdjustPos(SimpleMath::Vector3 pos)
 	_adjustPos = pos;
 }
 
-bool OBBCollisionComponent::IsInterSect(CollisionComponent* collisionComponent)
+bool OBBCollisionComponent::IsInterSect(CollisionComponent* collisionComponent, InterSectInfo& inter_sect_info)
 {
 	auto otherCollisionType = collisionComponent->GetCollisionType();
 
@@ -63,12 +63,12 @@ bool OBBCollisionComponent::IsInterSect(CollisionComponent* collisionComponent)
 	{
 		// 今は使わないかも
 		SimpleMath::Vector3 point;
-		return CollisionInterSect::SphereToOBBInterSect(static_cast<SphereCollisionComponent*>(collisionComponent),this,point);
+		return CollisionInterSect::SphereToOBBInterSect(static_cast<SphereCollisionComponent*>(collisionComponent),this,point, inter_sect_info);
 	}
 
 	if (otherCollisionType == CollisionType_OBB)
 	{
-		return CollisionInterSect::OBBToOBBInterSect(this, static_cast<OBBCollisionComponent*>(collisionComponent));
+		return CollisionInterSect::OBBToOBBInterSect(this, static_cast<OBBCollisionComponent*>(collisionComponent), inter_sect_info);
 	}
 
 	return false;

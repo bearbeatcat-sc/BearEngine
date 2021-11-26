@@ -50,7 +50,7 @@ void AABBCollisionComponent::SetAdjustPos(SimpleMath::Vector3 pos)
 	_adjustPos = pos;
 }
 
-bool AABBCollisionComponent::IsInterSect(CollisionComponent* collisionComponent)
+bool AABBCollisionComponent::IsInterSect(CollisionComponent* collisionComponent, InterSectInfo& inter_sect_info)
 {
 	auto otherCollisionType = collisionComponent->GetCollisionType();
 	

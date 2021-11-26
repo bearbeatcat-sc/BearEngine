@@ -37,7 +37,7 @@ const DirectX::SimpleMath::Vector3& SphereCollisionComponent::GetPosition()
 	return _user->GetPosition() + m_AdjustPos;
 }
 
-bool SphereCollisionComponent::IsInterSect(CollisionComponent* collisionComponent)
+bool SphereCollisionComponent::IsInterSect(CollisionComponent* collisionComponent, InterSectInfo& inter_sect_info)
 {
 	// 中心と点との距離の二乗
 	//float distance = (GetUserPosition() - collisionComponent->GetUserPosition()).lengthSquare();
@@ -49,14 +49,14 @@ bool SphereCollisionComponent::IsInterSect(CollisionComponent* collisionComponen
 
 	if(otherCollisionType == CollisionType_Sphere)
 	{
-		return CollisionInterSect::SphereToSphereInterSect(this, static_cast<SphereCollisionComponent*>(collisionComponent));
+		return CollisionInterSect::SphereToSphereInterSect(this, static_cast<SphereCollisionComponent*>(collisionComponent), inter_sect_info);
 	}
 
 	if (otherCollisionType == CollisionType_OBB)
 	{
 		// 今は使わないかも
 		SimpleMath::Vector3 point;
-		return CollisionInterSect::SphereToOBBInterSect(this, static_cast<OBBCollisionComponent*>(collisionComponent), point);
+		return CollisionInterSect::SphereToOBBInterSect(this, static_cast<OBBCollisionComponent*>(collisionComponent), point, inter_sect_info);
 	}
 
 	
@@ -66,7 +66,6 @@ bool SphereCollisionComponent::IsInterSect(CollisionComponent* collisionComponen
 
 void SphereCollisionComponent::Update()
 {
-
 #ifdef _DEBUG
 	if (_isDrawDebug)
 		DebugDrawer::GetInstance().DrawSphere(m_Radius * 2.0f, GetPosition());

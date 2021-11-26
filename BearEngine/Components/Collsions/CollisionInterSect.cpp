@@ -2,23 +2,29 @@
 
 #include "Components/Collsions/SphereCollisionComponent.h"
 #include "Components/Collsions/OBBCollisionComponent.h"
+#include <Components/Collsions/InterSectInfo.h>
 
-const bool CollisionInterSect::SphereToOBBInterSect(SphereCollisionComponent* sphere, OBBCollisionComponent* obb, SimpleMath::Vector3& point)
+const bool CollisionInterSect::SphereToOBBInterSect(SphereCollisionComponent* sphere, OBBCollisionComponent* obb, SimpleMath::Vector3& point, InterSectInfo& interSect)
 {
 	auto pos = sphere->GetPosition();
 	ClosetPtPointOBB(pos, obb, point);
-
+	
 	float radius = sphere->GetRadius();
 
 	SimpleMath::Vector3 v = point - pos;
 
 	float dot = v.Dot(v);
 
+	interSect._PoisitionA = pos;
+	interSect._PoisitionB = obb->GetCenter();
+	interSect._InterSectPositionA = point;
+	interSect._InterSectPositionB = point;
+
 	return dot <= radius * radius;
 }
 
 // http://marupeke296.com/COL_3D_No13_OBBvsOBB.html
-const bool CollisionInterSect::OBBToOBBInterSect(OBBCollisionComponent* obb1, OBBCollisionComponent* obb2)
+const bool CollisionInterSect::OBBToOBBInterSect(OBBCollisionComponent* obb1, OBBCollisionComponent* obb2, InterSectInfo& interSect)
 {
 	auto obb1DirectionVec = obb1->GetDirectionVec();
 	auto obb2DirectionVec = obb2->GetDirectionVec();
@@ -183,14 +189,24 @@ const bool CollisionInterSect::OBBToOBBInterSect(OBBCollisionComponent* obb1, OB
 }
 
 const bool CollisionInterSect::SphereToSphereInterSect(SphereCollisionComponent* sphere1,
-	SphereCollisionComponent* sphere2)
+	SphereCollisionComponent* sphere2, InterSectInfo& interSect)
 {	
 	DirectX::SimpleMath::Vector3 thisPos = sphere1->GetPosition();
 	DirectX::SimpleMath::Vector3 otherPos = sphere2->GetPosition();
 	float thisRadius = sphere1->GetRadius();
 	float otherRadius = sphere2->GetRadius();
 
+	interSect._PoisitionA = thisPos;
+	interSect._PoisitionB = otherPos;
 
+	SimpleMath::Vector3 ab = otherPos - thisPos;
+	SimpleMath::Vector3 normal = ab;
+	normal.Normalize();
+	
+	interSect._Normal = normal;
+	interSect._InterSectPositionA = thisPos + normal * thisRadius;
+	interSect._InterSectPositionB = otherPos + normal * otherRadius;
+	
 	DirectX::SimpleMath::Vector3 temp = otherPos - thisPos;
 	float sum_Radius = thisRadius + otherRadius;
 

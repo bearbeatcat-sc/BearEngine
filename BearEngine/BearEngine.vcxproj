@@ -286,6 +286,7 @@
     <ClInclude Include="Components\AnimationComponent.h" />
     <ClInclude Include="Components\AnimationQue.h" />
     <ClInclude Include="Components\Collsions\CollisionInterSect.h" />
+    <ClInclude Include="Components\Collsions\InterSectInfo.h" />
     <ClInclude Include="Components\Collsions\OBBCollisionComponent.h" />
     <ClInclude Include="Components\Physics\RigidBodyComponent.h" />
     <ClInclude Include="Components\SpriteComponent3D.h" />

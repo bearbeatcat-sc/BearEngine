@@ -2,7 +2,8 @@
 #include "../../Game_Object/Actor.h"
 #include "CollisionTagManager.h"
 #include "CollisionTree_Object.h"
-#include "../../Utility/Time.h"
+#include "Components/Physics/RigidBodyComponent.h"
+#include "InterSectInfo.h"
 
 CollisionComponent::CollisionComponent(Actor* user, CollisionType collType, const std::string& collisonTag, int upadeteOredr)
 	:Component(user, upadeteOredr), _collisionType(collType), _collisionTag(collisonTag), _treeObject(nullptr),_isDrawDebug(true)
@@ -46,6 +47,18 @@ void CollisionComponent::OffDrawDebug()
 	_isDrawDebug = false;
 }
 
+void CollisionComponent::RegistRigidBody(std::shared_ptr<RigidBodyComponent> rigid_body_component)
+{
+	_rigidBodyComponent = rigid_body_component;
+}
+
+void CollisionComponent::OnResolveContact(Actor* other, CollisionComponent* otherCollisionComponent,InterSectInfo& inter_sect_info)
+{
+	if (!_rigidBodyComponent)return;;
+	
+	_rigidBodyComponent->OnResolveContact(other,otherCollisionComponent,inter_sect_info);
+}
+
 const std::string& CollisionComponent::GetCollsionTag()
 {
 	return _collisionTag;
@@ -73,13 +86,29 @@ Actor* CollisionComponent::GetUser()
 	return _user;
 }
 
-void CollisionComponent::UserOnCollision(Actor* other, CollisionComponent* collisionComponent)
+std::shared_ptr<RigidBodyComponent> CollisionComponent::GetRigidBody()
+{
+	if(_rigidBodyComponent)
+	{
+		return _rigidBodyComponent;
+	}
+	
+	return nullptr;
+}
+
+void CollisionComponent::UserOnCollision(Actor* other, CollisionComponent* otherCollisionComponent,InterSectInfo& inter_sect_info)
 {
 	// TODO:　実装中のため使用しない
 	//if (m_IsRigid)
 	//{
 	//	RigidUpdate(collisionComponent);
 	//}
+
+	// お互い、RigidBodyを所持していた場合だけ処理を行う
+	if(_rigidBodyComponent && otherCollisionComponent->GetRigidBody())
+	{
+		_rigidBodyComponent->OnCollider(other, otherCollisionComponent, inter_sect_info);
+	}
 
 	_user->OnCollsion(other);
 }

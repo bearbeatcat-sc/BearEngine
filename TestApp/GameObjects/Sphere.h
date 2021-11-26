@@ -5,6 +5,7 @@
 #include <SimpleMath.h>
 #include <memory>
 
+#include "Components/Physics/RigidBodyComponent.h"
 #include "Device/Raytracing/DXRInstance.h"
 
 using namespace DirectX::SimpleMath;
@@ -61,6 +62,7 @@ private:
 	DirectX::SimpleMath::Color mColor;
 	Vector3 mInitPos;
 	Vector3 mStartPos;
+	std::shared_ptr<RigidBodyComponent> _rigidBodyComponent;
 };
 
 #endif

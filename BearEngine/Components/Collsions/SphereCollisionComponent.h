@@ -18,7 +18,7 @@ public:
 	const DirectX::SimpleMath::Vector3& GetAdjustPos();
 	const DirectX::SimpleMath::Vector3& GetPosition();
 	
-	virtual bool IsInterSect(CollisionComponent* collisionComponent) override;
+	virtual bool IsInterSect(CollisionComponent* collisionComponent, InterSectInfo& inter_sect_info) override;
 	virtual void Update() override;
 	
 	const DirectX::SimpleMath::Vector3 GetMin() override;

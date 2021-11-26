@@ -92,13 +92,29 @@ void Sphere::Init()
 		CollisionManager::GetInstance().AddComponent(_sphereCollisionComponent);
 		CollisionManager::GetInstance().AddRegistTree(_sphereCollisionComponent);
 
+		_rigidBodyComponent = std::make_shared<RigidBodyComponent>(this);
+		AddComponent(_rigidBodyComponent);
+		_sphereCollisionComponent->RegistRigidBody(_rigidBodyComponent);
+		_rigidBodyComponent->_AddGravity = SimpleMath::Vector3::Zero;
+
 	}
 	else
 	{
 		_instance = DXRPipeLine::GetInstance().AddInstance("Sphere", 0);
-		_obbCollisionComponent = new OBBCollisionComponent(this, GetPosition(), m_Scale, "Object");
-		CollisionManager::GetInstance().AddComponent(_obbCollisionComponent);
-		CollisionManager::GetInstance().AddRegistTree(_obbCollisionComponent);
+		//_obbCollisionComponent = new OBBCollisionComponent(this, GetPosition(), m_Scale, "Object");
+		//CollisionManager::GetInstance().AddComponent(_obbCollisionComponent);
+		//CollisionManager::GetInstance().AddRegistTree(_obbCollisionComponent);
+
+		_sphereCollisionComponent = new SphereCollisionComponent(this, m_Scale.x, "Object");
+		CollisionManager::GetInstance().AddComponent(_sphereCollisionComponent);
+		CollisionManager::GetInstance().AddRegistTree(_sphereCollisionComponent);
+
+				_rigidBodyComponent = std::make_shared<RigidBodyComponent>(this);
+		AddComponent(_rigidBodyComponent);
+		//_obbCollisionComponent->RegistRigidBody(_rigidBodyComponent);
+		_sphereCollisionComponent->RegistRigidBody(_rigidBodyComponent);
+		_rigidBodyComponent->_AddGravity = SimpleMath::Vector3::Zero;
+
 	}
 	
 
@@ -106,7 +122,7 @@ void Sphere::Init()
 	_instance->SetMatrix(mtx);
 	_instance->CreateRaytracingInstanceDesc();
 
-	
+
 
 }
 

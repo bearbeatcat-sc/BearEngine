@@ -24,7 +24,7 @@ public:
 	void SetAdjustPos(SimpleMath::Vector3 pos);
 
 	
-	virtual bool IsInterSect(CollisionComponent* collisionComponent) override;
+	virtual bool IsInterSect(CollisionComponent* collisionComponent, InterSectInfo& inter_sect_info) override;
 	virtual void Update() override;
 
 

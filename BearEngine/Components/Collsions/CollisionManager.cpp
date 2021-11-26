@@ -1,14 +1,14 @@
 ﻿#include "CollisionManager.h"
 #include "CollisionComponent.h"
-#include "./CollisionManager.h"
 #include "./CollisionTagManager.h"
 #include "CollisionTree_Object.h"
-#include <chrono>
 #include "../../imgui/imgui.h"
 #include "../../Utility/Time.h"
-#include "../../Game_Object/Actor.h"
 #include "../../Utility/LogSystem.h"
+#include "InterSectInfo.h"
+
 #include <string>
+#include <chrono>
 
 CollisionManager::CollisionManager()
 	:m_isDebugMode(true)
@@ -105,10 +105,14 @@ void CollisionManager::InterSect()
 		if (!collisionTable[collisonList[i]->GetCollisionIndex()][collisonList[i + 1]->GetCollisionIndex()]) continue;
 
 
-		if (collisonList[i]->IsInterSect(collisonList[i + 1]))
+		InterSectInfo inter_sect_info;
+		if (collisonList[i]->IsInterSect(collisonList[i + 1], inter_sect_info))
 		{
-			collisonList[i]->UserOnCollision(collisonList[i + 1]->GetUser(), collisonList[i + 1]);
-			collisonList[i + 1]->UserOnCollision(collisonList[i]->GetUser(), collisonList[i]);
+			// 衝突解決
+			collisonList[i]->OnResolveContact(collisonList[i + 1]->GetUser(), collisonList[i + 1],inter_sect_info);
+			
+			collisonList[i]->UserOnCollision(collisonList[i + 1]->GetUser(), collisonList[i + 1], inter_sect_info);
+			collisonList[i + 1]->UserOnCollision(collisonList[i]->GetUser(), collisonList[i], inter_sect_info);
 		}
 	}
 

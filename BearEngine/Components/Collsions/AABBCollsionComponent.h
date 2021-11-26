@@ -23,7 +23,7 @@ public:
 	void SetCenterPosition(const SimpleMath::Vector3& pos);
 	void SetSize(const SimpleMath::Vector3& size);
 	void SetAdjustPos(SimpleMath::Vector3 pos);
-	virtual bool IsInterSect(CollisionComponent* collisionComponent) override;
+	virtual bool IsInterSect(CollisionComponent* collisionComponent, InterSectInfo& inter_sect_info) override;
 	virtual void Update() override;
 
 private:
