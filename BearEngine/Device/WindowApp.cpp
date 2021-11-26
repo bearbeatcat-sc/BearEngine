@@ -38,8 +38,16 @@ HRESULT WindowApp::Run(Game* game)
 {
 	game_ = game;
 	OutputDebugStringA("Hello,DirectX!!\n");
-	
-	window_size = { game_->windowSize_X,game->windowSize_Y };
+
+	// デスクトップのRectを取得
+	RECT desktopRect;
+	GetWindowRect(GetDesktopWindow(), &desktopRect);
+
+	const int desktop_width = desktopRect.right - desktopRect.left;
+	const int desktop_height = desktopRect.bottom - desktopRect.top;
+
+	// デスクトップサイズよりもゲーム側の指定ウィンドウサイズが大きかったら制限する。
+	window_size = { std::clamp(game->windowSize_X,0,desktop_width),std::clamp(game->windowSize_Y,0,desktop_height) };
 
 
 	w_.cbSize = sizeof(WNDCLASSEX);
@@ -51,7 +59,6 @@ HRESULT WindowApp::Run(Game* game)
 	RegisterClassEx(&w_);
 	RECT wrc = { 0,0,window_size.window_Width,window_size.window_Height };
 	AdjustWindowRect(&wrc, WS_OVERLAPPEDWINDOW, false);
-
 
 	hwnd_ = CreateWindow(
 		w_.lpszClassName,
@@ -66,6 +73,7 @@ HRESULT WindowApp::Run(Game* game)
 		w_.hInstance,
 		nullptr
 	);
+
 
 
 
@@ -144,7 +152,7 @@ HWND WindowApp::GetHWND()
 	return hwnd_;
 }
 
-WindowSize WindowApp::GetWindowSize()
+const WindowSize& WindowApp::GetWindowSize()
 {
 	return window_size;
 }

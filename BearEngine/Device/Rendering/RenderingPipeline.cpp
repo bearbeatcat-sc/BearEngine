@@ -230,8 +230,10 @@ void RenderingPipeLine::DrawPostEffectPolygon()
 
 void RenderingPipeLine::RenderGUIImage()
 {
+	auto windowSize = WindowApp::GetInstance().GetWindowSize();
+	
 	ImGui::Begin("Game");
-	ImGui::Image((ImTextureID)_processed_resource_guiImage_Handle.ptr, ImVec2(1280, 720));
+	ImGui::Image((ImTextureID)_processed_resource_guiImage_Handle.ptr, ImVec2(windowSize.window_Width * 0.7f,windowSize.window_Height * 0.7f));
 	ImGui::End();
 }
 

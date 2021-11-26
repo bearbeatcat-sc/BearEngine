@@ -20,7 +20,7 @@ public:
 
 	HRESULT Run(Game* m_Game);
 	HWND GetHWND();
-	WindowSize GetWindowSize();
+	const WindowSize& GetWindowSize();
 	WNDCLASSEX GetWndClassEx();
 	float GetAspect();
 	const std::string FileOpen();
