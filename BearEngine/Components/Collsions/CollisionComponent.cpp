@@ -138,3 +138,7 @@ CollisionTreeObject* CollisionComponent::GetCollisionTreeObject()
 	return _treeObject;
 }
 
+void CollisionComponent::DrawProperties()
+{
+}
+

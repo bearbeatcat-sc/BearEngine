@@ -90,3 +90,8 @@ void MeshComponent::SetVisible(bool flag)
 {
 	m_Mesh->SetVisible(flag);
 }
+
+void MeshComponent::DrawProperties()
+{
+	
+}

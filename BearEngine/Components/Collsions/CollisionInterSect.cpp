@@ -205,7 +205,7 @@ const bool CollisionInterSect::SphereToSphereInterSect(SphereCollisionComponent*
 	
 	interSect._Normal = normal;
 	interSect._InterSectPositionA = thisPos + normal * thisRadius;
-	interSect._InterSectPositionB = otherPos + normal * otherRadius;
+	interSect._InterSectPositionB = otherPos - normal * otherRadius;
 	
 	DirectX::SimpleMath::Vector3 temp = otherPos - thisPos;
 	float sum_Radius = thisRadius + otherRadius;

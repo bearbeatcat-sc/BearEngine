@@ -73,3 +73,7 @@ void SpriteComponent3D::SetBillBoardType(Sprite3D::BillBoardType billBoardType)
 {
 	m_Sprite->SetBillBoardType(billBoardType);
 }
+
+void SpriteComponent3D::DrawProperties()
+{
+}

@@ -24,6 +24,7 @@ public:
 	void SetTexture(const std::string& textureName);
 	void SetAnchorPoint(DirectX::SimpleMath::Vector2 anchorPoint);
 	void SetDrawFlag(bool flag);
+	void DrawProperties() override;
 
 protected:
 	std::shared_ptr<Sprite2D> m_Sprite;

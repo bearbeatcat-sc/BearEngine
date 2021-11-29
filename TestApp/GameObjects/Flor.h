@@ -8,7 +8,7 @@
 
 using namespace DirectX;
 
-class OBBCollisionComponent;
+class CollisionComponent;
 class InkManager;
 class RigidBodyComponent;
 
@@ -26,7 +26,7 @@ private:
 	virtual void OnCollsion(Actor* other) override;
 
 private:
-	OBBCollisionComponent* m_pCollisionComponent;
+	CollisionComponent* m_pCollisionComponent;
 	InkManager* m_pInkManager;
 	std::shared_ptr<RigidBodyComponent> _rigidBodyComponent;
 };

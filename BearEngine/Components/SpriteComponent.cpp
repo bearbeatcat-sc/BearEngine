@@ -64,3 +64,7 @@ void SpriteComponent::SetDrawFlag(bool flag)
 {
 	m_Sprite->SetDrawFlag(flag);
 }
+
+void SpriteComponent::DrawProperties()
+{
+}

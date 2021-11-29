@@ -26,6 +26,7 @@ public:
 	void SetScale(SimpleMath::Vector3 scale);
 	void SetRotate(SimpleMath::Vector3 rotate);
 	void SetBillBoardType(Sprite3D::BillBoardType billBoardType);
+	void DrawProperties() override;
 
 protected:
 	std::shared_ptr<Sprite3D> m_Sprite;

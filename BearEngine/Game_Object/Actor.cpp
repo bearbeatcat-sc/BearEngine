@@ -2,12 +2,16 @@
 #include "../Components/Component.h"
 #include "ActorManager.h"
 #include <DirectXMath.h>
+#include <tchar.h>
+
 #include "../Utility/Timer.h"
 #include <imgui/imgui.h>
 
+#include "Game.h"
+
 Actor::Actor(const std::string& actorName)
 	:m_Position(DirectX::SimpleMath::Vector3::Zero), m_Scale(DirectX::SimpleMath::Vector3::One), m_Rotation(DirectX::SimpleMath::Vector3::Zero), _ActoName(actorName), m_first(true), m_WorldMatrix(DirectX::SimpleMath::Matrix::Identity), m_IsActive(true),
-	_isShowHierarchy(false)
+	_isShowHierarchy(false), m_Parent(nullptr), destroyFlag(false)
 {
 
 }
@@ -114,14 +118,14 @@ void Actor::SetScale(const DirectX::SimpleMath::Vector3& scale)
 }
 
 
-const  DirectX::SimpleMath::Matrix& Actor::GetWorldMatrix()
+const DirectX::SimpleMath::Matrix Actor::GetWorldMatrix()
 {
 	SetWorldMatrix();
 
 	if (m_Parent == nullptr || m_Parent->GetDestroyFlag())
 	{
 		return m_WorldMatrix;
-	}
+	}	
 
 	// 今回は同じ用に扱う。	
 	return m_WorldMatrix * m_Parent->GetWorldMatrix();
@@ -258,6 +262,11 @@ void Actor::RenderHierarchy(int index)
 
 	if (ImGui::DragFloat3("Rotation", f_rotation, 0.01f))
 		isChange = true;
+
+	for(auto component : m_Components)
+	{
+		component->DrawProperties();
+	}
 
 	if (isChange)
 	{

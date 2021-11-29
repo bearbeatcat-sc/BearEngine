@@ -16,11 +16,13 @@ public:
 	RigidBodyComponent(Actor* pActor);
 	~RigidBodyComponent();
 	virtual  void Update() override;
-	void AddImpulse(const SimpleMath::Vector3& vec);
+	void AddImpulse(const SimpleMath::Vector3 vec);
+	const SimpleMath::Vector3& GetVelocity();
 	void OnCollider(Actor* other, CollisionComponent* otherCollisionComponent,InterSectInfo& inter_sect_info);
 	void OnStatic();
 	void OnResolveContact(Actor* other, CollisionComponent* otherCollisionComponent, InterSectInfo& inter_sect_info);
-	
+	void DrawProperties() override;
+
 	const bool IsStatic() const;
 	const bool IsCalculatePhysics() const;
 
@@ -30,6 +32,8 @@ public:
 private:
 	void AddGravity();
 	const float GetMass();
+	void CalculateMoment(Actor* other, std::shared_ptr<RigidBodyComponent> otherRigidBody,
+	                     InterSectInfo& inter_sect_info);
 	void ResolveContact(Actor* other, std::shared_ptr<RigidBodyComponent> otherRigidBody,InterSectInfo& inter_sect_info);
 
 private:

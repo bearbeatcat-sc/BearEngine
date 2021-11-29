@@ -96,6 +96,7 @@ void Sphere::Init()
 		AddComponent(_rigidBodyComponent);
 		_sphereCollisionComponent->RegistRigidBody(_rigidBodyComponent);
 		_rigidBodyComponent->_AddGravity = SimpleMath::Vector3::Zero;
+		_rigidBodyComponent->_Mass = 0.1f;
 
 	}
 	else
@@ -114,7 +115,7 @@ void Sphere::Init()
 		//_obbCollisionComponent->RegistRigidBody(_rigidBodyComponent);
 		_sphereCollisionComponent->RegistRigidBody(_rigidBodyComponent);
 		_rigidBodyComponent->_AddGravity = SimpleMath::Vector3::Zero;
-
+		_rigidBodyComponent->_Mass = 0.1f;
 	}
 	
 

@@ -3,8 +3,6 @@
 #include <iostream>
 #include "Device/WindowApp.h"
 
-
-
 class Game
 {
 public:

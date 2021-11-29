@@ -26,6 +26,10 @@ void AnimationComponent::AddAnimationQue(const std::string& animationName, std::
 	animationQues.emplace(animationName, que);
 }
 
+void AnimationComponent::DrawProperties()
+{
+}
+
 void AnimationComponent::Update()
 {
 	AnimationUpdate();

@@ -41,7 +41,7 @@ public:
 	
 	void SetRotation(const DirectX::SimpleMath::Vector3 rotate);
 
-	const DirectX::SimpleMath::Matrix& GetWorldMatrix();
+	const DirectX::SimpleMath::Matrix GetWorldMatrix();
 	void SetWorldMatrix();
 	void SetWorldMatrix(const DirectX::SimpleMath::Matrix& mat);
 

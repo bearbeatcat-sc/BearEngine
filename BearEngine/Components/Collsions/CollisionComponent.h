@@ -46,6 +46,7 @@ public:
 	CollisionTreeObject* GetCollisionTreeObject();
 
 
+	void DrawProperties() override;
 protected:
 	bool _isDrawDebug;
 	CollisionTreeObject* _treeObject;

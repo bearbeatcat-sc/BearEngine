@@ -1,4 +1,4 @@
-#include "AABBCollsionComponent.h"
+ï»¿#include "AABBCollsionComponent.h"
 #include "../../Utility/Math/MathUtility.h"
 #include "../../Game_Object/Actor.h"
 #include "CollisionTree_Object.h"
@@ -54,7 +54,7 @@ bool AABBCollisionComponent::IsInterSect(CollisionComponent* collisionComponent,
 {
 	auto otherCollisionType = collisionComponent->GetCollisionType();
 	
-	// “–‚½‚è”»’è‚Ìƒ^ƒCƒv‚É‚æ‚Á‚Ä•ªŠò
+	// ï¿½ï¿½ï¿½ï¿½ï¿½è”»ï¿½ï¿½Ìƒ^ï¿½Cï¿½vï¿½É‚ï¿½ï¿½ï¿½Ä•ï¿½ï¿½ï¿½
 	if (otherCollisionType == CollisionType_AABB)
 	{
 		auto otherCol = static_cast<AABBCollisionComponent*>(collisionComponent);
@@ -79,7 +79,7 @@ bool AABBCollisionComponent::IsInterSect(CollisionComponent* collisionComponent,
 
 void AABBCollisionComponent::Update()
 {
-	// ˆÊ’u‚ðŽè“®‚ÅƒZƒbƒg‚µ‚Ä‚¢‚È‚¢ê‡‚ÍAƒZƒbƒg‚·‚éB
+	// ï¿½Ê’uï¿½ï¿½è“®ï¿½ÅƒZï¿½bï¿½gï¿½ï¿½ï¿½Ä‚ï¿½ï¿½È‚ï¿½ï¿½ê‡ï¿½ÍAï¿½Zï¿½bï¿½gï¿½ï¿½ï¿½ï¿½B
 	if (!_isSetPosition) 
 	{
 		_center = _user->GetPosition() + _adjustPos;

@@ -9,6 +9,7 @@ public:
 	Component(Actor* user, int updateOrder = 100);
 	virtual ~Component();
 	virtual void Update() = 0;
+	virtual void DrawProperties() = 0;
 
 	int GetUpdateOrder() const;
 

@@ -17,10 +17,11 @@ public:
 	~AnimationComponent();
 	void PlayAnimation(const std::string& animationName);
 	void AddAnimationQue(const std::string& animationName,std::shared_ptr<AnimationQue> que);
-
+	void DrawProperties() override;
 private:
 	void Update() override;
 	void AnimationUpdate();
+
 
 private:
 	std::map<std::string,std::shared_ptr<AnimationQue>> animationQues;

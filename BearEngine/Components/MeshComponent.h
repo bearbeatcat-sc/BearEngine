@@ -37,6 +37,7 @@ public:
 	void SetColor(const SimpleMath::Color& color);
 	void SetEffect(const std::string& effectName);
 	void SetVisible(bool flag);
+	void DrawProperties() override;
 
 private:
 	std::shared_ptr<Mesh> m_Mesh;
