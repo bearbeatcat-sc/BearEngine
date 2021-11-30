@@ -75,8 +75,8 @@ void Flor::Init()
 
 	SetTag("Object");
 
-	//m_pCollisionComponent = new OBBCollisionComponent(this,basePos,SimpleMath::Vector3(2.0f * grid_size_x, 1, 2.0f * grid_size_z), "Object");
-	m_pCollisionComponent = new SphereCollisionComponent(this, 10.0f, "Object");
+	m_pCollisionComponent = new OBBCollisionComponent(this,basePos,SimpleMath::Vector3(2.0f * grid_size_x, 1, 2.0f * grid_size_z), "Object");
+	//m_pCollisionComponent = new SphereCollisionComponent(this, 10.0f, "Object");
 	
 	CollisionManager::GetInstance().AddComponent(m_pCollisionComponent);
 	CollisionManager::GetInstance().AddRegistTree(m_pCollisionComponent);
@@ -84,6 +84,7 @@ void Flor::Init()
 	AddComponent(_rigidBodyComponent);
 	m_pCollisionComponent->RegistRigidBody(_rigidBodyComponent);
 	_rigidBodyComponent->_AddGravity = SimpleMath::Vector3::Zero;
+	_rigidBodyComponent->_Mass = 2.0f;
 	
 }
 

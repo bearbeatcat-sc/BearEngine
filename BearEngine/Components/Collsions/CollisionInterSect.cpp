@@ -17,7 +17,19 @@ const bool CollisionInterSect::SphereToOBBInterSect(SphereCollisionComponent* sp
 
 	interSect._PoisitionA = pos;
 	interSect._PoisitionB = obb->GetCenter();
+	
+	interSect._Normal = v;
+	interSect._Normal.Normalize();
+	
 	interSect._InterSectPositionA = point;
+	interSect._InterSectPositionB = point;
+
+	//SimpleMath::Vector3 ab = obb->GetCenter() - point;
+	//SimpleMath::Vector3 normal = ab;
+	//normal.Normalize();
+
+	//interSect._Normal = normal;
+	interSect._InterSectPositionA = pos + interSect._Normal * radius;
 	interSect._InterSectPositionB = point;
 
 	return dot <= radius * radius;

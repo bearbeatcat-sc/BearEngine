@@ -261,7 +261,7 @@ bool DebugDrawer::GenerateConstantBuffers()
 void DebugDrawer::SetCubeConstantBuffer(int index, DebugDrawer::DrawCubeCommand cube)
 {
 	auto vpMat = _camera->GetViewMat() * _camera->GetProjectMat();
-	auto worldMat = cube.rotation * DirectX::SimpleMath::Matrix::CreateScale(cube.size) * DirectX::SimpleMath::Matrix::CreateTranslation(cube.pos);
+	auto worldMat = DirectX::SimpleMath::Matrix::CreateScale(cube.size) * cube.rotation * DirectX::SimpleMath::Matrix::CreateTranslation(cube.pos);
 	auto constBuff = _constantBuffers[index]->getBuffer();
 
 	ConstBufferData* constMap = nullptr;

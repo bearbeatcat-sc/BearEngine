@@ -94,6 +94,6 @@ void OBBCollisionComponent::Update()
 
 #ifdef _DEBUG
 	if (_isDrawDebug)
-		DebugDrawer::GetInstance().DrawCube(_size * 2.0f, _center, SimpleMath::Matrix::CreateFromQuaternion(_user->GetRotation()));
+		DebugDrawer::GetInstance().DrawCube(_size * 2.0f, _center, _user->GetRotation());
 #endif
 }
