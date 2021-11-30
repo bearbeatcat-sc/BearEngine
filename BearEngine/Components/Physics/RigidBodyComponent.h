@@ -22,6 +22,7 @@ public:
 	void OnStatic();
 	void OnResolveContact(Actor* other, CollisionComponent* otherCollisionComponent, InterSectInfo& inter_sect_info);
 	void DrawProperties() override;
+	void UpdateActorPosition(const SimpleMath::Vector3 pos);
 
 	const bool IsStatic() const;
 	const bool IsCalculatePhysics() const;
@@ -35,7 +36,6 @@ private:
 	void CalculateMoment(Actor* other, std::shared_ptr<RigidBodyComponent> otherRigidBody,
 	                     InterSectInfo& inter_sect_info);
 	void ResolveContact(Actor* other, std::shared_ptr<RigidBodyComponent> otherRigidBody,InterSectInfo& inter_sect_info);
-
 private:
 	SimpleMath::Vector3 _Velocity;
 	SimpleMath::Vector3 _Gravity;

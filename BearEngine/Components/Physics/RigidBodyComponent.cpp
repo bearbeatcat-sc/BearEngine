@@ -46,7 +46,6 @@ void RigidBodyComponent::OnCollider(Actor* other, CollisionComponent* otherColli
 void RigidBodyComponent::OnStatic()
 {
 	_isStatic = true;
-	_Mass = 0.0f;
 }
 
 void RigidBodyComponent::OnResolveContact(Actor* other, CollisionComponent* otherCollisionComponent,InterSectInfo& inter_sect_info)
@@ -89,7 +88,7 @@ const bool RigidBodyComponent::IsStatic() const
 
 const bool RigidBodyComponent::IsCalculatePhysics() const
 {
-	return _Mass > 0.0f && !_isStatic;
+	return _Mass > 0.0f;
 }
 
 void RigidBodyComponent::AddGravity()
@@ -128,9 +127,19 @@ void RigidBodyComponent::ResolveContact(Actor* other, std::shared_ptr<RigidBodyC
 	const SimpleMath::Vector3 ds = otherPosition - position;
 
 	// “¯‚¶‚¾‚¯•â³‚·‚éƒCƒ[ƒW
-	_user->SetPosition(_user->GetPosition() + ds * tA * 1.0f);
-	other->SetPosition(other->GetPosition() - ds * tB * 1.0f);
+	//_user->SetPosition(_user->GetPosition() + ds * tA * 1.0f);
+	UpdateActorPosition(_user->GetPosition() + ds * tA);
+	otherRigidBody->UpdateActorPosition(other->GetPosition() - ds * tB);
 
+}
 
+void RigidBodyComponent::UpdateActorPosition(const SimpleMath::Vector3 pos)
+{
+	if(IsStatic())
+	{
+		return;
+	}
+
+	_user->SetPosition(pos);
 }
 

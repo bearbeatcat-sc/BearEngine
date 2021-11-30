@@ -84,8 +84,8 @@ void Flor::Init()
 	AddComponent(_rigidBodyComponent);
 	m_pCollisionComponent->RegistRigidBody(_rigidBodyComponent);
 	_rigidBodyComponent->_AddGravity = SimpleMath::Vector3::Zero;
-	_rigidBodyComponent->_Mass = 2.0f;
-	
+	_rigidBodyComponent->_Mass = 1.0f;
+	_rigidBodyComponent->OnStatic();
 }
 
 void Flor::UpdateActor()
