@@ -133,8 +133,10 @@ void CameraAsistant::ViewMove(const SimpleMath::Vector3& moveVec)
 	SimpleMath::Quaternion qu = SimpleMath::Quaternion::CreateFromYawPitchRoll(_Yaw, _Pitch, 0.0f);
 
 	SimpleMath::Vector3 viewForward = SimpleMath::Vector3::Transform(SimpleMath::Vector3::Forward, qu);
+	SimpleMath::Vector3 up = SimpleMath::Vector3::Transform(SimpleMath::Vector3::Up, qu);
+	
 	SimpleMath::Vector3 newTarget = m_Camera->GetPosition() + viewForward;
 
-
+	m_Camera->SetUp(up);
 	m_Camera->SetTarget(newTarget);
 }

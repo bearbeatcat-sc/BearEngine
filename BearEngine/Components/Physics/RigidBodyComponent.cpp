@@ -8,7 +8,7 @@
 
 RigidBodyComponent::RigidBodyComponent(Actor* pActor)
 	:Component(pActor), _Velocity(SimpleMath::Vector3(0.0f)), _AddGravity(SimpleMath::Vector3(0, -10.0f, 0.0f)),
-_Gravity(SimpleMath::Vector3::Zero), _Mass(1.0f), _isStatic(false)
+_Gravity(SimpleMath::Vector3::Zero), _Mass(1.0f), _isStatic(false), _Elasticty(1.0f)
 {
 }
 
@@ -107,9 +107,16 @@ const float RigidBodyComponent::GetMass()
 // Õ“Ë‚ÌˆÚ“®—Ê‚ÌŒvZ
 void RigidBodyComponent::CalculateMoment(Actor* other, std::shared_ptr<RigidBodyComponent> otherRigidBody, InterSectInfo& inter_sect_info)
 {
+	// ’e«‚ÌŒvZ
+	const float elasticityA = _Elasticty;
+	const float elasticityB = otherRigidBody->_Elasticty;
+
+	const float elasticity = elasticityA * elasticityB;
+
+	
 	const SimpleMath::Vector3& normal = inter_sect_info._Normal;
 	const SimpleMath::Vector3 vab = _Velocity - otherRigidBody->GetVelocity();
-	const float impulse = -2.0f * vab.Dot(normal) / (_Mass + otherRigidBody->_Mass);
+	const float impulse = -(1.0f + elasticity) * vab.Dot(normal) / (_Mass + otherRigidBody->_Mass);
 	const SimpleMath::Vector3 impulseVec = normal * impulse;
 
 	AddImpulse(impulseVec);

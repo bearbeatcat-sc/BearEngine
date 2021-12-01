@@ -76,24 +76,21 @@ bool OBBCollisionComponent::IsInterSect(CollisionComponent* collisionComponent, 
 
 void OBBCollisionComponent::Update()
 {
-	// 位置を手動でセットしていない場合は、セットする。
-	if (!_isSetPosition)
-	{
-		_center = _user->GetPosition() + _adjustPos;
-		_isSetPosition = false;
+	_center = _user->GetPosition();
+	_isSetPosition = false;
 
-		// 回転用クォータニオンから回転行列に変換。
-		auto matrix = SimpleMath::Matrix::CreateFromQuaternion(_user->GetRotation());
+	// 回転用クォータニオンから回転行列に変換。
+	auto matrix = SimpleMath::Matrix::CreateFromQuaternion(_user->GetRotation());
 
-		
-		// 向きのベクトルに収めていく。
-		_directionVec[0] = SimpleMath::Vector3(matrix._11,matrix._12,matrix._13);
-		_directionVec[1] = SimpleMath::Vector3(matrix._21, matrix._22, matrix._23);
-		_directionVec[2] = SimpleMath::Vector3(matrix._31, matrix._32, matrix._33);
-	}
+
+	// 向きのベクトルに収めていく。
+	_directionVec[0] = SimpleMath::Vector3(matrix._11, matrix._12, matrix._13);
+	_directionVec[1] = SimpleMath::Vector3(matrix._21, matrix._22, matrix._23);
+	_directionVec[2] = SimpleMath::Vector3(matrix._31, matrix._32, matrix._33);
+
 
 #ifdef _DEBUG
 	if (_isDrawDebug)
-		DebugDrawer::GetInstance().DrawCube(_size * 2.0f, _center, _user->GetRotation());
+		DebugDrawer::GetInstance().DrawCube(_size * 3.0f, _center, _user->GetRotation());
 #endif
 }

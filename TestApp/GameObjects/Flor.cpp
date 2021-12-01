@@ -23,7 +23,7 @@ Flor::~Flor()
 void Flor::Init()
 {
 	SetActorName("Flor");
-	
+
 	const int grid_size_x = 8;
 	const int grid_size_z = 7;
 
@@ -55,14 +55,14 @@ void Flor::Init()
 
 			if (flag)
 			{
-				auto cube = new Cube( (SimpleMath::Vector3(x, 0, z) * 2.0f), SimpleMath::Vector3(1.0f, 1, 1.0f), 300.0f, "WhiteCube", false);
+				auto cube = new Cube((SimpleMath::Vector3(x, 0, z) * 2.0f), SimpleMath::Vector3(1.0f, 1, 1.0f), 300.0f, "WhiteCube", false);
 				cube->SetActorName("Cube");
 				//ActorManager::GetInstance().AddActor(cube);
 				SetChild(cube);
 			}
 			else
 			{
-				auto cube = new Cube( (SimpleMath::Vector3(x, 0, z) * 2.0f), SimpleMath::Vector3(1.0f, 1, 1.0f), 300.0f, "GrayCube", false);
+				auto cube = new Cube((SimpleMath::Vector3(x, 0, z) * 2.0f), SimpleMath::Vector3(1.0f, 1, 1.0f), 300.0f, "GrayCube", false);
 				cube->SetActorName("Cube");
 				//ActorManager::GetInstance().AddActor(cube);
 
@@ -75,8 +75,10 @@ void Flor::Init()
 
 	SetTag("Object");
 
-	m_pCollisionComponent = new OBBCollisionComponent(this,basePos,SimpleMath::Vector3(2.0f * grid_size_x, 1, 2.0f * grid_size_z), "Object");
+	m_pCollisionComponent = new OBBCollisionComponent(this, basePos, SimpleMath::Vector3(1.0f * grid_size_x, 1, 1.0f * grid_size_z), "Object");
 	//m_pCollisionComponent = new SphereCollisionComponent(this, 10.0f, "Object");
+
+	static_cast<OBBCollisionComponent*>(m_pCollisionComponent)->SetAdjustPos(SimpleMath::Vector3(grid_size_x, 2, grid_size_z) * 0.5f);
 	
 	CollisionManager::GetInstance().AddComponent(m_pCollisionComponent);
 	CollisionManager::GetInstance().AddRegistTree(m_pCollisionComponent);

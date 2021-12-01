@@ -234,48 +234,48 @@ const XMMATRIX  Camera::GetProjectMat()
 
 const XMMATRIX Camera::GetViewMat()
 {
-	XMVECTOR eyePosition = XMLoadFloat3(&m_Pos);
-	XMVECTOR targetPosition = XMLoadFloat3(&m_Target);
-	XMVECTOR upVector = XMLoadFloat3(&m_Up);
+	//XMVECTOR eyePosition = XMLoadFloat3(&m_Pos);
+	//XMVECTOR targetPosition = XMLoadFloat3(&m_Target);
+	//XMVECTOR upVector = XMLoadFloat3(&m_Up);
 
-	// カメラのZ軸
-	XMVECTOR cameraAxisZ = XMVectorSubtract(targetPosition, eyePosition);
-	cameraAxisZ = XMVector3Normalize(cameraAxisZ); // 正規化
+	//// カメラのZ軸
+	//XMVECTOR cameraAxisZ = XMVectorSubtract(targetPosition, eyePosition);
+	//cameraAxisZ = XMVector3Normalize(cameraAxisZ); // 正規化
 
-	// カメラのX軸
-	XMVECTOR cameraAxisX;
-	cameraAxisX = XMVector3Cross(upVector, cameraAxisZ);
-	cameraAxisX = XMVector3Normalize(cameraAxisX);
+	//// カメラのX軸
+	//XMVECTOR cameraAxisX;
+	//cameraAxisX = XMVector3Cross(upVector, cameraAxisZ);
+	//cameraAxisX = XMVector3Normalize(cameraAxisX);
 
-	// カメラのY軸
-	XMVECTOR cameraAxisY;
-	cameraAxisY = XMVector3Cross(cameraAxisZ, cameraAxisX);
-	cameraAxisY = XMVector3Normalize(cameraAxisY);
+	//// カメラのY軸
+	//XMVECTOR cameraAxisY;
+	//cameraAxisY = XMVector3Cross(cameraAxisZ, cameraAxisX);
+	//cameraAxisY = XMVector3Normalize(cameraAxisY);
 
-	// カメラ回転行列
-	XMMATRIX matCameraRot;
-	matCameraRot.r[0] = cameraAxisX;
-	matCameraRot.r[1] = cameraAxisY;
-	matCameraRot.r[2] = cameraAxisZ;
-	matCameraRot.r[3] = XMVectorSet(0, 0, 0, 1);
+	//// カメラ回転行列
+	//XMMATRIX matCameraRot;
+	//matCameraRot.r[0] = cameraAxisX;
+	//matCameraRot.r[1] = cameraAxisY;
+	//matCameraRot.r[2] = cameraAxisZ;
+	//matCameraRot.r[3] = XMVectorSet(0, 0, 0, 1);
 
-	// 逆行列を計算
-	XMMATRIX matView = XMMatrixTranspose(matCameraRot);
+	//// 逆行列を計算
+	//XMMATRIX matView = XMMatrixTranspose(matCameraRot);
 
-	XMVECTOR reverseEyePosition = XMVectorNegate(eyePosition);
+	//XMVECTOR reverseEyePosition = XMVectorNegate(eyePosition);
 
-	// カメラの位置からワールド原点へのベクトル
-	XMVECTOR tX = XMVector3Dot(cameraAxisX, reverseEyePosition);
-	XMVECTOR tY = XMVector3Dot(cameraAxisY, reverseEyePosition);
-	XMVECTOR tZ = XMVector3Dot(cameraAxisZ, reverseEyePosition);
+	//// カメラの位置からワールド原点へのベクトル
+	//XMVECTOR tX = XMVector3Dot(cameraAxisX, reverseEyePosition);
+	//XMVECTOR tY = XMVector3Dot(cameraAxisY, reverseEyePosition);
+	//XMVECTOR tZ = XMVector3Dot(cameraAxisZ, reverseEyePosition);
 
-	XMVECTOR translation = XMVectorSet(tX.m128_f32[0], tY.m128_f32[1], tZ.m128_f32[2], 1.0f);
+	//XMVECTOR translation = XMVectorSet(tX.m128_f32[0], tY.m128_f32[1], tZ.m128_f32[2], 1.0f);
 
-	matView.r[3] = translation;
+	//matView.r[3] = translation;
 
 	return XMMatrixLookAtLH(XMLoadFloat3(&m_Pos), XMLoadFloat3(&m_Target), XMLoadFloat3(&m_Up));
 
-	return matView;
+	//return matView;
 }
 
 const 	SimpleMath::Vector3& Camera::GetPosition()

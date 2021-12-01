@@ -29,6 +29,7 @@ public:
 
 	SimpleMath::Vector3 _AddGravity;
 	float _Mass;
+	float _Elasticty; // ’e«
 
 private:
 	void AddGravity();
