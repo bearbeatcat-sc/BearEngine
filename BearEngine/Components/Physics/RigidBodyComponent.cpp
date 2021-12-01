@@ -18,6 +18,7 @@ RigidBodyComponent::~RigidBodyComponent()
 
 void RigidBodyComponent::Update()
 {
+	
 	AddGravity();
 
 	auto position = _user->GetPosition();
@@ -28,6 +29,8 @@ void RigidBodyComponent::Update()
 
 void RigidBodyComponent::AddImpulse(const SimpleMath::Vector3 vec)
 {
+	if (IsStatic()) return;
+	
 	_Velocity += vec * _Mass;
 }
 
@@ -40,7 +43,7 @@ const SimpleMath::Vector3& RigidBodyComponent::GetVelocity()
 void RigidBodyComponent::OnCollider(Actor* other, CollisionComponent* otherCollisionComponent,InterSectInfo& inter_sect_info)
 {
 	// ç°ÇÕíPèÉÇ…0Ç…Ç∑ÇÈÇæÇØÅB	
-	_Velocity = SimpleMath::Vector3::Zero;
+	//_Velocity = SimpleMath::Vector3::Zero;
 }
 
 void RigidBodyComponent::OnStatic()
