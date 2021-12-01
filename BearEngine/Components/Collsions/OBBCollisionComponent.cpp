@@ -14,7 +14,7 @@ OBBCollisionComponent::OBBCollisionComponent(Actor* actor, SimpleMath::Vector3 c
 
 const SimpleMath::Vector3 OBBCollisionComponent::GetCenter()
 {
-	return _center + _adjustPos;
+	return _user->GetPosition() + _adjustPos;
 }
 
 const SimpleMath::Vector3& OBBCollisionComponent::GetSize()
@@ -24,13 +24,13 @@ const SimpleMath::Vector3& OBBCollisionComponent::GetSize()
 
 const SimpleMath::Vector3 OBBCollisionComponent::GetMin()
 {
-	return _center - _size;
+	return GetCenter() - _size;
 
 }
 
 const SimpleMath::Vector3 OBBCollisionComponent::GetMax()
 {
-	return _center + _size;
+	return GetCenter() + _size;
 }
 
 const std::vector<SimpleMath::Vector3>& OBBCollisionComponent::GetDirectionVec()
@@ -76,7 +76,6 @@ bool OBBCollisionComponent::IsInterSect(CollisionComponent* collisionComponent, 
 
 void OBBCollisionComponent::Update()
 {
-	_center = _user->GetPosition();
 	_isSetPosition = false;
 
 	// 回転用クォータニオンから回転行列に変換。
@@ -91,6 +90,6 @@ void OBBCollisionComponent::Update()
 
 #ifdef _DEBUG
 	if (_isDrawDebug)
-		DebugDrawer::GetInstance().DrawCube(_size * 3.0f, _center, _user->GetRotation());
+		DebugDrawer::GetInstance().DrawCube(_size * 2.0f, GetCenter(),matrix);
 #endif
 }
