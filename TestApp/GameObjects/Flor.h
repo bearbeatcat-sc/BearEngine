@@ -9,7 +9,6 @@
 using namespace DirectX;
 
 class CollisionComponent;
-class InkManager;
 class RigidBodyComponent;
 
 class Flor
@@ -25,10 +24,7 @@ private:
 	virtual void Shutdown() override;
 	virtual void OnCollsion(Actor* other) override;
 
-private:
-	CollisionComponent* m_pCollisionComponent;
-	InkManager* m_pInkManager;
-	std::shared_ptr<RigidBodyComponent> _rigidBodyComponent;
+
 };
 
 #endif

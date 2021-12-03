@@ -1,12 +1,17 @@
 ﻿#include "Cube.h"
 
-#include "Device/Raytracing/DXRPipeLine.h"
 #include "Utility/Random.h"
-#include "Utility/Time.h"
 #include "Utility/Timer.h"
 
+#include "Components/Collsions/CollisionManager.h"
+#include "Components/Collsions/OBBCollisionComponent.h"
+#include "Components/Physics/RigidBodyComponent.h"
+#include "Device/DirectX/DirectXInput.h"
+#include "Device/Raytracing/DXRPipeLine.h"
+
+
 Cube::Cube(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& scale, float destroyTime, const std::string& meshName, bool moveFlag)
-	:_initScale(scale), _IsGenerate(false), _IsMove(moveFlag), _DXRMeshName(meshName),Actor()
+	:_initScale(scale), _IsGenerate(false), _IsMove(moveFlag), _DXRMeshName(meshName), _IsStatic(false),Actor()
 {
 	SetPosition(pos);
 	SetScale(scale);
@@ -15,6 +20,12 @@ Cube::Cube(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& scale, flo
 	_GenerateTimer = std::make_shared<Timer>(0.3f);
 
 	_Acc = SimpleMath::Vector3(0, 4.0f, 0.0f);
+}
+
+void Cube::OnStatic()
+{
+	_IsStatic = true;
+
 }
 
 void Cube::UpdateActor()
@@ -41,6 +52,11 @@ void Cube::UpdateActor()
 	//auto mtx = SimpleMath::Matrix::CreateFromQuaternion(m_Rotation) * SimpleMath::Matrix::CreateScale(m_Scale) * SimpleMath::Matrix::CreateTranslation(m_Position);
 	auto mtx = GetWorldMatrix();
 	_instance->SetMatrix(mtx);
+
+	if(DirectXInput::GetInstance().IsKeyDown(DIK_SPACE))
+	{
+		_rigidBodyComponent->AddAngularImpulse(SimpleMath::Vector3(0, 0.1f, 0), SimpleMath::Vector3(0,0,1));
+	}
 }
 
 void Cube::Generate()
@@ -68,11 +84,31 @@ void Cube::Init()
 	_instance->SetMatrix(mtx);
 	_instance->CreateRaytracingInstanceDesc();
 
+	m_pCollisionComponent = new OBBCollisionComponent(this, GetPosition(), m_Scale, "Object");
+	//m_pCollisionComponent = new SphereCollisionComponent(this, 10.0f, "Object");
+
+
+	CollisionManager::GetInstance().AddComponent(m_pCollisionComponent);
+	CollisionManager::GetInstance().AddRegistTree(m_pCollisionComponent);
+	_rigidBodyComponent = std::make_shared<RigidBodyComponent>(this,m_pCollisionComponent);
+	AddComponent(_rigidBodyComponent);
+	m_pCollisionComponent->RegistRigidBody(_rigidBodyComponent);
+	_rigidBodyComponent->_Mass = 1.0f;
+	_rigidBodyComponent->_Elasticty = 1.0f;
+	_rigidBodyComponent->_AddGravity = SimpleMath::Vector3(0, -8.0f, 0.0f);
+
+	if(_IsStatic)
+	{
+		_rigidBodyComponent->_AddGravity = SimpleMath::Vector3::Zero;
+		_rigidBodyComponent->OnStaticPosition();
+		_rigidBodyComponent->OnStaticRotate();
+	}
 
 }
 
 void Cube::Shutdown()
 {
+	m_pCollisionComponent->Delete();
 }
 
 void Cube::OnCollsion(Actor* other)

@@ -1,37 +1,77 @@
-#include "RigidBodyComponent.h"
+ï»¿#include "RigidBodyComponent.h"
 
 #include "Components/Collsions/CollisionComponent.h"
 #include "Components/Collsions/InterSectInfo.h"
+#include "Components/Collsions/OBBCollisionComponent.h"
+#include "Components/Collsions/SphereCollisionComponent.h"
 #include "Game_Object/Actor.h"
 #include "imgui/imgui.h"
 #include "Utility/Time.h"
 
-RigidBodyComponent::RigidBodyComponent(Actor* pActor)
+RigidBodyComponent::RigidBodyComponent(Actor* pActor, CollisionComponent* collision_component)
 	:Component(pActor), _Velocity(SimpleMath::Vector3(0.0f)), _AddGravity(SimpleMath::Vector3(0, -10.0f, 0.0f)),
-_Gravity(SimpleMath::Vector3::Zero), _Mass(1.0f), _isStatic(false), _Elasticty(1.0f)
+	_Mass(1.0f), _isStaticPosition(false),_isStaticRotate(false), _Elasticty(1.0f), _CollisionComponent(collision_component),
+	_Friction(1.0f)
 {
 }
 
-RigidBodyComponent::~RigidBodyComponent()
+void RigidBodyComponent::UpdatePosition()
 {
+	if (_isStaticPosition)return;
+
+	
+	AddGravity();
+	SimpleMath::Vector3 accel = _Forces * InvMass();
+
+	_Velocity += accel * Time::DeltaTime;
+	_Velocity *= 0.98f;
+
+	auto position = _user->GetPosition();
+	position += _Velocity * Time::DeltaTime;
+	_user->SetPosition(position);
+}
+
+void RigidBodyComponent::UpdateRotation()
+{
+	if (_isStaticRotate)return;
+	
+	auto qu = _user->GetVecRotation();
+	qu += _AngVel * Time::DeltaTime;
+
+	_user->SetRotation(qu);
+
+	// æ¸›è¡°
+	// _V
+	_AngVel *= 0.98f;
 }
 
 void RigidBodyComponent::Update()
 {
-	
-	AddGravity();
-
-	auto position = _user->GetPosition();
-	position += _Velocity;
-
-	_user->SetPosition(position);
+	UpdatePosition();
+	UpdateRotation();
 }
 
 void RigidBodyComponent::AddImpulse(const SimpleMath::Vector3 vec)
 {
-	if (IsStatic()) return;
-	
-	_Velocity += vec * _Mass;
+	if (_isStaticPosition) return;
+
+	_Velocity += vec;
+}
+
+void RigidBodyComponent::AddAngularImpulse(const SimpleMath::Vector3 point, const SimpleMath::Vector3 impulse)
+{
+
+	if (_isStaticRotate) return;
+
+	// ç¾çŠ¶ã¯ã‚¢ã‚¯ã‚¿ãƒ¼ã®ä½ç½®ã€‚ã‚ã¨ã‚ã¨ã€ã‚³ãƒ©ã‚¤ãƒ€ãƒ¼ã®ä½ç½®ã‚’å…ƒã«è¨­å®šã™ã‚‹äºˆå®š
+	auto centerOfmass = _user->GetPosition();
+
+	//ã€€è¡çªç‚¹ã¨ã®å·®åˆ†ã‹ã‚‰ãƒˆãƒ«ã‚¯ã‚’æ±‚ã‚ã‚‹ã€‚
+	auto torque = (point - centerOfmass).Cross(impulse);
+
+	// è§’åŠ é€Ÿåº¦
+	auto angAccel = SimpleMath::Vector3::Transform(torque, InvTensor());
+	_AngVel += angAccel;
 }
 
 const SimpleMath::Vector3& RigidBodyComponent::GetVelocity()
@@ -39,27 +79,32 @@ const SimpleMath::Vector3& RigidBodyComponent::GetVelocity()
 	return _Velocity;
 }
 
-// “–‚½‚è”»’è‚ğŒŸ’m‚µ‚½‚çA”­¶‚·‚é‚à‚Ì‚Æ‚µ‚Äˆµ‚¤—\’è
-void RigidBodyComponent::OnCollider(Actor* other, CollisionComponent* otherCollisionComponent,InterSectInfo& inter_sect_info)
+// ï¿½ï¿½ï¿½ï¿½ï¿½è”»ï¿½ï¿½ï¿½ï¿½ï¿½mï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Aï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì‚Æ‚ï¿½ï¿½Äˆï¿½ï¿½ï¿½ï¿½\ï¿½ï¿½
+void RigidBodyComponent::OnCollider(Actor* other, CollisionComponent* otherCollisionComponent, InterSectInfo& inter_sect_info)
 {
-	// ¡‚Í’Pƒ‚É0‚É‚·‚é‚¾‚¯B	
+	// ï¿½ï¿½ï¿½Í’Pï¿½ï¿½ï¿½ï¿½0ï¿½É‚ï¿½ï¿½é‚¾ï¿½ï¿½ï¿½B	
 	//_Velocity = SimpleMath::Vector3::Zero;
 }
 
-void RigidBodyComponent::OnStatic()
+void RigidBodyComponent::OnStaticRotate()
 {
-	_isStatic = true;
+	_isStaticRotate = true;
 }
 
-void RigidBodyComponent::OnResolveContact(Actor* other, CollisionComponent* otherCollisionComponent,InterSectInfo& inter_sect_info)
+void RigidBodyComponent::OnStaticPosition()
 {
-	// •¨—ŒvZ‚Ís‚í‚È‚¢B
+	_isStaticPosition = true;
+}
+
+void RigidBodyComponent::OnResolveContact(Actor* other, CollisionComponent* otherCollisionComponent, InterSectInfo& inter_sect_info)
+{
+	// ï¿½ï¿½ï¿½ï¿½ï¿½vï¿½Zï¿½Ísï¿½ï¿½È‚ï¿½ï¿½B
 	if (!IsCalculatePhysics() || !otherCollisionComponent->GetRigidBody()->IsCalculatePhysics())
 	{
 		return;
 	}
 
-	ResolveContact(other, otherCollisionComponent->GetRigidBody(),inter_sect_info);
+	ResolveContact(other, otherCollisionComponent->GetRigidBody(), inter_sect_info);
 }
 
 void RigidBodyComponent::DrawProperties()
@@ -71,23 +116,33 @@ void RigidBodyComponent::DrawProperties()
 		_AddGravity.z
 	};
 
-	
-	if(ImGui::TreeNode("RigidBodyComponent"))
+	float f_addAngVel[3] =
+	{
+		_AngVel.x,
+		_AngVel.y,
+		_AngVel.z
+	};
+
+
+	if (ImGui::TreeNode("RigidBodyComponent"))
 	{
 		if (ImGui::DragFloat3("Gravity", f_gravity, 0.01f))
 		{
 			_AddGravity = DirectX::SimpleMath::Vector3(f_gravity);
 		}
 
+		if (ImGui::DragFloat3("AddAngVel", f_addAngVel, 0.01f))
+		{
+			_AngVel = DirectX::SimpleMath::Vector3(f_addAngVel);
+		}
+
+
 		ImGui::TreePop();
 	}
 
 }
 
-const bool RigidBodyComponent::IsStatic() const
-{
-	return _isStatic;
-}
+
 
 const bool RigidBodyComponent::IsCalculatePhysics() const
 {
@@ -96,7 +151,7 @@ const bool RigidBodyComponent::IsCalculatePhysics() const
 
 void RigidBodyComponent::AddGravity()
 {
-	_Velocity += _AddGravity * _Mass * Time::DeltaTime;
+	_Forces = _AddGravity * _Mass;
 }
 
 const float RigidBodyComponent::GetMass()
@@ -104,30 +159,129 @@ const float RigidBodyComponent::GetMass()
 	return _Mass;
 }
 
-// Õ“Ë‚ÌˆÚ“®—Ê‚ÌŒvZ
+// ï¿½Õ“Ëï¿½ï¿½ÌˆÚ“ï¿½ï¿½Ê‚ÌŒvï¿½Z
 void RigidBodyComponent::CalculateMoment(Actor* other, std::shared_ptr<RigidBodyComponent> otherRigidBody, InterSectInfo& inter_sect_info)
 {
-	// ’e«‚ÌŒvZ
-	const float elasticityA = _Elasticty;
-	const float elasticityB = otherRigidBody->_Elasticty;
+	// ï¿½eï¿½ï¿½ï¿½ÌŒvï¿½Z
+	//const float elasticityA = _Elasticty;
+	//const float elasticityB = otherRigidBody->_Elasticty;
 
-	const float elasticity = elasticityA * elasticityB;
+	//const float elasticity = elasticityA * elasticityB;
 
+	//SimpleMath::Vector3 r1 = inter_sect_info._InterSectPositionA - inter_sect_info._PoisitionA;
+	//SimpleMath::Vector3 r2 = inter_sect_info._InterSectPositionB - inter_sect_info._PoisitionB;
+	//	//const SimpleMath::Vector3 vab = _Velocity - otherRigidBody->GetVelocity();
+
+	////const float impulse = -(1.0f + elasticity) * vab.Dot(normal) / (_Mass + otherRigidBody->_Mass);
+
+	//const SimpleMath::Vector3& normal = inter_sect_info._Normal;
+
+	//// ä»Šå›ã¯æ³•ç·šã®æ–¹å‘ã‚’å†è¨ˆç®—ã™ã‚‹
+	//auto relativeVel = (_Velocity + _AngVel.Cross(r1)) - (otherRigidBody->GetVelocity() + otherRigidBody->_AngVel.Cross(r2));
+	//relativeVel.Normalize();
+
+	//const float impulse = -(1.0f + elasticity) * relativeVel.Dot(normal) / (_Mass + otherRigidBody->_Mass);
+
+
+	//const SimpleMath::Vector3 impulseVec = relativeVel * impulse;
+
+	//_Velocity = impulseVec;
+	//otherRigidBody->_Velocity = impulseVec * -1.0f;
+
+	//AddImpulse(impulseVec);
+	//otherRigidBody->AddImpulse(impulseVec * -1.0f);
+
+
+	float invMass1 = InvMass();
+	float invMass2 = otherRigidBody->InvMass();
+
+	float invMassSum = invMass1 + invMass2;
+
+	// ãŠäº’ã„ã€ã¾ã£ãŸãè³ªé‡ã‚’æŒãŸãªã„å ´åˆã¯è¨ˆç®—ã§ããªã„
+	if (invMassSum == 0.0f) { return; }
+
+	SimpleMath::Vector3 r1 = inter_sect_info._InterSectPositionA - inter_sect_info._PoisitionA;
+	SimpleMath::Vector3 r2 = inter_sect_info._InterSectPositionB - inter_sect_info._PoisitionB;
+
+	auto i1 = InvTensor();
+	auto i2 = otherRigidBody->InvTensor();
+
+	//auto relativeVel = otherRigidBody->_Velocity - _Velocity;
+	auto relativeVel = (otherRigidBody->_Velocity + otherRigidBody->_AngVel.Cross(r2))
+		- (_Velocity + _AngVel.Cross(r1));
+
+	auto relativeNorm = inter_sect_info._Normal;
+	relativeNorm.Normalize();
+
+	if (relativeVel.Dot(relativeNorm) > 0.0f)
+	{
+		return;
+	}
+
+
+	// åç™ºä¿‚æ•°
+	float e = fminf(_Elasticty, otherRigidBody->_Elasticty);
+	float numerator = (-(1.0f + e) * relativeVel.Dot(relativeNorm));
+
+	float d1 = invMassSum;
+	auto d2 = SimpleMath::Vector3::Transform(r1.Cross(relativeNorm), i1).Cross(r1);
+	auto d3 = SimpleMath::Vector3::Transform(r2.Cross(relativeNorm), i2).Cross(r2);
+
+	float denominator = d1 + relativeNorm.Dot(d2 + d3);
+
+	//float j = numerator / invMassSum;
+
+	// ã‚¼ãƒ­é™¤ç®—é˜²æ­¢
+	float j = (denominator == 0.0f) ? 0.0f : numerator / denominator;
+
+	auto impulse = relativeNorm * j;
+	SetVelocity(_Velocity - impulse * invMass1);
+	otherRigidBody->SetVelocity(otherRigidBody->_Velocity + impulse * invMass2);
+
+	SetAngVel(_AngVel - SimpleMath::Vector3::Transform(r1.Cross(impulse), i1));
+	otherRigidBody->SetAngVel(otherRigidBody->_AngVel + SimpleMath::Vector3::Transform(r2.Cross(impulse), i2));
+
+
+
+	// è¡çªæ³•ç·š
+	auto t = relativeVel - (relativeNorm * relativeVel.Dot(relativeNorm));
+	t.Normalize();
+
+	numerator = -relativeVel.Dot(t);
+	d1 = invMassSum;
+	d2 = SimpleMath::Vector3::Transform(r1.Cross(t), i1).Cross(r1);
+	d3 = SimpleMath::Vector3::Transform(r2.Cross(t), i2).Cross(r2);
+	denominator = d1 + t.Dot(d2 + d3);
 	
-	const SimpleMath::Vector3& normal = inter_sect_info._Normal;
-	const SimpleMath::Vector3 vab = _Velocity - otherRigidBody->GetVelocity();
-	const float impulse = -(1.0f + elasticity) * vab.Dot(normal) / (_Mass + otherRigidBody->_Mass);
-	const SimpleMath::Vector3 impulseVec = normal * impulse;
+	//float jt = numerator / invMassSum;
+	float jt = numerator / denominator;
 
-	AddImpulse(impulseVec);
-	otherRigidBody->AddImpulse(impulseVec * -1.0f);
+	// æ‘©æ“¦ã«ã‚ˆã‚‹è¨ˆç®—
+	float friction = sqrtf(_Friction * otherRigidBody->_Friction);
+
+	if (jt > j * friction)
+	{
+		jt = j * friction;
+	}
+	else if (jt < -j * friction)
+	{
+		jt = -j * friction;
+	}
+
+
+	auto tangentImpuse = t * jt;
+
+	SetVelocity(_Velocity - tangentImpuse * invMass1);
+	otherRigidBody->SetVelocity(otherRigidBody->_Velocity + tangentImpuse * invMass2);
+	SetAngVel(_AngVel - SimpleMath::Vector3::Transform(r1.Cross(tangentImpuse), i1));
+	otherRigidBody->SetAngVel(otherRigidBody->_AngVel + SimpleMath::Vector3::Transform(r2.Cross(tangentImpuse), i2));
 }
 
-// •¨‘Ì“¯m‚Ì‰Ÿ‚µo‚µ
+// ï¿½ï¿½ï¿½Ì“ï¿½ï¿½mï¿½Ì‰ï¿½ï¿½ï¿½ï¿½oï¿½ï¿½
 void RigidBodyComponent::ResolveContact(Actor* other, std::shared_ptr<RigidBodyComponent> otherRigidBody, InterSectInfo& inter_sect_info)
 {
 	CalculateMoment(other, otherRigidBody, inter_sect_info);
-	
+
 	const float tA = _Mass / (_Mass + otherRigidBody->GetMass());
 	const float tB = otherRigidBody->GetMass() / (_Mass + otherRigidBody->GetMass());
 
@@ -136,20 +290,126 @@ void RigidBodyComponent::ResolveContact(Actor* other, std::shared_ptr<RigidBodyC
 
 	const SimpleMath::Vector3 ds = otherPosition - position;
 
-	// “¯‚¶‚¾‚¯•â³‚·‚éƒCƒ[ƒW
-	//_user->SetPosition(_user->GetPosition() + ds * tA * 1.0f);
 	UpdateActorPosition(_user->GetPosition() + ds * tA);
 	otherRigidBody->UpdateActorPosition(other->GetPosition() - ds * tB);
 
 }
 
+SimpleMath::Matrix RigidBodyComponent::InvTensor(SphereCollisionComponent* sphere_collision_component)
+{
+	float ix = 0.0f;
+	float iy = 0.0f;
+	float iz = 0.0f;
+	float iw = 0.0f;
+
+	if (_Mass != 0.0f)
+	{
+		float r = sphere_collision_component->GetRadius();
+		float r2 = r * r;
+		float fraction = (2.0f / 5.0f);
+
+		ix = r2 * _Mass * fraction;
+		iy = r2 * _Mass * fraction;
+		iz = r2 * _Mass * fraction;
+
+		iw = 1.0f;
+	}
+
+
+	auto result = SimpleMath::Matrix(
+		ix, 0, 0, 0,
+		0, iy, 0, 0,
+		0, 0, iz, 0,
+		0, 0, 0, iw);
+
+	return result.Invert();
+}
+
+
+SimpleMath::Matrix RigidBodyComponent::InvTensor(OBBCollisionComponent* obb_collision_component)
+{
+	float ix = 0.0f;
+	float iy = 0.0f;
+	float iz = 0.0f;
+	float iw = 0.0f;
+
+	if (_Mass != 0.0f)
+	{
+		SimpleMath::Vector3 size = obb_collision_component->GetSize() * 2.0f;
+
+		float fraction = (1.0f / 12.0f);
+
+		float x2 = size.x * size.x;
+		float y2 = size.y * size.y;
+		float z2 = size.z * size.z;
+
+		ix = (y2 + z2) * _Mass * fraction;
+		iy = (x2 + z2) * _Mass * fraction;
+		iz = (x2 + y2) * _Mass * fraction;
+
+		iw = 1.0f;
+	}
+
+	auto result = SimpleMath::Matrix(
+		ix, 0, 0, 0,
+		0, iy, 0, 0,
+		0, 0, iz, 0,
+		0, 0, 0, iw);
+
+	return result.Invert();
+}
+
+SimpleMath::Matrix RigidBodyComponent::InvTensor()
+{
+	auto type = _CollisionComponent->GetCollisionType();
+
+	if (type == CollisionType_Sphere)
+	{
+		return InvTensor(static_cast<SphereCollisionComponent*>(_CollisionComponent));
+	}
+
+	if (type == CollisionType_OBB)
+	{
+		return InvTensor(static_cast<OBBCollisionComponent*>(_CollisionComponent));
+	}
+
+	return SimpleMath::Matrix::Identity;
+}
+
+
 void RigidBodyComponent::UpdateActorPosition(const SimpleMath::Vector3 pos)
 {
-	if(IsStatic())
+	if (_isStaticPosition)
 	{
 		return;
 	}
 
 	_user->SetPosition(pos);
+}
+
+float RigidBodyComponent::InvMass()
+{
+	if (_Mass == 0.0f) { return 0.0f; }
+
+	return 1.0f / _Mass;
+}
+
+void RigidBodyComponent::SetVelocity(const SimpleMath::Vector3& velocity)
+{
+	if (_isStaticPosition)
+	{
+		return;
+	}
+	
+	_Velocity = velocity;
+}
+
+void RigidBodyComponent::SetAngVel(const SimpleMath::Vector3& angVel)
+{
+	if (_isStaticRotate)
+	{
+		return;
+	}
+	_AngVel = angVel;
 }
 

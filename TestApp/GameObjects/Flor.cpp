@@ -77,21 +77,9 @@ void Flor::Init()
 	cube->SetActorName("Cube");
 	//ActorManager::GetInstance().AddActor(cube);
 	SetChild(cube);
-
 	SetTag("Object");
 
-	m_pCollisionComponent = new OBBCollisionComponent(this, GetPosition(), SimpleMath::Vector3(1.0f * grid_size_x, 1, 1.0f * grid_size_z), "Object");
-	//m_pCollisionComponent = new SphereCollisionComponent(this, 10.0f, "Object");
 
-	
-	CollisionManager::GetInstance().AddComponent(m_pCollisionComponent);
-	CollisionManager::GetInstance().AddRegistTree(m_pCollisionComponent);
-	_rigidBodyComponent = std::make_shared<RigidBodyComponent>(this);
-	AddComponent(_rigidBodyComponent);
-	m_pCollisionComponent->RegistRigidBody(_rigidBodyComponent);
-	_rigidBodyComponent->_AddGravity = SimpleMath::Vector3::Zero;
-	_rigidBodyComponent->_Mass = 1.0f;
-	_rigidBodyComponent->OnStatic();
 }
 
 void Flor::UpdateActor()
@@ -101,7 +89,6 @@ void Flor::UpdateActor()
 
 void Flor::Shutdown()
 {
-	m_pCollisionComponent->Delete();
 }
 
 void Flor::OnCollsion(Actor* other)

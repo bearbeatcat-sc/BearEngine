@@ -9,6 +9,8 @@ using namespace DirectX;
 
 class DXRInstance;
 class Timer;
+class CollisionComponent;
+class RigidBodyComponent;
 
 class Cube
 	:public Actor
@@ -16,6 +18,7 @@ class Cube
 public:
 	Cube(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& scale,float destroyTime,const std::string& meshName,bool moveFlag = true);
 	~Cube() = default;
+	void OnStatic();
 
 private:
 	virtual void UpdateActor() override;
@@ -34,6 +37,11 @@ private:
 	bool _IsGenerate;
 	bool _IsMove;
 	bool _IsWhite;
+	bool _IsStatic;
+
+private:
+	CollisionComponent* m_pCollisionComponent;
+	std::shared_ptr<RigidBodyComponent> _rigidBodyComponent;
 
 	std::string _DXRMeshName;
 };

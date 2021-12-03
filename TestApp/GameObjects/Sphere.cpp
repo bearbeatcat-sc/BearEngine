@@ -85,18 +85,16 @@ void Sphere::Init()
 	mInitPos = m_Position;
 	mStartPos = mInitPos;
 
-	if(m_Type == SphereType_NormalLowPoly)
+	if (m_Type == SphereType_NormalLowPoly)
 	{
 		_instance = DXRPipeLine::GetInstance().AddInstance("Sphere2", 0);
-		_sphereCollisionComponent = new SphereCollisionComponent(this, m_Scale.x, "Object");
+		_sphereCollisionComponent = new SphereCollisionComponent(this, m_Scale.x * 0.5f, "Object");
 		CollisionManager::GetInstance().AddComponent(_sphereCollisionComponent);
 		CollisionManager::GetInstance().AddRegistTree(_sphereCollisionComponent);
 
-		_rigidBodyComponent = std::make_shared<RigidBodyComponent>(this);
+		_rigidBodyComponent = std::make_shared<RigidBodyComponent>(this, _sphereCollisionComponent);
 		AddComponent(_rigidBodyComponent);
 		_sphereCollisionComponent->RegistRigidBody(_rigidBodyComponent);
-		_rigidBodyComponent->_AddGravity = SimpleMath::Vector3::Zero;
-		_rigidBodyComponent->_Mass = 1.0f;
 
 	}
 	else
@@ -106,19 +104,21 @@ void Sphere::Init()
 		//CollisionManager::GetInstance().AddComponent(_obbCollisionComponent);
 		//CollisionManager::GetInstance().AddRegistTree(_obbCollisionComponent);
 
-		_sphereCollisionComponent = new SphereCollisionComponent(this, m_Scale.x, "Object");
+		_sphereCollisionComponent = new SphereCollisionComponent(this, m_Scale.x * 0.5f, "Object");
 		CollisionManager::GetInstance().AddComponent(_sphereCollisionComponent);
 		CollisionManager::GetInstance().AddRegistTree(_sphereCollisionComponent);
 
-				_rigidBodyComponent = std::make_shared<RigidBodyComponent>(this);
+		_rigidBodyComponent = std::make_shared<RigidBodyComponent>(this, _sphereCollisionComponent);
 		AddComponent(_rigidBodyComponent);
 		//_obbCollisionComponent->RegistRigidBody(_rigidBodyComponent);
 		_sphereCollisionComponent->RegistRigidBody(_rigidBodyComponent);
-		_rigidBodyComponent->_AddGravity = SimpleMath::Vector3::Zero;
-		_rigidBodyComponent->_Mass = 1.0f;
-	}
-	
 
+	}
+
+	_rigidBodyComponent->_AddGravity = SimpleMath::Vector3(0, -8.0f, 0.0f);
+	_rigidBodyComponent->_Mass = 1.0f;
+	_rigidBodyComponent->_Elasticty = 1.0f;
+	
 	auto mtx = GetWorldMatrix();
 	_instance->SetMatrix(mtx);
 	_instance->CreateRaytracingInstanceDesc();
@@ -129,11 +129,13 @@ void Sphere::Init()
 
 void Sphere::Shutdown()
 {
-	if(_obbCollisionComponent != nullptr)
+	if (_obbCollisionComponent != nullptr)
 		_obbCollisionComponent->Delete();
 
 	if (_sphereCollisionComponent != nullptr)
 		_sphereCollisionComponent->Delete();
+
+	_instance->Destroy();
 }
 
 void Sphere::OnCollsion(Actor* other)

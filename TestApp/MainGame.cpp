@@ -59,8 +59,8 @@ void MainGame::Init()
 	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "GrayCube", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f), 0.1));
 	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "RoughCube", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.0f), 0.5f));
 
-	DXRPipeLine::GetInstance().AddMeshData(blenderMonkyMeshData, L"HitGroup", "Sphere", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f), 0.2f));
-	_blenderMonkey = DXRPipeLine::GetInstance().AddMeshData(blenderMonkyMeshData, L"HitGroup", "Sphere2", _blenderMonkyMaterial);
+	DXRPipeLine::GetInstance().AddMeshData(sphereMeshData, L"HitGroup", "Sphere", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f), 0.2f));
+	_blenderMonkey = DXRPipeLine::GetInstance().AddMeshData(sphereMeshData, L"HitGroup", "Sphere2", _blenderMonkyMaterial);
 
 	// 必ず、メッシュデータを追加してからパイプラインの初期化を行う。
 	DXRPipeLine::GetInstance().InitPipeLine();
@@ -107,12 +107,23 @@ void MainGame::Init()
 	const SimpleMath::Vector3 basePos = SimpleMath::Vector3(-5.5f, -2.5f, -5.5f);
 
 
-	auto floor = new Flor(basePos,SimpleMath::Vector3(1));
-	floor->SetScale(SimpleMath::Vector3(1,1,1));
+	auto floor = new Cube(SimpleMath::Vector3(1.45f, -2.5f, 0.640f),SimpleMath::Vector3(grid_size_x,1,grid_size_z),300.0f,"WhiteCube",false);
+	floor->SetRotation(SimpleMath::Vector3(0, 0, 2.870));
+	floor->SetActorName("Floor");
 	ActorManager::GetInstance().AddActor(floor);
+	floor->OnStatic();
 
-	auto wall = new Cube(SimpleMath::Vector3(1.5f, 3.0f, 9.0f), SimpleMath::Vector3(grid_size_x, 6, 1), 300.0f, "WhiteCube", false);
+	auto wall = new Cube(SimpleMath::Vector3(2.830f, 2.240f, 8.840f), SimpleMath::Vector3(grid_size_x, 6, 1), 300.0f, "WhiteCube", false);
 	ActorManager::GetInstance().AddActor(wall);
+	wall->SetActorName("Wall");
+	wall->SetRotation(SimpleMath::Vector3(0, 0, -0.250f));
+	wall->OnStatic();
+
+	auto wall2 = new Cube(SimpleMath::Vector3(11, -2.210f, 7.260f), SimpleMath::Vector3(grid_size_x, 6, 1), 300.0f, "WhiteCube", false);
+	ActorManager::GetInstance().AddActor(wall2);
+	wall2->SetActorName("Wall");
+	wall2->SetRotation(SimpleMath::Vector3(1.5f, 0.280f, 0));
+	wall2->OnStatic();
 
 	//auto leftWall = new Cube(SimpleMath::Vector3(-7.0f, 3.0f, -0.0f), SimpleMath::Vector3(1, 6, grid_size_x), 300.0f, "RoughCube", false);
 	//ActorManager::GetInstance().AddActor(leftWall);
@@ -126,15 +137,19 @@ void MainGame::Init()
 	//auto backWall = new Cube(SimpleMath::Vector3(1.5f, 3.0f, -9.0f), SimpleMath::Vector3(grid_size_x, 6, 1), 300.0f, "RoughCube", false);
 	//ActorManager::GetInstance().AddActor(backWall);
 
-	auto sphere = new Sphere(SimpleMath::Vector3(-2.0f, 0.0f, 6.0f), Sphere::SphereType_Normal);
-	sphere->SetScale(SimpleMath::Vector3(1.0f));
-	sphere->SetRotation(SimpleMath::Vector3(3.0f, 0.0f, 0.0f));
-	ActorManager::GetInstance().AddActor(sphere);
+	//auto sphere = new Sphere(SimpleMath::Vector3(-2.0f, 0.0f, 6.0f), Sphere::SphereType_Normal);
+	//sphere->SetScale(SimpleMath::Vector3(1.0f));
+	//sphere->SetRotation(SimpleMath::Vector3(3.0f, 0.0f, 0.0f));
+	//ActorManager::GetInstance().AddActor(sphere);
 
-	auto sphere2 = new Sphere(SimpleMath::Vector3(3.0f, 0.0f, 3.0f), Sphere::SphereType_NormalLowPoly);
-	sphere2->SetScale(SimpleMath::Vector3(1.0f));
-	sphere2->SetRotation(SimpleMath::Vector3(-2.4f, 0.0f, 0.0f));
-	ActorManager::GetInstance().AddActor(sphere2);
+	//auto sphere2 = new Sphere(SimpleMath::Vector3(3.0f, 0.0f, 3.0f), Sphere::SphereType_NormalLowPoly);
+	//sphere2->SetScale(SimpleMath::Vector3(1.0f));
+	//sphere2->SetRotation(SimpleMath::Vector3(-2.4f, 0.0f, 0.0f));
+	//ActorManager::GetInstance().AddActor(sphere2);
+
+	//auto cube = new Cube(SimpleMath::Vector3(-2.0f, 0.0f, 3.0f), SimpleMath::Vector3(1.0f), 300.0f, "WhiteCube", false);
+	//cube->SetActorName("Cube");
+	//ActorManager::GetInstance().AddActor(cube);
 
 	//for (int i = 0; i < 200; ++i)
 	//{
@@ -184,32 +199,55 @@ void MainGame::Update()
 
 
 
-	//_GenerateTimer->Update();
-	//if(_GenerateTimer->IsTime())
-	//{
-	//	_GenerateTimer->Reset();
-	//	auto pos_x = Random::GetRandom(-20.0f, 20.0f);
-	//	auto pos_z = Random::GetRandom(10.0f, 30.0f);
-	//	float pos_y = 2.0f;
+	_GenerateTimer->Update();
+	if(_GenerateTimer->IsTime())
+	{
+		if (_GenerateCount >= _MaxGenerateCount)
+		{
+			_IsGenerate = false;
+			_GenerateTimer->Reset();
+			return;
+		}
+		
+		auto pos_x = Random::GetRandom(-1.0f, 1.0f);
+		auto pos_z = Random::GetRandom(-1.0f, 1.0f);
+		float pos_y = 3.0f;
 
-	//	float rotateX = Random::GetRandom(-1.0f, 1.0f);
-	//	float rotateY = Random::GetRandom(-1.0f, 1.0f);
-	//	float rotateZ = Random::GetRandom(-1.0f, 1.0f);
+		float scale = Random::GetRandom(0.5f, 1.2f);
 
-	//	float scale = Random::GetRandom(1.0f, 3.0f);
+		int flag = Random::GetRandom(0, 1);
 
-	//	auto sphere = new Sphere(SimpleMath::Vector3(pos_x, pos_y, pos_z), Sphere::SphereType_Normal);
-	//	sphere->SetScale(SimpleMath::Vector3(scale));
-	//	sphere->SetRotation(Quaternion::CreateFromYawPitchRoll(rotateX, rotateY, rotateZ));
-	//	ActorManager::GetInstance().AddActor(sphere);
+		
+		if (flag == 0)
+		{
+			Sphere* sphere = nullptr;
+			sphere = new Sphere(SimpleMath::Vector3(pos_x, pos_y, pos_z), Sphere::SphereType_Normal);
+			sphere->SetScale(SimpleMath::Vector3(scale));
+			ActorManager::GetInstance().AddActor(sphere);
+			sphere->Destroy(10.0f);
+			sphere->SetActorName("Sphere");
+			
+/*			auto cube = new Cube(SimpleMath::Vector3(pos_x, pos_y, pos_z), SimpleMath::Vector3(0.1f), 300.0f, "WhiteCube", false);
+			cube->SetActorName("Cube");
+			ActorManager::GetInstance().AddActor(cube);		*/	
+		}
+		else if(flag == 1)
+		{
+			Sphere* sphere = nullptr;
+			sphere = new Sphere(SimpleMath::Vector3(pos_x, pos_y, pos_z), Sphere::SphereType_NormalLowPoly);
 
-	//	_GenerateCount++;
+			sphere->SetScale(SimpleMath::Vector3(scale));
+			ActorManager::GetInstance().AddActor(sphere);
+			sphere->Destroy(10.0f);
+			sphere->SetActorName("Sphere");
+		}
 
-	//	if(_GenerateCount >= _MaxGenerateCount)
-	//	{
-	//		_IsGenerate = false;
-	//	}
-	//}
+
+
+		_GenerateCount++;
+
+
+	}
 
 
 
