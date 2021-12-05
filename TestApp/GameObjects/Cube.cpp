@@ -8,6 +8,7 @@
 #include "Components/Physics/RigidBodyComponent.h"
 #include "Device/DirectX/DirectXInput.h"
 #include "Device/Raytracing/DXRPipeLine.h"
+#include "Utility/LogSystem.h"
 
 
 Cube::Cube(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& scale, float destroyTime, const std::string& meshName, bool moveFlag)
@@ -93,8 +94,8 @@ void Cube::Init()
 	_rigidBodyComponent = std::make_shared<RigidBodyComponent>(this,m_pCollisionComponent);
 	AddComponent(_rigidBodyComponent);
 	m_pCollisionComponent->RegistRigidBody(_rigidBodyComponent);
-	_rigidBodyComponent->_Mass = 1.0f;
-	_rigidBodyComponent->_Elasticty = 1.0f;
+	_rigidBodyComponent->_Mass = 300.0f;
+	_rigidBodyComponent->_Elasticty = 3.0f;
 	_rigidBodyComponent->_AddGravity = SimpleMath::Vector3(0, -8.0f, 0.0f);
 
 	if(_IsStatic)
@@ -104,6 +105,7 @@ void Cube::Init()
 		_rigidBodyComponent->OnStaticRotate();
 	}
 
+	SetTag("Block");
 }
 
 void Cube::Shutdown()
@@ -113,4 +115,8 @@ void Cube::Shutdown()
 
 void Cube::OnCollsion(Actor* other)
 {
+	if (other->IsContainsTag("Block"))
+	{
+		LogSystem::AddLog("Hit");
+	}
 }

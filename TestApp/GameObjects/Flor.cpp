@@ -8,6 +8,7 @@
 #include "Components/Collsions/OBBCollisionComponent.h"
 #include "Components/Collsions/SphereCollisionComponent.h"
 #include "Components/Physics/RigidBodyComponent.h"
+#include "Utility/LogSystem.h"
 
 Flor::Flor(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& scale)
 	:Actor()
@@ -93,7 +94,7 @@ void Flor::Shutdown()
 
 void Flor::OnCollsion(Actor* other)
 {
-	
+
 }
 
 

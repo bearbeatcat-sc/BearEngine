@@ -10,7 +10,7 @@
 
 RigidBodyComponent::RigidBodyComponent(Actor* pActor, CollisionComponent* collision_component)
 	:Component(pActor), _Velocity(SimpleMath::Vector3(0.0f)), _AddGravity(SimpleMath::Vector3(0, -10.0f, 0.0f)),
-	_Mass(1.0f), _isStaticPosition(false),_isStaticRotate(false), _Elasticty(1.0f), _CollisionComponent(collision_component),
+	_Mass(1.0f), _isStaticPosition(false), _isStaticRotate(false), _Elasticty(1.0f), _CollisionComponent(collision_component),
 	_Friction(1.0f)
 {
 }
@@ -19,12 +19,12 @@ void RigidBodyComponent::UpdatePosition()
 {
 	if (_isStaticPosition)return;
 
-	
+
 	AddGravity();
 	SimpleMath::Vector3 accel = _Forces * InvMass();
 
 	_Velocity += accel * Time::DeltaTime;
-	_Velocity *= 0.98f;
+	//_Velocity *= 0.98f;
 
 	auto position = _user->GetPosition();
 	position += _Velocity * Time::DeltaTime;
@@ -34,7 +34,7 @@ void RigidBodyComponent::UpdatePosition()
 void RigidBodyComponent::UpdateRotation()
 {
 	if (_isStaticRotate)return;
-	
+
 	auto qu = _user->GetVecRotation();
 	qu += _AngVel * Time::DeltaTime;
 
@@ -123,6 +123,12 @@ void RigidBodyComponent::DrawProperties()
 		_AngVel.z
 	};
 
+	float f_velocity[3] =
+	{
+		_Velocity.x,
+		_Velocity.y,
+		_Velocity.z
+	};
 
 	if (ImGui::TreeNode("RigidBodyComponent"))
 	{
@@ -136,6 +142,18 @@ void RigidBodyComponent::DrawProperties()
 			_AngVel = DirectX::SimpleMath::Vector3(f_addAngVel);
 		}
 
+		if (ImGui::DragFloat3("Velocity", f_velocity, 0.01f))
+		{
+			_Velocity = DirectX::SimpleMath::Vector3(f_velocity);
+		}
+
+		if (ImGui::Checkbox("IsStaticPosition", &_isStaticPosition))
+		{
+		}
+
+		if (ImGui::Checkbox("IsStaticRotate", &_isStaticRotate))
+		{
+		}
 
 		ImGui::TreePop();
 	}
@@ -252,9 +270,107 @@ void RigidBodyComponent::CalculateMoment(Actor* other, std::shared_ptr<RigidBody
 	d2 = SimpleMath::Vector3::Transform(r1.Cross(t), i1).Cross(r1);
 	d3 = SimpleMath::Vector3::Transform(r2.Cross(t), i2).Cross(r2);
 	denominator = d1 + t.Dot(d2 + d3);
-	
+
 	//float jt = numerator / invMassSum;
 	float jt = numerator / denominator;
+
+	// 摩擦による計算
+	float friction = sqrtf(_Friction * otherRigidBody->_Friction);
+
+	if (jt > j * friction)
+	{
+		jt = j * friction;
+	}
+	else if (jt < -j * friction)
+	{
+		jt = -j * friction;
+	}
+
+
+	auto tangentImpuse = t * jt;
+
+	SetVelocity(_Velocity - tangentImpuse * invMass1);
+	otherRigidBody->SetVelocity(otherRigidBody->_Velocity + tangentImpuse * invMass2);
+	SetAngVel(_AngVel - SimpleMath::Vector3::Transform(r1.Cross(tangentImpuse), i1));
+	otherRigidBody->SetAngVel(otherRigidBody->_AngVel + SimpleMath::Vector3::Transform(r2.Cross(tangentImpuse), i2));
+}
+
+void RigidBodyComponent::CalculateMoment(Actor* other, std::shared_ptr<RigidBodyComponent> otherRigidBody,
+	InterSectInfo& inter_sect_info, int count)
+{
+	float invMass1 = InvMass();
+	float invMass2 = otherRigidBody->InvMass();
+
+	float invMassSum = invMass1 + invMass2;
+
+	// お互い、まったく質量を持たない場合は計算できない
+	if (invMassSum == 0.0f) { return; }
+
+	SimpleMath::Vector3 r1 = inter_sect_info._InterSectPositions[count] - inter_sect_info._PoisitionA;
+	SimpleMath::Vector3 r2 = inter_sect_info._InterSectPositions[count] - inter_sect_info._PoisitionB;
+
+	auto i1 = InvTensor();
+	auto i2 = otherRigidBody->InvTensor();
+
+	//auto relativeVel = otherRigidBody->_Velocity - _Velocity;
+	auto relativeVel = (otherRigidBody->_Velocity + otherRigidBody->_AngVel.Cross(r2))
+		- (_Velocity + _AngVel.Cross(r1));
+
+	auto relativeNorm = inter_sect_info._Normal;
+	relativeNorm.Normalize();
+
+
+
+	if (relativeVel.Dot(relativeNorm) >= 0.0f)
+	{
+		return;
+	}
+
+
+	// 反発係数
+	float e = fminf(_Elasticty, otherRigidBody->_Elasticty);
+	float numerator = (-(1.0f + e) * relativeVel.Dot(relativeNorm));
+
+	float d1 = invMassSum;
+	auto d2 = SimpleMath::Vector3::Transform(r1.Cross(relativeNorm), i1).Cross(r1);
+	auto d3 = SimpleMath::Vector3::Transform(r2.Cross(relativeNorm), i2).Cross(r2);
+
+	float denominator = d1 + relativeNorm.Dot(d2 + d3);
+
+	//float j = numerator / invMassSum;
+
+	// ゼロ除算防止
+	float j = (denominator == 0.0f) ? 0.0f : numerator / denominator;
+
+	if (inter_sect_info._InterSectPositions.size() > 0 && j != 0.0f)
+	{
+		j /= (float)inter_sect_info._InterSectPositions.size();
+	}
+
+	auto impulse = relativeNorm * j * 3.0f;
+	SetVelocity(_Velocity - impulse * invMass1);
+	otherRigidBody->SetVelocity(otherRigidBody->_Velocity + impulse * invMass2);
+
+	SetAngVel(_AngVel - SimpleMath::Vector3::Transform(r1.Cross(impulse), i1));
+	otherRigidBody->SetAngVel(otherRigidBody->_AngVel + SimpleMath::Vector3::Transform(r2.Cross(impulse), i2));
+
+	// 衝突法線
+	auto t = relativeVel - (relativeNorm * relativeVel.Dot(relativeNorm));
+	t.Normalize();
+
+	numerator = -relativeVel.Dot(t);
+	d1 = invMassSum;
+	d2 = SimpleMath::Vector3::Transform(r1.Cross(t), i1).Cross(r1);
+	d3 = SimpleMath::Vector3::Transform(r2.Cross(t), i2).Cross(r2);
+	denominator = d1 + t.Dot(d2 + d3);
+
+	//float jt = numerator / invMassSum;
+	float jt = numerator / denominator;
+
+	if (inter_sect_info._InterSectPositions.size() > 0 && jt != 0.0f)
+	{
+		jt /= (float)inter_sect_info._InterSectPositions.size();
+	}
 
 	// 摩擦による計算
 	float friction = sqrtf(_Friction * otherRigidBody->_Friction);
@@ -280,19 +396,31 @@ void RigidBodyComponent::CalculateMoment(Actor* other, std::shared_ptr<RigidBody
 // ���̓��m�̉����o��
 void RigidBodyComponent::ResolveContact(Actor* other, std::shared_ptr<RigidBodyComponent> otherRigidBody, InterSectInfo& inter_sect_info)
 {
-	CalculateMoment(other, otherRigidBody, inter_sect_info);
+	const int interSectPositionCount = inter_sect_info._InterSectPositions.size();
 
-	const float tA = _Mass / (_Mass + otherRigidBody->GetMass());
-	const float tB = otherRigidBody->GetMass() / (_Mass + otherRigidBody->GetMass());
+	// 複数の交点がある場合は、OBBtoOBB
+	if (interSectPositionCount > 0)
+	{
+		for (int i = 0; i < interSectPositionCount; ++i)
+		{
+			CalculateMoment(other, otherRigidBody, inter_sect_info, i);
 
-	auto position = inter_sect_info._InterSectPositionA;
-	auto otherPosition = inter_sect_info._InterSectPositionB;
+			Update();
+			otherRigidBody->Update();
+		}
 
-	const SimpleMath::Vector3 ds = otherPosition - position;
 
-	UpdateActorPosition(_user->GetPosition() + ds * tA);
-	otherRigidBody->UpdateActorPosition(other->GetPosition() - ds * tB);
 
+	}
+
+	//float totalMass = InvMass() + otherRigidBody->InvMass();
+
+	//float depth = fmaxf(inter_sect_info.depth - 0.01f, 0.0f);
+	//float scalar = depth / totalMass;
+	//auto correction = (inter_sect_info._Normal * depth * 1.1f);
+
+	//UpdateActorPosition(_user->GetPosition() - correction * InvMass());
+	//otherRigidBody->UpdateActorPosition(otherRigidBody->_user->GetPosition() + correction * otherRigidBody->InvMass());
 }
 
 SimpleMath::Matrix RigidBodyComponent::InvTensor(SphereCollisionComponent* sphere_collision_component)
@@ -400,7 +528,7 @@ void RigidBodyComponent::SetVelocity(const SimpleMath::Vector3& velocity)
 	{
 		return;
 	}
-	
+
 	_Velocity = velocity;
 }
 

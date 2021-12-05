@@ -95,7 +95,9 @@ void Sphere::Init()
 		_rigidBodyComponent = std::make_shared<RigidBodyComponent>(this, _sphereCollisionComponent);
 		AddComponent(_rigidBodyComponent);
 		_sphereCollisionComponent->RegistRigidBody(_rigidBodyComponent);
-
+		
+		_rigidBodyComponent->OnStaticPosition();
+		_rigidBodyComponent->OnStaticRotate();
 	}
 	else
 	{
@@ -140,7 +142,6 @@ void Sphere::Shutdown()
 
 void Sphere::OnCollsion(Actor* other)
 {
-	LogSystem::AddLog("Hit");
 }
 
 void Sphere::UpDown()

@@ -55,8 +55,8 @@ public:
 private:
 	void AddGravity();
 	const float GetMass();
-	void CalculateMoment(Actor* other, std::shared_ptr<RigidBodyComponent> otherRigidBody,
-	                     InterSectInfo& inter_sect_info);
+	void CalculateMoment(Actor* other, std::shared_ptr<RigidBodyComponent> otherRigidBody,InterSectInfo& inter_sect_info);
+	void CalculateMoment(Actor* other, std::shared_ptr<RigidBodyComponent> otherRigidBody,InterSectInfo& inter_sect_info,int count);
 	void ResolveContact(Actor* other, std::shared_ptr<RigidBodyComponent> otherRigidBody,InterSectInfo& inter_sect_info);
 	
 	SimpleMath::Matrix InvTensor(OBBCollisionComponent* obb_collision_component);
