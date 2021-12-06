@@ -107,23 +107,23 @@ void MainGame::Init()
 	const SimpleMath::Vector3 basePos = SimpleMath::Vector3(-5.5f, -2.5f, -5.5f);
 
 
-	auto floor = new Cube(SimpleMath::Vector3(1.45f, -2.5f, 0.640f),SimpleMath::Vector3(grid_size_x,1,grid_size_z),300.0f,"WhiteCube",false);
+	auto floor = new Cube(SimpleMath::Vector3(1.45f, -2.5f, 0.640f), SimpleMath::Vector3(grid_size_x, 1, grid_size_z), 300.0f, "WhiteCube", false);
 	floor->SetRotation(SimpleMath::Vector3(0, 0, 2.870));
 	floor->SetActorName("Floor");
 	ActorManager::GetInstance().AddActor(floor);
 	floor->OnStatic();
 
-	//auto wall = new Cube(SimpleMath::Vector3(2.830f, 2.240f, 8.840f), SimpleMath::Vector3(grid_size_x, 6, 1), 300.0f, "WhiteCube", false);
-	//ActorManager::GetInstance().AddActor(wall);
-	//wall->SetActorName("Wall");
-	//wall->SetRotation(SimpleMath::Vector3(0, 0, -0.250f));
-	//wall->OnStatic();
+	auto wall = new Cube(SimpleMath::Vector3(2.830f, 2.240f, 8.840f), SimpleMath::Vector3(grid_size_x, 6, 1), 300.0f, "WhiteCube", false);
+	ActorManager::GetInstance().AddActor(wall);
+	wall->SetActorName("Wall");
+	wall->SetRotation(SimpleMath::Vector3(0, 0, -0.250f));
+	wall->OnStatic();
 
-	//auto wall2 = new Cube(SimpleMath::Vector3(11, -2.210f, 7.260f), SimpleMath::Vector3(grid_size_x, 6, 1), 300.0f, "WhiteCube", false);
-	//ActorManager::GetInstance().AddActor(wall2);
-	//wall2->SetActorName("Wall");
-	//wall2->SetRotation(SimpleMath::Vector3(1.5f, 0.280f, 0));
-	//wall2->OnStatic();
+	auto wall2 = new Cube(SimpleMath::Vector3(11, -2.210f, 7.260f), SimpleMath::Vector3(grid_size_x, 6, 1), 300.0f, "WhiteCube", false);
+	ActorManager::GetInstance().AddActor(wall2);
+	wall2->SetActorName("Wall");
+	wall2->SetRotation(SimpleMath::Vector3(1.5f, 0.280f, 0));
+	wall2->OnStatic();
 
 	//auto leftWall = new Cube(SimpleMath::Vector3(-7.0f, 3.0f, -0.0f), SimpleMath::Vector3(1, 6, grid_size_x), 300.0f, "RoughCube", false);
 	//ActorManager::GetInstance().AddActor(leftWall);
@@ -147,7 +147,7 @@ void MainGame::Init()
 	//sphere2->SetRotation(SimpleMath::Vector3(-2.4f, 0.0f, 0.0f));
 	//ActorManager::GetInstance().AddActor(sphere2);
 
-	auto cube = new Cube(SimpleMath::Vector3(-2.0f, 3.0f , 3.0f), SimpleMath::Vector3(1.0f), 300.0f, "WhiteCube", false);
+	auto cube = new Cube(SimpleMath::Vector3(-2.0f, 3.0f, 3.0f), SimpleMath::Vector3(1.0f), 300.0f, "WhiteCube", false);
 	cube->SetActorName("Cube");
 	cube->OnStatic();
 	ActorManager::GetInstance().AddActor(cube);
@@ -201,7 +201,7 @@ void MainGame::Update()
 
 
 	_GenerateTimer->Update();
-	if(_GenerateTimer->IsTime())
+	if (_GenerateTimer->IsTime())
 	{
 		if (_GenerateCount >= _MaxGenerateCount)
 		{
@@ -209,7 +209,7 @@ void MainGame::Update()
 			_GenerateTimer->Reset();
 			return;
 		}
-		
+
 		auto pos_x = Random::GetRandom(-2.0f, 2.0f);
 		auto pos_z = Random::GetRandom(-2.0f, 2.0f);
 		float pos_y = 3.0f;
@@ -218,7 +218,7 @@ void MainGame::Update()
 
 		int flag = Random::GetRandom(0, 1);
 
-		
+
 		if (flag == 0)
 		{
 			//Sphere* sphere = nullptr;
@@ -228,23 +228,30 @@ void MainGame::Update()
 			//sphere->Destroy(10.0f);
 			//sphere->SetActorName("Sphere");
 			
-	
+			Sphere* sphere = nullptr;
+			sphere = new Sphere(SimpleMath::Vector3(pos_x, pos_y, pos_z), Sphere::SphereType_Normal);
+
+			sphere->SetScale(SimpleMath::Vector3(scale));
+			ActorManager::GetInstance().AddActor(sphere);
+			sphere->Destroy(10.0f);
+			sphere->SetActorName("Sphere");
+
 		}
-		else if(flag == 1)
+		else if (flag == 1)
 		{
-			//Sphere* sphere = nullptr;
-			//sphere = new Sphere(SimpleMath::Vector3(pos_x, pos_y, pos_z), Sphere::SphereType_Normal);
+			Sphere* sphere = nullptr;
+			sphere = new Sphere(SimpleMath::Vector3(pos_x, pos_y, pos_z), Sphere::SphereType_Normal);
 
-			//sphere->SetScale(SimpleMath::Vector3(scale));
-			//ActorManager::GetInstance().AddActor(sphere);
-			//sphere->Destroy(10.0f);
-			//sphere->SetActorName("Sphere");
+			sphere->SetScale(SimpleMath::Vector3(scale));
+			ActorManager::GetInstance().AddActor(sphere);
+			sphere->Destroy(10.0f);
+			sphere->SetActorName("Sphere");
 
-			auto cube = new Cube(SimpleMath::Vector3(pos_x, pos_y + 6.0f, pos_z), SimpleMath::Vector3(0.5f), 300.0f, "WhiteCube", false);
-			cube->SetActorName("Cube");
-			ActorManager::GetInstance().AddActor(cube);
-			cube->Destroy(10.0f);
-			cube->SetRotation(SimpleMath::Vector3(pos_x, pos_y, pos_z) * scale * pos_y);
+			//auto cube = new Cube(SimpleMath::Vector3(pos_x, pos_y + 6.0f, pos_z), SimpleMath::Vector3(0.5f), 300.0f, "WhiteCube", false);
+			//cube->SetActorName("Cube");
+			//ActorManager::GetInstance().AddActor(cube);
+			//cube->Destroy(10.0f);
+			//cube->SetRotation(SimpleMath::Vector3(pos_x, pos_y, pos_z) * scale * pos_y);
 		}
 
 

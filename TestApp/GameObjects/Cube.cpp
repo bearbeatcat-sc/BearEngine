@@ -94,8 +94,8 @@ void Cube::Init()
 	_rigidBodyComponent = std::make_shared<RigidBodyComponent>(this,m_pCollisionComponent);
 	AddComponent(_rigidBodyComponent);
 	m_pCollisionComponent->RegistRigidBody(_rigidBodyComponent);
-	_rigidBodyComponent->_Mass = 300.0f;
-	_rigidBodyComponent->_Elasticty = 3.0f;
+	_rigidBodyComponent->_Mass = 1.0f;
+	_rigidBodyComponent->_Elasticty = 1.0f;
 	_rigidBodyComponent->_AddGravity = SimpleMath::Vector3(0, -8.0f, 0.0f);
 
 	if(_IsStatic)

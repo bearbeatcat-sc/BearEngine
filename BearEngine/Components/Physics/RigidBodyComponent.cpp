@@ -347,7 +347,7 @@ void RigidBodyComponent::CalculateMoment(Actor* other, std::shared_ptr<RigidBody
 		j /= (float)inter_sect_info._InterSectPositions.size();
 	}
 
-	auto impulse = relativeNorm * j * 3.0f;
+	auto impulse = relativeNorm * j;
 	SetVelocity(_Velocity - impulse * invMass1);
 	otherRigidBody->SetVelocity(otherRigidBody->_Velocity + impulse * invMass2);
 
@@ -404,20 +404,32 @@ void RigidBodyComponent::ResolveContact(Actor* other, std::shared_ptr<RigidBodyC
 		for (int i = 0; i < interSectPositionCount; ++i)
 		{
 			CalculateMoment(other, otherRigidBody, inter_sect_info, i);
-
-			Update();
-			otherRigidBody->Update();
 		}
-
-
-
 	}
+	else
+	{
+		CalculateMoment(other, otherRigidBody, inter_sect_info);
+	}
+
+	Update();
+	otherRigidBody->Update();
+	
+	const float tA = _Mass / (_Mass + otherRigidBody->GetMass());
+	const float tB = otherRigidBody->GetMass() / (_Mass + otherRigidBody->GetMass());
+	
+	auto position = inter_sect_info._InterSectPositionA;
+	auto otherPosition = inter_sect_info._InterSectPositionB;
+
+	const SimpleMath::Vector3 ds = otherPosition - position;
+	
+	UpdateActorPosition(_user->GetPosition() + ds * tA);
+	otherRigidBody->UpdateActorPosition(other->GetPosition() - ds * tB);
 
 	//float totalMass = InvMass() + otherRigidBody->InvMass();
 
 	//float depth = fmaxf(inter_sect_info.depth - 0.01f, 0.0f);
 	//float scalar = depth / totalMass;
-	//auto correction = (inter_sect_info._Normal * depth * 1.1f);
+	//auto correction = (inter_sect_info._Normal * scalar);
 
 	//UpdateActorPosition(_user->GetPosition() - correction * InvMass());
 	//otherRigidBody->UpdateActorPosition(otherRigidBody->_user->GetPosition() + correction * otherRigidBody->InvMass());
