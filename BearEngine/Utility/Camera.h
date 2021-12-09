@@ -30,10 +30,10 @@ public:
 	float GetFov();
 	float GetAspect();
 	float GetSpriteScale();
-	const XMMATRIX& GetBillBoardMat();
-	const XMMATRIX& GetYAxisBillBoardMat();
-	const XMMATRIX GetProjectMat();
-	const XMMATRIX GetViewMat();
+	const SimpleMath::Matrix GetBillBoardMat();
+	const SimpleMath::Matrix GetYAxisBillBoardMat();
+	const SimpleMath::Matrix GetProjectMat();
+	const SimpleMath::Matrix GetViewMat();
 	const SimpleMath::Vector3& GetPosition();
 	const SimpleMath::Vector3& GetTarget();
 	const SimpleMath::Vector3& GetUp();
@@ -48,15 +48,12 @@ private:
 	SimpleMath::Vector3 m_Pos;
 	SimpleMath::Vector3 m_Target;
 	SimpleMath::Vector3 m_Up;
-	XMMATRIX matBillBoard;
-	XMMATRIX matYAxisBillBoard;
+	SimpleMath::Matrix matBillBoard;
+	SimpleMath::Matrix matYAxisBillBoard;
 	float m_near;
 	float m_far;
 	float m_Aspect;
 	float m_Fov;
-
-	//DEBUG
-	float m_SpriteScale;
 
 };
 

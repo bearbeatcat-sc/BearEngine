@@ -28,6 +28,7 @@ public:
 	void UpdatePointLight(int index, const SimpleMath::Vector3& position, const SimpleMath::Color& color, float distance,
 		float decay);
 	void Draw();
+	void Update();
 	void SetDebugMode(bool flag);
 	std::shared_ptr<PointLight> GetPointLights(int index);
 	std::shared_ptr<DirectionalLight> GetDirectionalLight();
@@ -43,6 +44,7 @@ protected:
 private:
 	void CreatePointLightResource();
 	void UpdatePointLightResource();
+	void DestroyPointLight();
 
 private:
 	std::vector<std::shared_ptr<PointLight>> m_PointLights;

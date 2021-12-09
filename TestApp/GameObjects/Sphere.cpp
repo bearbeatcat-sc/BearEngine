@@ -85,6 +85,7 @@ void Sphere::Init()
 	mInitPos = m_Position;
 	mStartPos = mInitPos;
 
+
 	if (m_Type == SphereType_NormalLowPoly)
 	{
 		_instance = DXRPipeLine::GetInstance().AddInstance("Sphere2", 0);
@@ -95,9 +96,7 @@ void Sphere::Init()
 		_rigidBodyComponent = std::make_shared<RigidBodyComponent>(this, _sphereCollisionComponent);
 		AddComponent(_rigidBodyComponent);
 		_sphereCollisionComponent->RegistRigidBody(_rigidBodyComponent);
-		
-		_rigidBodyComponent->OnStaticPosition();
-		_rigidBodyComponent->OnStaticRotate();
+
 	}
 	else
 	{
@@ -120,6 +119,8 @@ void Sphere::Init()
 	_rigidBodyComponent->_AddGravity = SimpleMath::Vector3(0, -8.0f, 0.0f);
 	_rigidBodyComponent->_Mass = 1.0f;
 	_rigidBodyComponent->_Elasticty = 1.0f;
+
+	_rigidBodyComponent->SetStaticFlag(true, false);
 	
 	auto mtx = GetWorldMatrix();
 	_instance->SetMatrix(mtx);

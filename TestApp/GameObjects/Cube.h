@@ -18,7 +18,7 @@ class Cube
 public:
 	Cube(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& scale,float destroyTime,const std::string& meshName,bool moveFlag = true);
 	~Cube() = default;
-	void OnStatic();
+	void OnStatic(bool posflag,bool rotateFlag);
 
 private:
 	virtual void UpdateActor() override;
@@ -37,7 +37,9 @@ private:
 	bool _IsGenerate;
 	bool _IsMove;
 	bool _IsWhite;
-	bool _IsStatic;
+	
+	bool _IsStaticPosition;
+	bool _IsStaticRotate;
 
 private:
 	CollisionComponent* m_pCollisionComponent;

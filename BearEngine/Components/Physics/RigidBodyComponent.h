@@ -31,8 +31,8 @@ public:
 	SimpleMath::Matrix InvTensor();
 
 	void OnCollider(Actor* other, CollisionComponent* otherCollisionComponent,InterSectInfo& inter_sect_info);
-	void OnStaticRotate();
-	void OnStaticPosition();
+	void SetStaticFlag(bool positionFlag,bool rotateFlag);
+
 	void OnResolveContact(Actor* other, CollisionComponent* otherCollisionComponent, InterSectInfo& inter_sect_info);
 	void DrawProperties() override;
 	void UpdateActorPosition(const SimpleMath::Vector3 pos);

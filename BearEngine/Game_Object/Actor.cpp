@@ -79,9 +79,16 @@ std::vector<Actor*>& Actor::GetChildren()
 	return m_Children;
 }
 
-const DirectX::SimpleMath::Vector3& Actor::GetPosition() const
+const DirectX::SimpleMath::Vector3 Actor::GetPosition()
 {
-	return m_Position;
+	if (m_Parent == nullptr)
+	{
+		return m_Position;
+	}
+
+	auto matrix = GetWorldMatrix();
+
+	return DirectX::SimpleMath::Vector3(matrix._41, matrix._42, matrix._43);
 }
 
 void Actor::SetPosition(const DirectX::SimpleMath::Vector3& pos)
@@ -90,17 +97,30 @@ void Actor::SetPosition(const DirectX::SimpleMath::Vector3& pos)
 	SetWorldMatrix();
 }
 
-const DirectX::SimpleMath::Vector3& Actor::GetScale() const
+const DirectX::SimpleMath::Vector3& Actor::GetScale()
 {
-	return m_Scale;
+
+	if (m_Parent == nullptr)
+	{
+		return m_Scale;
+	}
+
+	auto matrix = GetWorldMatrix();
+
+	auto size_x = DirectX::SimpleMath::Vector3(matrix._11, matrix._12, matrix._13).Length();
+	auto size_y = DirectX::SimpleMath::Vector3(matrix._11, matrix._12, matrix._13).Length();
+	auto size_z = DirectX::SimpleMath::Vector3(matrix._11, matrix._12, matrix._13).Length();
+
+	return DirectX::SimpleMath::Vector3(size_x, size_y, size_z);
 }
 
-const DirectX::SimpleMath::Quaternion Actor::GetRotation() const
+const DirectX::SimpleMath::Quaternion Actor::GetRotation()
 {
 	return DirectX::SimpleMath::Quaternion::CreateFromYawPitchRoll(m_Rotation.x, m_Rotation.y, m_Rotation.z);
+
 }
 
-const DirectX::SimpleMath::Vector3& Actor::GetVecRotation() const
+const DirectX::SimpleMath::Vector3& Actor::GetVecRotation()
 {
 	return m_Rotation;
 }
@@ -122,10 +142,10 @@ const DirectX::SimpleMath::Matrix Actor::GetWorldMatrix()
 {
 	SetWorldMatrix();
 
-	if (m_Parent == nullptr || m_Parent->GetDestroyFlag())
+	if (m_Parent == nullptr )
 	{
 		return m_WorldMatrix;
-	}	
+	}
 
 	// 今回は同じ用に扱う。	
 	return m_WorldMatrix * m_Parent->GetWorldMatrix();
@@ -215,18 +235,18 @@ void Actor::UpdateChild()
 }
 
 //#ifdef _DEBUG
-void Actor::RenderChildDebug(int& index,int& selected)
+void Actor::RenderChildDebug(int& index, int& selected)
 {
 	for (auto itr = m_Children.begin(); itr != m_Children.end(); itr++)
 	{
-		(*itr)->RenderDebug(index,selected);
+		(*itr)->RenderDebug(index, selected);
 	}
 }
 
 void Actor::RenderHierarchy(int index)
 {
 	if (!_isShowHierarchy)return;
-	
+
 	float f_position[3] =
 	{
 		m_Position.x,
@@ -251,7 +271,7 @@ void Actor::RenderHierarchy(int index)
 	bool isChange = false;
 
 	std::string windowName = "Hierarchy:" + _ActoName;
-	
+
 	ImGui::Begin(windowName.c_str(), &_isShowHierarchy);
 
 	if (ImGui::DragFloat3("Position", f_position, 0.01f))
@@ -263,7 +283,7 @@ void Actor::RenderHierarchy(int index)
 	if (ImGui::DragFloat3("Rotation", f_rotation, 0.01f))
 		isChange = true;
 
-	for(auto component : m_Components)
+	for (auto component : m_Components)
 	{
 		component->DrawProperties();
 	}
@@ -322,12 +342,12 @@ void Actor::SetActorName(const std::string& actoName)
 }
 
 //#ifdef _DEBUG
-void Actor::RenderDebug(int& index,int& selected)
+void Actor::RenderDebug(int& index, int& selected)
 {
 	index++;
 
 	ImGui::PushID((_ActoName + std::to_string(index)).c_str());
-	
+
 	if (ImGui::Selectable(_ActoName.c_str(), selected == index, ImGuiSelectableFlags_SpanAllColumns))
 	{
 		selected = index;
@@ -338,16 +358,16 @@ void Actor::RenderDebug(int& index,int& selected)
 	{
 		if (ImGui::TreeNode("Child"))
 		{
-			RenderChildDebug(index,selected);
+			RenderChildDebug(index, selected);
 			ImGui::TreePop();
 		}
 	}
 
-	if(selected == index)
+	if (selected == index)
 	{
 		RenderHierarchy(index);
 	}
-	
+
 	ImGui::PopID();
 
 }

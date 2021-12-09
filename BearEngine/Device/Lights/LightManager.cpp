@@ -27,6 +27,8 @@ void LightManager::CreatePointLightResource()
 
 void LightManager::UpdatePointLightResource()
 {
+	DestroyPointLight();
+	
 	std::vector<PointLight::ConstPointLightDatas> constPointLightDatas;
 
 	for (auto light : m_PointLights)
@@ -40,6 +42,21 @@ void LightManager::UpdatePointLightResource()
 	_PointLightsResource->getBuffer()->Map(0, &readRange, &data);
 	memcpy(data, constPointLightDatas.data(), constPointLightDatas.size() * sizeof(PointLight::ConstPointLightDatas));
 	_PointLightsResource->getBuffer()->Unmap(0, nullptr);
+}
+
+void LightManager::DestroyPointLight()
+{
+	for (auto itr = m_PointLights.begin(); itr != m_PointLights.end();)
+	{
+		if ((*itr)->IsDestroy())
+		{
+			//delete (*itr);
+			itr = m_PointLights.erase(itr);
+			continue;
+		}
+
+		++itr;
+	}
 }
 
 void LightManager::Init()
@@ -128,6 +145,24 @@ void LightManager::Draw()
 		{
 			UpdatePointLightResource();
 		}
+	}
+}
+
+void LightManager::Update()
+{
+	bool isUpdate = false;
+
+	for (int i = 0; i < m_PointLights.size(); ++i)
+	{
+		if (m_PointLights[i]->_isUpdate)
+		{
+			isUpdate = true;
+		}
+	}
+
+	if(isUpdate)
+	{
+		UpdatePointLightResource();
 	}
 }
 

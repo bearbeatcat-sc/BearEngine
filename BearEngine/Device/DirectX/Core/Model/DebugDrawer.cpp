@@ -19,7 +19,6 @@ DebugDrawer::~DebugDrawer()
 
 bool DebugDrawer::Init(const wchar_t* vertexShaderPath, const wchar_t* pixelShaderPath)
 {
-	_camera = CameraManager::GetInstance().GetMainCamera();
 
 
 
@@ -364,6 +363,8 @@ const int DebugDrawer::RenderSphere(ID3D12GraphicsCommandList* tempCommand, UINT
 
 void DebugDrawer::Draw()
 {
+	_camera = CameraManager::GetInstance().GetMainCamera();
+
 	ID3D12GraphicsCommandList* tempCommand = DirectXGraphics::GetInstance().GetCommandList();
 
 	tempCommand->SetPipelineState(_pso.pso.Get());

@@ -25,41 +25,41 @@ const bool CollisionInterSect::SphereToOBBInterSect(SphereCollisionComponent* sp
 
 	interSect._PoisitionA = pos;
 	interSect._PoisitionB = obb->GetCenter();
+	
+	if (CMP(dot, 0.0f))
+	{
+		auto v2 = point - obb->GetCenter();
+		float mSq = v2.Length();
 
+		if (CMP(mSq, 0.0f))
+		{
+			return true;
+		}
 
-	SimpleMath::Vector3 normal = v;
-	normal.Normalize();
-	interSect._Normal = normal;
-
-	//if (CMP(dot, 0.0f))
-	//{
-	//	auto v2 = point - obb->GetCenter();
-	//	float mSq = v2.Dot(v2);
-
-	//	if (CMP(mSq, 0.0f))
-	//	{
-	//		return true;
-	//	}
-
-	//	interSect._Normal = v2;
-	//	interSect._Normal.Normalize();
-	//}
-	//else
-	//{
-	//	interSect._Normal = v;
-	//	interSect._Normal.Normalize();
-	//}
-
+		interSect._Normal = v2;
+		interSect._Normal.Normalize();
+	}
+	else
+	{
+		interSect._Normal = point - pos;
+		interSect._Normal.Normalize();
+	}
+	
 	//interSect._InterSectPositionA = pos + interSect._Normal * radius;
 
-	auto outsidePoint = pos - interSect._Normal * radius;
-	auto vec = (point - outsidePoint);
-	float distance = sqrtf(vec.Dot(vec));
+	auto outsidePoint = pos + interSect._Normal * radius;;
+	auto vec = (outsidePoint - point);
+
+	//float distance = sqrtf(vec.Dot(vec));
+	float distance = sqrtf(vec.Length());
 
 	interSect.depth = distance * 0.5f;
 
-	//interSect._InterSectPositions.push_back(
-	//	point + (outsidePoint - point) * 0.5f);
+	interSect._InterSectPositions.push_back(
+		point + (outsidePoint - point) * 0.5f);
+
+
+
 
 	interSect._InterSectPositionA = pos + interSect._Normal * radius;
 	interSect._InterSectPositionB = point;
@@ -401,7 +401,7 @@ const bool CollisionInterSect::SphereToSphereInterSect(SphereCollisionComponent*
 	normal.Normalize();
 
 	interSect._Normal = normal;
-	interSect.depth = fabsf(normal.Length()- (thisRadius + otherRadius));
+	interSect.depth = fabsf(normal.Length() - (thisRadius + otherRadius));
 
 	float dtp = thisRadius - interSect.depth;
 	SimpleMath::Vector3 contact = thisPos + normal * dtp;
@@ -409,7 +409,7 @@ const bool CollisionInterSect::SphereToSphereInterSect(SphereCollisionComponent*
 	interSect._InterSectPositionA = thisPos + normal * thisRadius;
 	interSect._InterSectPositionB = otherPos - normal * otherRadius;
 
-	//interSect._InterSectPositions.push_back(contact);
+	interSect._InterSectPositions.push_back(contact);
 
 	//DirectX::SimpleMath::Vector3 temp = otherPos - thisPos;
 

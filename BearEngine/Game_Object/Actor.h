@@ -3,8 +3,11 @@
 
 #include <vector>
 #include "../../DirectXTK12/Inc/SimpleMath.h"
+#include <SimpleMath.h>
 #include <string>
 #include <memory>
+
+using namespace DirectX;
 
 
 class Component;
@@ -30,19 +33,19 @@ public:
 	void SetChild(Actor* child);	
 	std::vector<Actor*>& GetChildren();
 
-	const DirectX::SimpleMath::Vector3& GetPosition() const;
+	const DirectX::SimpleMath::Vector3 GetPosition() ;
 	void SetPosition(const DirectX::SimpleMath::Vector3& pos);
 
-	const DirectX::SimpleMath::Vector3& GetScale() const;
+	const DirectX::SimpleMath::Vector3& GetScale() ;
 	void SetScale(const DirectX::SimpleMath::Vector3& scale);
 
-	const DirectX::SimpleMath::Quaternion GetRotation() const;
-	const DirectX::SimpleMath::Vector3& GetVecRotation() const;
+	const DirectX::SimpleMath::Quaternion GetRotation() ;
+	const DirectX::SimpleMath::Vector3& GetVecRotation() ;
 	
 	void SetRotation(const DirectX::SimpleMath::Vector3 rotate);
 
-	const DirectX::SimpleMath::Matrix GetWorldMatrix();
-	void SetWorldMatrix();
+	const DirectX::SimpleMath::Matrix GetWorldMatrix() ;
+	void SetWorldMatrix() ;
 	void SetWorldMatrix(const DirectX::SimpleMath::Matrix& mat);
 
 	DirectX::SimpleMath::Vector3 GetForward();

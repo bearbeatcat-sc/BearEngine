@@ -15,7 +15,8 @@ public:
 	friend class Singleton<CameraManager>;
 	void Init();
 	void Shutdown();
-	bool AddCamera(std::string cameraName, std::shared_ptr<Camera> camera);
+	void SetMainCamera(const std::string& cameraName);
+	bool AddCamera(const std::string& cameraName, std::shared_ptr<Camera> camera);
 	std::shared_ptr<Camera> GetMainCamera();
 	std::shared_ptr<Camera> GetCamera(std::string cameraName);
 

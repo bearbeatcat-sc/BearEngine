@@ -5,7 +5,7 @@
 #include "imgui/imgui.h"
 
 PointLight::PointLight(const SimpleMath::Vector3& position, const SimpleMath::Color& color, float distance, float decay)
-	:_position(position), _color(color), _distance(distance), _decay(decay)
+	:_position(position), _color(color), _distance(distance), _decay(decay), _isDestroy(false)
 {
 }
 
@@ -18,6 +18,16 @@ void PointLight::UpdatePointLight(const SimpleMath::Vector3& position, const Sim
 	_decay = decay;
 
 	_isUpdate = true;
+}
+
+bool PointLight::IsDestroy()
+{
+	return _isDestroy;
+}
+
+void PointLight::Destroy()
+{
+	_isDestroy = true;
 }
 
 const PointLight::ConstPointLightDatas PointLight::CreateLightData()

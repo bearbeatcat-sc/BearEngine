@@ -22,10 +22,12 @@ public:
 		float decay;
 	};
 
+	bool IsDestroy();
+	void Destroy();
 	const ConstPointLightDatas CreateLightData();
 	bool DebugRender(int index);
-
-private:
+	
+	bool _isUpdate;
 
 private:
 
@@ -34,5 +36,5 @@ private:
 	float _distance;
 	float _decay;
 
-	bool _isUpdate;
+	bool _isDestroy;
 };

@@ -3,8 +3,11 @@
 
 void CameraManager::Init()
 {
-	m_MainCamera = std::shared_ptr<Camera>(new Camera(SimpleMath::Vector3(0, 0, -10), SimpleMath::Vector3(0, 0, 0)));
 
+	auto camera = std::make_shared<Camera>(SimpleMath::Vector3(0, 0, -10), SimpleMath::Vector3(0, 0, 0));
+	AddCamera("Camera0",camera);
+
+	SetMainCamera("Camera0");
 }
 
 void CameraManager::Shutdown()
@@ -12,7 +15,18 @@ void CameraManager::Shutdown()
 	m_Cameras.clear();
 }
 
-bool CameraManager::AddCamera(std::string cameraName, std::shared_ptr<Camera> camera)
+void CameraManager::SetMainCamera(const std::string& cameraName)
+{
+	if (m_Cameras.find(cameraName) == m_Cameras.end())
+	{
+		throw std::runtime_error("Not Regist Camera");
+	}
+
+	auto camera = m_Cameras.at(cameraName);
+	m_MainCamera = camera;
+}
+
+bool CameraManager::AddCamera(const std::string& cameraName, std::shared_ptr<Camera> camera)
 {
 	if (m_Cameras.find(cameraName) != m_Cameras.end())return false;
 
@@ -35,7 +49,7 @@ std::shared_ptr<Camera> CameraManager::GetCamera(std::string cameraName)
 
 CameraManager::CameraManager()
 {
-
+	Init();
 }
 
 CameraManager::~CameraManager()

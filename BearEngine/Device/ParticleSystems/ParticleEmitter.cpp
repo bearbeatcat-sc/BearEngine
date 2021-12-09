@@ -501,6 +501,8 @@ void ParticleEmitter::UpdateConstantBuffer()
 		break;
 
 	case DrawParticleMode_BillBoard_Y:
+		mat = vpMat;
+		billmat = m_Camera->GetYAxisBillBoardMat();
 		break;
 
 	}
@@ -514,7 +516,7 @@ void ParticleEmitter::UpdateConstantBuffer()
 	constMap->v_matrix = viewMat;
 	constMap->p_matrix = projMat;
 	constMap->vp_matrix = vpMat;
-	constMap->nearFar = SimpleMath::Vector3(m_Camera->GetNear(), m_Camera->GetFar(), m_Camera->GetSpriteScale());
+	constMap->nearFar = SimpleMath::Vector3(m_Camera->GetNear(), m_Camera->GetFar(), 0.0f);
 	m_ConstantBuffer->getBuffer()->Unmap(0, nullptr);
 }
 

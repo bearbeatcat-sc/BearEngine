@@ -12,7 +12,7 @@
 
 
 Cube::Cube(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& scale, float destroyTime, const std::string& meshName, bool moveFlag)
-	:_initScale(scale), _IsGenerate(false), _IsMove(moveFlag), _DXRMeshName(meshName), _IsStatic(false),Actor()
+	:_initScale(scale), _IsGenerate(false), _IsMove(moveFlag), _DXRMeshName(meshName), _IsStaticPosition(false),Actor(), _IsStaticRotate(false)
 {
 	SetPosition(pos);
 	SetScale(scale);
@@ -23,10 +23,10 @@ Cube::Cube(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& scale, flo
 	_Acc = SimpleMath::Vector3(0, 4.0f, 0.0f);
 }
 
-void Cube::OnStatic()
+void Cube::OnStatic(bool posflag, bool rotateFlag)
 {
-	_IsStatic = true;
-
+	_IsStaticPosition = posflag;
+	_IsStaticRotate = rotateFlag;
 }
 
 void Cube::UpdateActor()
@@ -96,14 +96,9 @@ void Cube::Init()
 	m_pCollisionComponent->RegistRigidBody(_rigidBodyComponent);
 	_rigidBodyComponent->_Mass = 1.0f;
 	_rigidBodyComponent->_Elasticty = 1.0f;
-	_rigidBodyComponent->_AddGravity = SimpleMath::Vector3(0, -8.0f, 0.0f);
+	_rigidBodyComponent->_AddGravity = SimpleMath::Vector3(-0.6f, 0.0f, 0.0f);
 
-	if(_IsStatic)
-	{
-		_rigidBodyComponent->_AddGravity = SimpleMath::Vector3::Zero;
-		_rigidBodyComponent->OnStaticPosition();
-		_rigidBodyComponent->OnStaticRotate();
-	}
+	_rigidBodyComponent->SetStaticFlag(_IsStaticPosition, _IsStaticRotate);
 
 	SetTag("Block");
 }

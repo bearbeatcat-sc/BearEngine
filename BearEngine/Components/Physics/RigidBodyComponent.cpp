@@ -29,6 +29,8 @@ void RigidBodyComponent::UpdatePosition()
 	auto position = _user->GetPosition();
 	position += _Velocity * Time::DeltaTime;
 	_user->SetPosition(position);
+
+	_Velocity *= 0.98f;
 }
 
 void RigidBodyComponent::UpdateRotation()
@@ -86,15 +88,14 @@ void RigidBodyComponent::OnCollider(Actor* other, CollisionComponent* otherColli
 	//_Velocity = SimpleMath::Vector3::Zero;
 }
 
-void RigidBodyComponent::OnStaticRotate()
+void RigidBodyComponent::SetStaticFlag(bool positionFlag, bool rotateFlag)
 {
-	_isStaticRotate = true;
+	_isStaticPosition = positionFlag;
+	_isStaticRotate = rotateFlag;
+
 }
 
-void RigidBodyComponent::OnStaticPosition()
-{
-	_isStaticPosition = true;
-}
+
 
 void RigidBodyComponent::OnResolveContact(Actor* other, CollisionComponent* otherCollisionComponent, InterSectInfo& inter_sect_info)
 {
@@ -225,6 +226,8 @@ void RigidBodyComponent::CalculateMoment(Actor* other, std::shared_ptr<RigidBody
 	auto i2 = otherRigidBody->InvTensor();
 
 	//auto relativeVel = otherRigidBody->_Velocity - _Velocity;
+
+	// 角運動量と移動量を加えたもの
 	auto relativeVel = (otherRigidBody->_Velocity + otherRigidBody->_AngVel.Cross(r2))
 		- (_Velocity + _AngVel.Cross(r1));
 
@@ -404,35 +407,38 @@ void RigidBodyComponent::ResolveContact(Actor* other, std::shared_ptr<RigidBodyC
 		for (int i = 0; i < interSectPositionCount; ++i)
 		{
 			CalculateMoment(other, otherRigidBody, inter_sect_info, i);
+
+			Update();
+			otherRigidBody->Update();
 		}
+
+		float totalMass = InvMass() + otherRigidBody->InvMass();
+
+		float depth = fmaxf(inter_sect_info.depth - 0.01f, 0.0f);
+		float scalar = depth / totalMass;
+		auto correction = (inter_sect_info._Normal * scalar);
+
+		UpdateActorPosition(_user->GetPosition() - correction * InvMass());
+		otherRigidBody->UpdateActorPosition(otherRigidBody->_user->GetPosition() + correction * otherRigidBody->InvMass());
+
+		return;
 	}
-	else
-	{
-		CalculateMoment(other, otherRigidBody, inter_sect_info);
-	}
+
+	CalculateMoment(other, otherRigidBody, inter_sect_info);
 
 	Update();
 	otherRigidBody->Update();
-	
+
 	const float tA = _Mass / (_Mass + otherRigidBody->GetMass());
 	const float tB = otherRigidBody->GetMass() / (_Mass + otherRigidBody->GetMass());
-	
+
 	auto position = inter_sect_info._InterSectPositionA;
 	auto otherPosition = inter_sect_info._InterSectPositionB;
 
 	const SimpleMath::Vector3 ds = otherPosition - position;
-	
+
 	UpdateActorPosition(_user->GetPosition() + ds * tA);
 	otherRigidBody->UpdateActorPosition(other->GetPosition() - ds * tB);
-
-	//float totalMass = InvMass() + otherRigidBody->InvMass();
-
-	//float depth = fmaxf(inter_sect_info.depth - 0.01f, 0.0f);
-	//float scalar = depth / totalMass;
-	//auto correction = (inter_sect_info._Normal * scalar);
-
-	//UpdateActorPosition(_user->GetPosition() - correction * InvMass());
-	//otherRigidBody->UpdateActorPosition(otherRigidBody->_user->GetPosition() + correction * otherRigidBody->InvMass());
 }
 
 SimpleMath::Matrix RigidBodyComponent::InvTensor(SphereCollisionComponent* sphere_collision_component)

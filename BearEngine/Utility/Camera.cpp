@@ -8,7 +8,7 @@
 #include <iostream>
 
 Camera::Camera()
-	:m_SpriteScale(0.0001f)
+	:m_Pos(SimpleMath::Vector3(0,0,0)), m_Target(SimpleMath::Vector3(0,0,1)), m_Up(SimpleMath::Vector3(0,1,0))
 {
 	m_near = 0.1f;
 	m_far = 300.0f;
@@ -19,7 +19,7 @@ Camera::Camera()
 }
 
 Camera::Camera(const SimpleMath::Vector3& pos, const SimpleMath::Vector3& target, const SimpleMath::Vector3& up)
-	:m_Pos(pos),m_Target(target),m_Up(up), m_SpriteScale(0.0001f)
+	:m_Pos(pos),m_Target(target),m_Up(up)
 {
 	m_near = 0.1f;
 	m_far = 300.0f;
@@ -78,11 +78,6 @@ void Camera::SetFov(float fov)
 	m_Fov = fov;
 }
 
-void Camera::SetSpriteScale(float scale)
-{
-	m_SpriteScale = scale;
-}
-
 float Camera::GetNear()
 {
 	return m_near;
@@ -103,12 +98,7 @@ float Camera::GetAspect()
 	return m_Aspect;
 }
 
-float Camera::GetSpriteScale()
-{
-	return m_SpriteScale;
-}
-
-const XMMATRIX& Camera::GetBillBoardMat()
+const SimpleMath::Matrix Camera::GetBillBoardMat()
 {
 	XMVECTOR eyePosition = XMLoadFloat3(&m_Pos);
 	XMVECTOR targetPosition = XMLoadFloat3(&m_Target);
@@ -149,16 +139,17 @@ const XMMATRIX& Camera::GetBillBoardMat()
 
 	matView.r[3] = translation;
 
-	matBillBoard = XMMatrixIdentity();
-	matBillBoard.r[0] = cameraAxisX;
-	matBillBoard.r[1] = cameraAxisY;
-	matBillBoard.r[2] = cameraAxisZ;
-	matBillBoard.r[3] = XMVectorSet(0, 0, 0, 1);
+	XMMATRIX mat;
+	mat = XMMatrixIdentity();
+	mat.r[0] = cameraAxisX;
+	mat.r[1] = cameraAxisY;
+	mat.r[2] = cameraAxisZ;
+	mat.r[3] = XMVectorSet(0, 0, 0, 1);
 
-	return matBillBoard;
+	return mat;
 }
 
-const XMMATRIX& Camera::GetYAxisBillBoardMat()
+const SimpleMath::Matrix Camera::GetYAxisBillBoardMat()
 {
 	XMVECTOR eyePosition = XMLoadFloat3(&m_Pos);
 	XMVECTOR targetPosition = XMLoadFloat3(&m_Target);
@@ -205,19 +196,26 @@ const XMMATRIX& Camera::GetYAxisBillBoardMat()
 	yBillCameraAxisY = XMVector3Normalize(upVector);
 	yBillCameraAxisZ = XMVector3Cross(yBillCameraAxisX, yBillCameraAxisY);
 
-	matYAxisBillBoard = XMMatrixIdentity();
-	matYAxisBillBoard.r[0] = yBillCameraAxisX;
-	matYAxisBillBoard.r[1] = yBillCameraAxisY;
-	matYAxisBillBoard.r[2] = yBillCameraAxisZ;
-	matYAxisBillBoard.r[3] = XMVectorSet(0, 0, 0, 1);
+	XMMATRIX mat;
+	mat = XMMatrixIdentity();
+	mat.r[0] = yBillCameraAxisX;
+	mat.r[1] = yBillCameraAxisY;
+	mat.r[2] = yBillCameraAxisZ;
+	mat.r[3] = XMVectorSet(0, 0, 0, 1);
 
-	return matYAxisBillBoard;
+	
+	return mat;
 }
 
-const XMMATRIX  Camera::GetProjectMat()
+const SimpleMath::Matrix  Camera::GetProjectMat()
 {
 
-
+	//return SimpleMath::Matrix::CreatePerspectiveFieldOfView(
+	//	m_Fov,
+	//	m_Aspect,
+	//	m_near,
+	//	m_far);
+	
 	return XMMatrixPerspectiveFovLH(m_Fov,
 		m_Aspect,
 		m_near,
@@ -232,7 +230,7 @@ const XMMATRIX  Camera::GetProjectMat()
 	//);
 }
 
-const XMMATRIX Camera::GetViewMat()
+const SimpleMath::Matrix Camera::GetViewMat()
 {
 	//XMVECTOR eyePosition = XMLoadFloat3(&m_Pos);
 	//XMVECTOR targetPosition = XMLoadFloat3(&m_Target);

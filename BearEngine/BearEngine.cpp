@@ -30,7 +30,6 @@ BearEngine::~BearEngine()
 void BearEngine::InitEngine()
 {
 	CollisionManager::GetInstance().Init(5, SimpleMath::Vector3(0, 0, 0), SimpleMath::Vector3(9000000, 9000000, 9000000));
-	CameraManager::GetInstance().Init();
 	SoundManager::GetInstance().Init();
 	ActorManager::GetInstance().Init();
 	DirectXInput::GetInstance().InitDirectInput();
@@ -40,6 +39,7 @@ void BearEngine::InitEngine()
 void BearEngine::EngineUpdate()
 {
 	DirectXInput::GetInstance().UpdateInput();
+	LightManager::GetInstance().Update();
 	ActorManager::GetInstance().Update();
 	CollisionManager::GetInstance().Update();
 	SpriteDrawer::GetInstance().Update();
