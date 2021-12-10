@@ -1060,6 +1060,7 @@ void RenderingPipeLine::DefaultRendering()
 	{
 		m_pSkyBox->Draw();
 	}
+	SpriteDrawer::GetInstance().Render3DSprite();
 	MeshDrawer::GetInstance().Draw();
 	ParticleManager::GetInstance().Draw();
 	DefaultRenderingEnd();

@@ -13,9 +13,13 @@ SpriteDrawer::SpriteDrawer()
 
 SpriteDrawer::~SpriteDrawer()
 {
-	sprites.clear();
-	m_ConstantHandles.clear();
+	_2dSprites.clear();
+	_3dSprites.clear();
+	
+	_constantHandles.clear();
 }
+
+
 
 bool SpriteDrawer::Init()
 {
@@ -31,9 +35,69 @@ bool SpriteDrawer::Init()
 	return true;
 }
 
-void SpriteDrawer::Draw()
+void SpriteDrawer::Render2DSprite()
+{	
+	RenderCall2D();
+}
+
+void SpriteDrawer::Render3DSprite()
 {
-	DrawCall();
+	RenderCall3D();
+}
+
+bool SpriteDrawer::IsAddSprite()
+{
+	if (_3dSprites.size() + _2dSprites.size() >= m_ObjectCount - 1)
+	{
+		return true;
+	}
+	return false;
+}
+
+void SpriteDrawer::AddSprite3D(const std::shared_ptr<Sprite>& sprite)
+{
+	if (!IsAddSprite()) return;
+
+	if (!GenerateConstantView(sprite))
+	{
+		return;
+	}
+
+	int myOrder = sprite->GetDrawOrder();
+	auto iter = _3dSprites.begin();
+
+	for (; iter != _3dSprites.end(); ++iter)
+	{
+		if (myOrder < (*iter)->GetDrawOrder())
+		{
+			break;
+		}
+	}
+
+	_3dSprites.insert(iter, sprite);
+}
+
+void SpriteDrawer::AddSprite2D(const std::shared_ptr<Sprite>& sprite)
+{
+	if (!IsAddSprite()) return;
+
+	if (!GenerateConstantView(sprite))
+	{
+		return;
+	}
+
+	int myOrder = sprite->GetDrawOrder();
+	auto iter = _2dSprites.begin();
+
+	for (; iter != _2dSprites.end(); ++iter)
+	{
+		if (myOrder < (*iter)->GetDrawOrder())
+		{
+			break;
+		}
+	}
+
+	_2dSprites.insert(iter, sprite);
 }
 
 void SpriteDrawer::Update()
@@ -43,33 +107,19 @@ void SpriteDrawer::Update()
 
 void SpriteDrawer::AddSprite(std::shared_ptr<Sprite> sprite)
 {
-	if (sprites.size() >= m_ObjectCount - 1)
+	if(typeid(sprite).name() == "Sprite3D")
 	{
+		AddSprite3D(sprite);
 		return;
 	}
+	
+	AddSprite2D(sprite);
 
-	if (!GenerateConstantView(sprite))
-	{
-		return;
-	}
-
-	int myOrder = sprite->GetDrawOrder();
-	auto iter = sprites.begin();
-
-	for (; iter != sprites.end(); ++iter)
-	{
-		if (myOrder < (*iter)->GetDrawOrder())
-		{
-			break;
-		}
-	}
-
-	sprites.insert(iter,sprite);
 }
 
 void SpriteDrawer::CheckState()
 {
-	for (auto itr = sprites.begin(); itr != sprites.end();)
+	for (auto itr = _3dSprites.begin(); itr != _3dSprites.end();)
 	{
 		if ((*itr)->GetUpdateTextureFlag())
 		{
@@ -79,13 +129,32 @@ void SpriteDrawer::CheckState()
 		if ((*itr)->m_DestroyFlag)
 		{
 			(*itr)->m_ConstantDescHandle->m_UseFlag = false;
-			itr = sprites.erase(itr);
+			itr = _3dSprites.erase(itr);
+			continue;
+		}
+
+		itr++;
+	}
+
+	for (auto itr = _2dSprites.begin(); itr != _2dSprites.end();)
+	{
+		if ((*itr)->GetUpdateTextureFlag())
+		{
+			UpdateTexture((*itr));
+		}
+
+		if ((*itr)->m_DestroyFlag)
+		{
+			(*itr)->m_ConstantDescHandle->m_UseFlag = false;
+			itr = _2dSprites.erase(itr);
 			continue;
 		}
 
 		itr++;
 	}
 }
+
+
 
 bool SpriteDrawer::GenerateHandles()
 {
@@ -96,17 +165,17 @@ bool SpriteDrawer::GenerateHandles()
 			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 		auto cpuHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(
-			m_BasicDescHeap->GetCPUDescriptorHandleForHeapStart(),
+			_descHeap->GetCPUDescriptorHandleForHeapStart(),
 			i * 2,
 			descHandleInc
 		);
 
 		auto gpuHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(
-			m_BasicDescHeap->GetGPUDescriptorHandleForHeapStart(),
+			_descHeap->GetGPUDescriptorHandleForHeapStart(),
 			i * 2,
 			descHandleInc);
 
-		m_ConstantHandles.push_back(MeshDrawer::CPU_GPU_Handles{ cpuHandle,gpuHandle,false });
+		_constantHandles.push_back(MeshDrawer::CPU_GPU_Handles{ cpuHandle,gpuHandle,false });
 	}
 
 	return true;
@@ -121,7 +190,7 @@ bool SpriteDrawer::InitConstantHeaps()
 	descHeapDesc.NodeMask = 0;
 
 	if (FAILED(DirectXDevice::GetInstance().GetDevice()->CreateDescriptorHeap(&descHeapDesc,
-		IID_PPV_ARGS(&m_BasicDescHeap))))
+		IID_PPV_ARGS(&_descHeap))))
 	{
 		return false;
 	}
@@ -136,12 +205,12 @@ bool SpriteDrawer::GenerateConstantView(std::shared_ptr<Sprite> sprite)
 	MeshDrawer::CPU_GPU_Handles* handles = nullptr;
 	bool m_isFind = false;
 
-	for (int i = 0; i < m_ConstantHandles.size(); i++)
+	for (int i = 0; i < _constantHandles.size(); i++)
 	{
-		if (!m_ConstantHandles.at(i).m_UseFlag)
+		if (!_constantHandles.at(i).m_UseFlag)
 		{
-			handles = &m_ConstantHandles.at(i);
-			m_ConstantHandles.at(i).m_UseFlag = true;
+			handles = &_constantHandles.at(i);
+			_constantHandles.at(i).m_UseFlag = true;
 			m_isFind = true;
 			break;
 		}
@@ -184,13 +253,42 @@ bool SpriteDrawer::GenerateConstantView(std::shared_ptr<Sprite> sprite)
 	return true;
 }
 
-bool SpriteDrawer::DrawCall()
+bool SpriteDrawer::RenderCall2D()
 {
 	ID3D12GraphicsCommandList* tempCommand = DirectXGraphics::GetInstance().GetCommandList();
 
-	auto heap = m_BasicDescHeap.Get();
+	auto heap = _descHeap.Get();
 
-	for (auto sprite: sprites)
+	for (auto sprite : _2dSprites)
+	{
+		if (!sprite->GetDrawFlag()) continue;
+
+		auto pso = EffectManager::GetInstance().GetEffect(sprite->GetEffectName())->GetPSO();
+		tempCommand->SetPipelineState(pso->pso.Get());
+		tempCommand->SetGraphicsRootSignature(pso->rootSignature.Get());
+
+
+		// 行列用ディスクリプタの設定
+		tempCommand->SetDescriptorHeaps(1, &heap);
+		tempCommand->SetGraphicsRootDescriptorTable(0, sprite->m_ConstantDescHandle->m_GPUDescHandle);
+
+		auto handle = sprite->m_ConstantDescHandle->m_GPUDescHandle;
+		handle.ptr += DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+		tempCommand->SetGraphicsRootDescriptorTable(1, handle);
+
+		sprite->Draw(tempCommand);
+	}
+	return true;
+}
+
+bool SpriteDrawer::RenderCall3D()
+{
+	ID3D12GraphicsCommandList* tempCommand = DirectXGraphics::GetInstance().GetCommandList();
+
+	auto heap = _descHeap.Get();
+
+	for (auto sprite : _3dSprites)
 	{
 		if (!sprite->GetDrawFlag()) continue;
 

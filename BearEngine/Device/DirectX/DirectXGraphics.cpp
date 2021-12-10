@@ -518,7 +518,8 @@ bool DirectXGraphics::WaitForGpu()
 
 void DirectXGraphics::Present()
 {
-	if(GetSwapChain()->Present(1, 0) == DXGI_ERROR_DEVICE_REMOVED)
+	const int sync_interval = WindowApp::GetInstance().sync_interval;
+	if(GetSwapChain()->Present(sync_interval, 0) == DXGI_ERROR_DEVICE_REMOVED)
 	{
 		DirectXDevice::GetInstance().DeviceRemovedHandler();
 	}
@@ -824,6 +825,7 @@ HRESULT DirectXGraphics::CreateSwapChain()
 	}
 
 	swapchain1.As(&m_Swapchain);
+
 
 	return result;
 }

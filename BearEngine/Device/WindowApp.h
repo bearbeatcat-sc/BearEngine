@@ -27,6 +27,7 @@ public:
 	void MsgBox(const std::string&& msg, const std::string& caption);
 
 	static WindowSize window_size;
+	static int sync_interval;
 
 protected:
 	WindowApp();
@@ -38,6 +39,6 @@ private:
 	WNDCLASSEX w_;
 	Game* game_;
 	BearEngine* bear_engine_;
-
+	
 };
 

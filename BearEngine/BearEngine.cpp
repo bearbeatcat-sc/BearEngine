@@ -60,7 +60,7 @@ void BearEngine::RenderApplication()
 {
 	// スプライトの描画を行う
 	RenderingPipeLine::GetInstance().BeginRenderResult();
-	SpriteDrawer::GetInstance().Draw();
+	SpriteDrawer::GetInstance().Render2DSprite();
 
 #ifdef _DEBUG
 	DebugDrawer::GetInstance().Draw();

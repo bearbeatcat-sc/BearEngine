@@ -15,6 +15,7 @@
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND, UINT, WPARAM, LPARAM);
 WindowSize WindowApp::window_size;
+int WindowApp::sync_interval;
 
 LRESULT WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
@@ -85,6 +86,17 @@ HRESULT WindowApp::Run(Game* game)
 	window_size.window_Width = clientSize.right - clientSize.left;
 	window_size.window_Height = clientSize.bottom - clientSize.top;
 
+
+	// リフレッシュレートに合わせて制限
+	auto hdc = GetDC(hwnd_);
+	auto rate = GetDeviceCaps(hdc, VREFRESH);
+
+	int interval = 0;
+	if (rate <= 60) interval = 1;
+	if (rate >= 120) interval = 2;
+
+	sync_interval = interval;
+	
 	bear_engine_ = new BearEngine();
 	bear_engine_->InitEngine();
 
