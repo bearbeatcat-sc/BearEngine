@@ -25,6 +25,7 @@ bool MeshManager::Init()
 
 	// キューブメッシュ用のデータを生成
 	CreateCubeMeshData();
+	CreatePlaneMeshData();
 
 	return true;
 }
@@ -65,7 +66,7 @@ std::shared_ptr<Mesh> MeshManager::GetCubeMesh(const std::string& effectName)
 	return mesh;
 }
 
-std::shared_ptr<MeshData> MeshManager::GetSpehereMeshData(const int tesselation)
+const std::shared_ptr<MeshData> MeshManager::GetSpehereMeshData(const int tesselation)
 {
 	auto result = FindSpehere(tesselation);
 
@@ -91,6 +92,11 @@ std::shared_ptr<MeshData> MeshManager::GetSpehereMeshData(const int tesselation)
 	return result;
 }
 
+const std::shared_ptr<MeshData> MeshManager::GetPlaneMeshData()
+{
+	return m_PlaneModelData;
+}
+
 std::shared_ptr<Mesh> MeshManager::GetSpehereMesh(int tesselation, const std::string& effectName)
 {
 	auto result = FindSpehere(tesselation);
@@ -106,10 +112,10 @@ std::shared_ptr<Mesh> MeshManager::GetSpehereMesh(int tesselation, const std::st
 
 		std::string modelName = "SphereMesh_" + std::to_string(tesselation);
 		std::wstring wst_modelName = StringUtil::GetWideStringFromString(modelName);
-		
-		data->GenerateMesh(wst_modelName, model.vertices,model.m_Indices, model.m_MaterialDatas);
+
+		data->GenerateMesh(wst_modelName, model.vertices, model.m_Indices, model.m_MaterialDatas);
 		m_SpehereModelDatas.emplace(tesselation, data);
-		
+
 		//DXRPipeLine::GetInstance().CreateResourceView(data);
 		result = data;
 	}
@@ -128,10 +134,10 @@ std::shared_ptr<Mesh> MeshManager::GetTriangleMesh(const SimpleMath::Vector3* po
 	MeshData::ModelData model;
 	GeometryGenerator::GenerateTriangleMeshData(model, points);
 	std::shared_ptr <MeshData> data = std::make_shared<MeshData>();
-	
+
 	std::wstring modelName = L"TriangleMesh";
-	
-	data->GenerateMesh(modelName,model.vertices, model.m_Indices, model.m_MaterialDatas);
+
+	data->GenerateMesh(modelName, model.vertices, model.m_Indices, model.m_MaterialDatas);
 
 
 	std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>(data, effectName);
@@ -140,15 +146,7 @@ std::shared_ptr<Mesh> MeshManager::GetTriangleMesh(const SimpleMath::Vector3* po
 
 std::shared_ptr<Mesh> MeshManager::GetPlaneMesh(const std::string& effectName)
 {
-	MeshData::ModelData model;
-	GeometryGenerator::GenerateSquareMeshData(model);
-	std::shared_ptr <MeshData> data = std::make_shared<MeshData>();
-
-	std::wstring modelName = L"PlaneMesh";
-	
-	data->GenerateMesh(modelName, model.vertices, model.m_Indices, model.m_MaterialDatas);
-
-	std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>(data, effectName);
+	std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>(m_PlaneModelData, effectName);
 	return mesh;
 }
 
@@ -177,10 +175,10 @@ bool MeshManager::LoadObj(const std::string& filePath, const std::string& fileNa
 	//}
 
 	std::wstring wstr_modelName = StringUtil::GetWideStringFromString(modelName);
-	data->GenerateMesh(wstr_modelName,model.vertices, model.m_Indices, model.m_MaterialDatas);
+	data->GenerateMesh(wstr_modelName, model.vertices, model.m_Indices, model.m_MaterialDatas);
 	m_ModelDatas.emplace(modelName, data);
 	//DXRPipeLine::GetInstance().CreateResourceView(data);
-	
+
 	return true;
 }
 
@@ -218,14 +216,25 @@ void MeshManager::CreateCubeMeshData()
 	m_CubeModelData = std::make_shared<MeshData>();
 
 	std::wstring modelName = L"CubeMesh";
-	
-	m_CubeModelData->GenerateMesh(modelName,model.vertices, model.m_Indices, model.m_MaterialDatas);
+
+	m_CubeModelData->GenerateMesh(modelName, model.vertices, model.m_Indices, model.m_MaterialDatas);
 
 	m_ModelDatas.emplace("CubeModelData", m_CubeModelData);
 
 	//DXRPipeLine::GetInstance().CreateResourceView(m_CubeModelData);
 }
 
+void MeshManager::CreatePlaneMeshData()
+{
+	MeshData::ModelData model;
+	GeometryGenerator::GenerateSquareMeshData(model);
+	m_PlaneModelData = std::make_shared<MeshData>();
+
+	std::wstring modelName = L"PlaneMesh";
+
+	m_PlaneModelData->GenerateMesh(modelName, model.vertices, model.m_Indices, model.m_MaterialDatas);
+
+}
 
 
 //bool MeshManager::LoadPrimitive(MeshData::ModelData model, std::string modelName)

@@ -41,4 +41,5 @@ private:
 
 	PhysicsBaseMaterial _blenderMonkyMaterial;
 	std::shared_ptr<DXRMeshData> _blenderMonkey;
+	std::shared_ptr<DXRMeshData> _test;
 };

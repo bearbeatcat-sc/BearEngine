@@ -20,7 +20,8 @@ ComPtr<ID3D12Resource> TextureManager::GetTexture(const std::string& textureName
 		return m_Textures.at(textureName);
 	}
 
-	return nullptr;
+	throw std::runtime_error("Not Find Texture.");
+
 }
 
 ComPtr<ID3D12Resource> TextureManager::GetWhiteTex()

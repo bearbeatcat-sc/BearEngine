@@ -25,13 +25,17 @@ public:
 	std::shared_ptr<Mesh> GetMesh(const std::string& modelname, const std::string& effectName);
 	//bool LoadPrimitive(MeshData::ModelData model, std::string modelName);
 	std::shared_ptr<Mesh> GetCubeMesh(const std::string& effectName);
-	std::shared_ptr<MeshData> GetSpehereMeshData(const int tesselation);
 	std::shared_ptr<Mesh> GetSpehereMesh(int tesselation, const std::string& effectName);
 	std::shared_ptr<Mesh> GetTriangleMesh(const SimpleMath::Vector3* points, const std::string& effectName);	
 	std::shared_ptr<Mesh> GetPlaneMesh(const std::string& effectName);
+	
 	const std::shared_ptr<MeshData> GetMeshData(const std::string& modelname);
+	const std::shared_ptr<MeshData> GetSpehereMeshData(const int tesselation);
+	const std::shared_ptr<MeshData> GetPlaneMeshData();
+
 	std::shared_ptr<MeshData> FindSpehere(int tesselation);
 	ID3D12DescriptorHeap* GetDescriptrHeap();
+
 
 protected:
 
@@ -40,6 +44,7 @@ protected:
 	bool LoadPmd(const std::string& filePath, const std::string& modelName);
 	void SmoothNormal(MeshData::ModelData& meshData);
 	void CreateCubeMeshData();
+	void CreatePlaneMeshData();
 	void CreateDescriptorHeap();
 
 

@@ -194,13 +194,12 @@ public:
 	bool Init();
 
 	std::shared_ptr<DXRInstance> AddInstance(const std::string& meshDataName, const int hitGroupIndex);
-	std::shared_ptr<DXRMeshData> AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::wstring& hitGroupName, const std::string& meshDataName);
+	std::shared_ptr<DXRMeshData> AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::wstring& hitGroupName, const std::string& meshDataName, const std::string& textureName = "");
 	std::shared_ptr<DXRMeshData> AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::wstring& hitGroupName,
-	                 const std::string& meshDataName,
-	                 PhysicsBaseMaterial material);
+	                 const std::string& meshDataName,PhysicsBaseMaterial material,const std::string& textureName = "");
 
 	void Render(ID3D12Resource* pRenderResource,SkyBox* pSkyBox);
-	void CreateResourceView(std::shared_ptr<MeshData> mesh);
+	void CreateResourceView(std::shared_ptr<MeshData> mesh, std::shared_ptr<DXRMeshData> dxr_mesh_data);
 	void DeleteInstance();
 	void DrawDebugGUI();
 	void OnUpdateMaterial();

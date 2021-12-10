@@ -134,16 +134,16 @@ bool DXRPipeLine::Init()
 std::shared_ptr<DXRInstance> DXRPipeLine::AddInstance(const std::string& meshDataName, const int hitGroupIndex)
 {
 	std::shared_ptr<DXRMeshData> findMesh;
-	
-	for(auto mesh : _meshDatas)
+
+	for (auto mesh : _meshDatas)
 	{
-		if(mesh->meshName == meshDataName)
+		if (mesh->_meshName == meshDataName)
 		{
 			findMesh = mesh;
 		}
 	}
 
-	if(findMesh == nullptr)
+	if (findMesh == nullptr)
 	{
 		throw std::runtime_error("Not Regist MeshData");
 	}
@@ -154,7 +154,7 @@ std::shared_ptr<DXRInstance> DXRPipeLine::AddInstance(const std::string& meshDat
 	}
 
 	auto instance = std::make_shared<DXRInstance>(hitGroupIndex, findMesh);
-	instance->_hitGroupIndex = findMesh->hitGropIndex;
+	instance->_hitGroupIndex = findMesh->_hitGropIndex;
 
 	_instances.push_back(instance);
 
@@ -163,22 +163,33 @@ std::shared_ptr<DXRInstance> DXRPipeLine::AddInstance(const std::string& meshDat
 	return instance;
 }
 
-std::shared_ptr<DXRMeshData> DXRPipeLine::AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::wstring& hitGroupName, const std::string& meshDataName)
+std::shared_ptr<DXRMeshData> DXRPipeLine::AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::wstring& hitGroupName, const std::string& meshDataName, const std::string& textureName)
 {
-	if(pMeshData == nullptr)
+	if (pMeshData == nullptr)
 	{
 		throw std::runtime_error("MeshDatas is null.");
 	}
 
-	CreateResourceView(pMeshData);
-	auto dxrMesh = std::make_shared<DXRMeshData>(hitGroupName, pMeshData->GetPhysicsBaseMaterial());
+	std::shared_ptr<DXRMeshData> dxrMesh = nullptr;
 
-	dxrMesh->m_ibView = pMeshData->m_ib_h_gpu_descriptor_handle;
-	dxrMesh->m_vbView = pMeshData->m_vb_h_gpu_descriptor_handle;
+	
+	if (textureName != "")
+	{
+		dxrMesh = std::make_shared<DXRMeshData>(hitGroupName, pMeshData->GetPhysicsBaseMaterial(), textureName);
+	}
+	else
+	{
+		dxrMesh = std::make_shared<DXRMeshData>(hitGroupName, pMeshData->GetPhysicsBaseMaterial());
+	}
+	
+	CreateResourceView(pMeshData, dxrMesh);
+
+	dxrMesh->_ibView = pMeshData->m_ib_h_gpu_descriptor_handle;
+	dxrMesh->_vbView = pMeshData->m_vb_h_gpu_descriptor_handle;
 
 	// 現状は1メッシュデータにつき、一つのヒットグループを扱っているので
-	dxrMesh->hitGropIndex = _meshDatas.size();
-	dxrMesh->meshName = meshDataName;
+	dxrMesh->_hitGropIndex = _meshDatas.size();
+	dxrMesh->_meshName = meshDataName;
 
 	CreateBLAS(dxrMesh, pMeshData);
 
@@ -187,23 +198,36 @@ std::shared_ptr<DXRMeshData> DXRPipeLine::AddMeshData(std::shared_ptr<MeshData> 
 	return dxrMesh;
 }
 
-std::shared_ptr<DXRMeshData> DXRPipeLine::AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::wstring& hitGroupName, const std::string& meshDataName,const PhysicsBaseMaterial material)
+std::shared_ptr<DXRMeshData> DXRPipeLine::AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::wstring& hitGroupName, const std::string& meshDataName, const PhysicsBaseMaterial material, const std::string& textureName)
 {
 	if (pMeshData == nullptr)
 	{
 		throw std::runtime_error("MeshDatas is null.");
 	}
 
-	CreateResourceView(pMeshData);
-	auto dxrMesh = std::make_shared<DXRMeshData>(hitGroupName, material);
+	std::shared_ptr<DXRMeshData> dxrMesh = nullptr;
 
-	dxrMesh->m_ibView = pMeshData->m_ib_h_gpu_descriptor_handle;
-	dxrMesh->m_vbView = pMeshData->m_vb_h_gpu_descriptor_handle;
+
+	if (textureName != "")
+	{
+		dxrMesh = std::make_shared<DXRMeshData>(hitGroupName, material, textureName);
+	}
+	else
+	{
+		dxrMesh = std::make_shared<DXRMeshData>(hitGroupName, material);
+	}
+
+	CreateResourceView(pMeshData, dxrMesh);
+
+	dxrMesh->_ibView = pMeshData->m_ib_h_gpu_descriptor_handle;
+	dxrMesh->_vbView = pMeshData->m_vb_h_gpu_descriptor_handle;
 	//dxrMesh->m_matView = pMeshData->m_mat_h_gpu_descriptor_handle;
 
 	// 現状は1メッシュデータにつき、一つのヒットグループを扱っているので
-	dxrMesh->hitGropIndex = _meshDatas.size();
-	dxrMesh->meshName = meshDataName;
+	dxrMesh->_hitGropIndex = _meshDatas.size();
+	dxrMesh->_meshName = meshDataName;
+
+
 
 	CreateBLAS(dxrMesh, pMeshData);
 
@@ -244,7 +268,7 @@ void DXRPipeLine::CreateBLAS(std::shared_ptr<DXRMeshData> pDXRMeshData, std::sha
 	std::shared_ptr<AccelerationStructureBuffers> buffers = std::make_shared<AccelerationStructureBuffers>();
 	buffers->pScratch = CreateBuffer(info.ScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, defaultHeapProps);
 	buffers->pScratch->SetName(L"BLAS_ScratchBuffer");
-	
+
 	buffers->pResult = CreateBuffer(info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, defaultHeapProps);
 	buffers->pResult->SetName(L"BLAS_ResultBuffer");
 
@@ -261,7 +285,7 @@ void DXRPipeLine::CreateBLAS(std::shared_ptr<DXRMeshData> pDXRMeshData, std::sha
 
 	DirectXGraphics::GetInstance().GetCommandList()->ResourceBarrier(1, &uavBarrier);
 
-	pDXRMeshData->_Buffer = buffers;
+	pDXRMeshData->_asBuffer = buffers;
 	pDXRMeshData->_blas = buffers->pResult;
 }
 
@@ -340,7 +364,7 @@ void DXRPipeLine::UpdateTLAS()
 
 void DXRPipeLine::DrawDebugGUI()
 {
-	if(ImGui::BeginTabItem("DXRPipeline"))
+	if (ImGui::BeginTabItem("DXRPipeline"))
 	{
 		ImGui::Text("InstanceCount:%i", _instances.size());
 		ImGui::EndTabItem();
@@ -364,13 +388,13 @@ void DXRPipeLine::UpdateMaterial()
 void DXRPipeLine::Render(ID3D12Resource* pRenderResource, SkyBox* pSkyBox)
 {
 	auto commandList = DirectXGraphics::GetInstance().GetCommandList();
-	
+
 	DirectXGraphics::GetInstance().ResourceBarrier(
 		_OutPutResource.Get(),
 		D3D12_RESOURCE_STATE_COPY_SOURCE,
 		D3D12_RESOURCE_STATE_UNORDERED_ACCESS
 	);
-	
+
 	UpdateTLAS();
 
 	// カメラ用のCBの更新
@@ -460,7 +484,7 @@ void DXRPipeLine::CreateTopLevelAS()
 	uint64_t tlasSize;
 
 	const int instanceCount = _instances.size();
-	
+
 	_instanceDescBuffers.resize(2);
 
 	auto size = UINT(_MaxInstanceCount * sizeof(D3D12_RAYTRACING_INSTANCE_DESC));
@@ -495,7 +519,7 @@ void DXRPipeLine::CreateTopLevelAS()
 	_AccelerationStructureBuffers.pUpdate = CreateBuffer(info.UpdateScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, defaultHeapProps);
 	_AccelerationStructureBuffers.pUpdate->SetName(L"TLAS_UpdateBuffer");
 
-	
+
 	tlasSize = info.ResultDataMaxSizeInBytes;
 
 	_AccelerationStructureBuffers.pInstanceDesc = _instanceDescBuffers[currentBuffer];
@@ -599,11 +623,11 @@ ComPtr<ID3D12RootSignature> DXRPipeLine::CreateClosestHitRootDesc()
 	rangeVB.NumDescriptors = 1;
 	rangeVB.RegisterSpace = 1;
 
-	//D3D12_DESCRIPTOR_RANGE rangeMatB{};
-	//rangeMatB.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-	//rangeMatB.BaseShaderRegister = 0;
-	//rangeMatB.NumDescriptors = 1;
-	//rangeMatB.RegisterSpace = 1;
+	D3D12_DESCRIPTOR_RANGE rangeTexture{};
+	rangeTexture.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	rangeTexture.BaseShaderRegister = 2;
+	rangeTexture.NumDescriptors = 1;
+	rangeTexture.RegisterSpace = 1;
 
 
 
@@ -614,7 +638,7 @@ ComPtr<ID3D12RootSignature> DXRPipeLine::CreateClosestHitRootDesc()
 	//rangeMat.RegisterSpace = 1;
 
 
-	std::array<D3D12_ROOT_PARAMETER, 3> rootParams;
+	std::array<D3D12_ROOT_PARAMETER, 4> rootParams;
 
 	rootParams[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
@@ -626,10 +650,16 @@ ComPtr<ID3D12RootSignature> DXRPipeLine::CreateClosestHitRootDesc()
 	rootParams[1].DescriptorTable.NumDescriptorRanges = 1;
 	rootParams[1].DescriptorTable.pDescriptorRanges = &rangeVB;
 
+
 	rootParams[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-	rootParams[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	rootParams[2].Descriptor.ShaderRegister = 0;
-	rootParams[2].Descriptor.RegisterSpace = 1;
+	rootParams[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	rootParams[2].DescriptorTable.NumDescriptorRanges = 1;
+	rootParams[2].DescriptorTable.pDescriptorRanges = &rangeTexture;
+
+	rootParams[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	rootParams[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParams[3].Descriptor.ShaderRegister = 0;
+	rootParams[3].Descriptor.RegisterSpace = 1;
 
 	D3D12_ROOT_SIGNATURE_DESC rootSigDesc{};
 	rootSigDesc.NumParameters = UINT(rootParams.size());
@@ -656,6 +686,7 @@ void DXRPipeLine::CreatePipeleineState(const wchar_t* shaderPath)
 	const WCHAR* rayGenShader = L"rayGen";
 	const WCHAR* hitGroup = L"HitGroup";
 	const WCHAR* closeHitShader = L"chs";
+	const WCHAR* anyHitShader = L"anyHit";
 
 
 	CD3DX12_STATE_OBJECT_DESC subObjects;
@@ -674,11 +705,13 @@ void DXRPipeLine::CreatePipeleineState(const wchar_t* shaderPath)
 	dxilLib->DefineExport(L"miss");
 	dxilLib->DefineExport(L"chs");
 	dxilLib->DefineExport(L"shadowMiss");
+	dxilLib->DefineExport(L"anyHit");
 
 	// ヒットグループの設定
 	CD3DX12_HIT_GROUP_SUBOBJECT* hit_group_subobject = subObjects.CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
 	hit_group_subobject->SetHitGroupType(D3D12_HIT_GROUP_TYPE_TRIANGLES);
 	hit_group_subobject->SetClosestHitShaderImport(L"chs");
+	hit_group_subobject->SetAnyHitShaderImport(L"anyHit");
 	hit_group_subobject->SetHitGroupExport(L"HitGroup");
 
 	// Global RootSigの設定
@@ -689,7 +722,7 @@ void DXRPipeLine::CreatePipeleineState(const wchar_t* shaderPath)
 	// Local RootSigの設定
 	auto rsModel = subObjects.CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
 	rsModel->SetRootSignature(_closesHitLocalRootSignature.Get());
-
+	// HitGroup
 	auto lrsAssocModel = subObjects.CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
 	lrsAssocModel->AddExport(L"HitGroup");
 	lrsAssocModel->SetSubobjectToAssociate(*rsModel);
@@ -736,9 +769,10 @@ void DXRPipeLine::CreateShaderTable()
 
 
 	// HitGroup
-	// ShaderIdenfierとVB/IB/Materialのデスクリプタ
+	// ShaderIdenfierとVB/IB/Texture/Materialのデスクリプタ
 	UINT hitGroupRecordSize = 0;
 	hitGroupRecordSize += D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+	hitGroupRecordSize += sizeof(D3D12_GPU_DESCRIPTOR_HANDLE);
 	hitGroupRecordSize += sizeof(D3D12_GPU_DESCRIPTOR_HANDLE);
 	hitGroupRecordSize += sizeof(D3D12_GPU_DESCRIPTOR_HANDLE);
 	hitGroupRecordSize = align_to(ShaderRecordAlignment, hitGroupRecordSize);
@@ -917,7 +951,7 @@ void DXRPipeLine::CreateShaderResource()
 
 }
 
-void DXRPipeLine::CreateResourceView(std::shared_ptr<MeshData> mesh)
+void DXRPipeLine::CreateResourceView(std::shared_ptr<MeshData> mesh, std::shared_ptr<DXRMeshData> dxr_mesh_data)
 {
 
 	_IncSize = DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(
@@ -955,9 +989,23 @@ void DXRPipeLine::CreateResourceView(std::shared_ptr<MeshData> mesh)
 		_AllocateCount,
 		_IncSize
 	);
-	;
+
 	auto ib_gpuHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(
 		_SrvUavHeap->GetGPUDescriptorHandleForHeapStart(),
+		_AllocateCount,
+		_IncSize
+	);;
+
+	_AllocateCount++;
+
+	auto texture_gpuHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(
+		_SrvUavHeap->GetGPUDescriptorHandleForHeapStart(),
+		_AllocateCount,
+		_IncSize
+	);
+
+	auto texture_cpuHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(
+		_SrvUavHeap->GetCPUDescriptorHandleForHeapStart(),
 		_AllocateCount,
 		_IncSize
 	);;
@@ -997,6 +1045,21 @@ void DXRPipeLine::CreateResourceView(std::shared_ptr<MeshData> mesh)
 	mesh->m_vb_h_gpu_descriptor_handle = vb_gpuHandle;
 	mesh->m_ib_h_gpu_descriptor_handle = ib_gpuHandle;
 
+	D3D12_SHADER_RESOURCE_VIEW_DESC textureSRVDesc = {};
+	textureSRVDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	textureSRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	textureSRVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	textureSRVDesc.Texture2D.MipLevels = 1;
+
+
+	// テクスチャバッファ
+	textureSRVDesc.Format = dxr_mesh_data->_texture.Get()->GetDesc().Format;
+	DirectXDevice::GetInstance().GetDevice()->CreateShaderResourceView(
+		dxr_mesh_data->_texture.Get(),
+		&textureSRVDesc,
+		texture_cpuHandle);
+
+	dxr_mesh_data->_textureView = texture_gpuHandle;
 }
 
 void DXRPipeLine::DeleteInstance()
@@ -1024,7 +1087,7 @@ void DXRPipeLine::CreateGlobalRootSignature()
 	// CubeMapテクスチャをt1レジスタに
 	CD3DX12_DESCRIPTOR_RANGE descRangeSkyBoxTex;
 	descRangeSkyBoxTex.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
-	
+
 	// ポイントライト
 	CD3DX12_DESCRIPTOR_RANGE descPointLights;
 	descPointLights.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2);
@@ -1090,7 +1153,7 @@ void DXRPipeLine::UpdateMaterialCB()
 
 	for (int i = 0; i < meshCount; ++i)
 	{
-		mats[i] = _meshDatas[i]->_Mat;
+		mats[i] = _meshDatas[i]->_mat;
 	}
 
 	auto bufferSize = sizeof(PhysicsBaseMaterial) * mats.size();
@@ -1112,15 +1175,15 @@ void DXRPipeLine::CreateMaterialCB()
 
 	for (int i = 0; i < meshCount; ++i)
 	{
-		mats[i] = _meshDatas[i]->_Mat;
+		mats[i] = _meshDatas[i]->_mat;
 	}
 
 	auto bufferSize = sizeof(PhysicsBaseMaterial) * mats.size();
 
 	// アライメント調整
 	bufferSize = (bufferSize + 0xff) & ~0xff;
-	
-	
+
+
 	_materialCB = CreateBuffer(bufferSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ,
 		uploadHeapProps);
 
@@ -1153,7 +1216,7 @@ UINT DXRPipeLine::WriteGPUDescriptor(void* dst, const D3D12_GPU_DESCRIPTOR_HANDL
 	return UINT(sizeof(handle));
 }
 
-UINT DXRPipeLine::WriteGPUResourceAddr(void* dst,const D3D12_GPU_VIRTUAL_ADDRESS addr)
+UINT DXRPipeLine::WriteGPUResourceAddr(void* dst, const D3D12_GPU_VIRTUAL_ADDRESS addr)
 {
 	memcpy(dst, &addr, sizeof(addr));
 
@@ -1174,9 +1237,10 @@ uint8_t* DXRPipeLine::WriteMeshShaderRecord(uint8_t* dst, const std::shared_ptr<
 	}
 
 	dst += WriteShaderIdentifer(dst, id);
-	
-	dst += WriteGPUDescriptor(dst, mesh->m_ibView);
-	dst += WriteGPUDescriptor(dst, mesh->m_vbView);
+
+	dst += WriteGPUDescriptor(dst, mesh->_ibView);
+	dst += WriteGPUDescriptor(dst, mesh->_vbView);
+	dst += WriteGPUDescriptor(dst, mesh->_textureView);
 
 	// バッファのアドレスを直接書き込み
 	dst += WriteGPUResourceAddr(dst, address);
@@ -1190,7 +1254,7 @@ D3D12_RAYTRACING_GEOMETRY_DESC DXRPipeLine::GetGeomtryDesc(std::shared_ptr<MeshD
 {
 	auto geomtryDesc = D3D12_RAYTRACING_GEOMETRY_DESC{};
 	geomtryDesc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
-	geomtryDesc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
+	geomtryDesc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_NONE;;
 
 	auto vertexBufferDesc = meshData->GetVertexBuffer()->GetResourceDesc();
 	auto indexBufferDesc = meshData->GetIndexBuffer()->GetResourceDesc();

@@ -81,6 +81,7 @@ RWTexture2D<float4> gOutput : register(u0);
 // Local HitGroup
 StructuredBuffer<uint> indexBuffer : register(t0, space1);
 StructuredBuffer<Vertex> vertexBuffer : register(t1, space1);
+Texture2D<float4> texture : register(t2, space1);
 ConstantBuffer<Material> matBuffer : register(b0, space1);
 
 static const float PI = 3.1415926f;
@@ -284,7 +285,7 @@ Vertex GetHitVertex(MyAttribute attrib)
         float w = weights[i];
         v.pos += vertexBuffer[index].pos * w;
         v.normal += vertexBuffer[index].normal * w;
-
+        v.uv += vertexBuffer[index].uv * w;
     }
 
     v.normal = normalize(v.normal);
@@ -557,6 +558,22 @@ void shadowMiss(inout ShadowPayload payload)
 }
 
 
+[shader("anyhit")]
+void anyHit(inout Payload payload,in MyAttribute attribs)
+{
+    Vertex vtx = GetHitVertex(attribs);
+	
+    float4 tex = texture.SampleLevel(gSampler, vtx.uv, 0.0f);
+
+
+    if (tex.w <= 0.0f)
+    {
+        IgnoreHit();
+    }
+
+
+}
+
 [shader("closesthit")]
 void chs(inout Payload payload, in MyAttribute attribs)
 {
@@ -577,12 +594,20 @@ void chs(inout Payload payload, in MyAttribute attribs)
     float roughness = matBuffer.roughness;
     float refract = matBuffer.refract;
     float transmission = matBuffer.transmission;
+
+    float4 tex = texture.SampleLevel(gSampler, vtx.uv, 0.0f);
+    albedo *= tex;
 	
     bool isRefract = (transmission < 1.0f) ? true : false;
     bool isReflection = (metallic.w > 0.0f) ? true : false;
-		
+
+	
+
+
     float3 diffuseColor = lerp(albedo.rgb, float3(0.0f, 0.0f, 0.0f), metallic.w);
     float3 specularColor = lerp(float3(0.04f, 0.04f, 0.04f), albedo.rgb, metallic.w);
+
+
 
     IncidentLight light;
 	
