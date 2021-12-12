@@ -6,7 +6,7 @@
 #include "InterSectInfo.h"
 
 CollisionComponent::CollisionComponent(Actor* user, CollisionType collType, const std::string& collisonTag, int upadeteOredr)
-	:Component(user, upadeteOredr), _collisionType(collType), _collisionTag(collisonTag), _treeObject(nullptr),_isDrawDebug(true)
+	:Component(user, upadeteOredr), _collisionType(collType), _collisionTag(collisonTag), _treeObject(nullptr),_isDrawDebug(true), _rigidBodyComponent(nullptr)
 {
 	_collisionIndex = CollisionTagManagaer::GetInstance().GetTagIndex(collisonTag);
 }

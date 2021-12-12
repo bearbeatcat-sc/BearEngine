@@ -112,6 +112,17 @@ void MainGame::Init()
 	const SimpleMath::Vector3 basePos = SimpleMath::Vector3(-5.5f, -2.5f, -5.5f);
 
 
+	auto sphere = new Sphere(SimpleMath::Vector3(-2.0f, 0.0f, 0.6f), Sphere::SphereType_Normal);
+	sphere->SetScale(SimpleMath::Vector3(1.0f));
+	sphere->SetRotation(SimpleMath::Vector3(3.0f, 0.0f, 0.0f));
+	ActorManager::GetInstance().AddActor(sphere);
+
+	//auto sphere2 = new Sphere(SimpleMath::Vector3(-2.8f, 6.0f, 0.6f), Sphere::SphereType_Normal);
+	//sphere2->SetScale(SimpleMath::Vector3(1.0f));
+	//sphere2->SetRotation(SimpleMath::Vector3(3.0f, 0.0f, 0.0f));
+	//ActorManager::GetInstance().AddActor(sphere2);
+
+	
 	auto floor = new Cube(SimpleMath::Vector3(1.45f, -2.5f, 0.640f), SimpleMath::Vector3(grid_size_x, 1, grid_size_z), 300.0f, "GrayCube", false);
 	floor->SetRotation(SimpleMath::Vector3(0, 0.0f, 0.0f));
 	floor->SetActorName("Floor");
@@ -124,11 +135,11 @@ void MainGame::Init()
 	//wall->SetRotation(SimpleMath::Vector3(0, 0, -0.250f));
 	//wall->OnStatic(true,true);
 
-	auto wall2 = new Cube(SimpleMath::Vector3(11, 4.5f, 7.260f), SimpleMath::Vector3(grid_size_x, 6, 1), 300.0f, "WhiteCube", false);
-	ActorManager::GetInstance().AddActor(wall2);
-	wall2->SetActorName("Wall");
-	wall2->SetRotation(SimpleMath::Vector3(0.0f, 0.0f, 0));
-	wall2->OnStatic(true, true);
+	//auto wall2 = new Cube(SimpleMath::Vector3(11, 4.5f, 7.260f), SimpleMath::Vector3(grid_size_x, 6, 1), 300.0f, "WhiteCube", false);
+	//ActorManager::GetInstance().AddActor(wall2);
+	//wall2->SetActorName("Wall");
+	//wall2->SetRotation(SimpleMath::Vector3(0.0f, 0.0f, 0));
+	//wall2->OnStatic(true, true);
 
 	//auto leftWall = new Cube(SimpleMath::Vector3(-7.0f, 3.0f, -0.0f), SimpleMath::Vector3(1, 6, grid_size_x), 300.0f, "RoughCube", false);
 	//ActorManager::GetInstance().AddActor(leftWall);
@@ -142,26 +153,18 @@ void MainGame::Init()
 	//auto backWall = new Cube(SimpleMath::Vector3(1.5f, 3.0f, -9.0f), SimpleMath::Vector3(grid_size_x, 6, 1), 300.0f, "RoughCube", false);
 	//ActorManager::GetInstance().AddActor(backWall);
 
-	auto sphere = new Sphere(SimpleMath::Vector3(-2.0f, 0.0f, 0.6f), Sphere::SphereType_Normal);
-	sphere->SetScale(SimpleMath::Vector3(1.0f));
-	sphere->SetRotation(SimpleMath::Vector3(3.0f, 0.0f, 0.0f));
-	ActorManager::GetInstance().AddActor(sphere);
-
-	auto sphere2 = new Sphere(SimpleMath::Vector3(-2.8f, 6.0f, 0.6f), Sphere::SphereType_Normal);
-	sphere2->SetScale(SimpleMath::Vector3(1.0f));
-	sphere2->SetRotation(SimpleMath::Vector3(3.0f, 0.0f, 0.0f));
-	ActorManager::GetInstance().AddActor(sphere2);
 
 	//auto sphere2 = new Sphere(SimpleMath::Vector3(3.0f, -150.0f, 3.0f), Sphere::SphereType_NormalLowPoly);
 	//sphere2->SetScale(SimpleMath::Vector3(300.0f));
 	//sphere2->SetRotation(SimpleMath::Vector3(-2.4f, 0.0f, 0.0f));
 	//ActorManager::GetInstance().AddActor(sphere2);
 
-	auto cube = new Cube(SimpleMath::Vector3(4.5f, -1.0f, -0.810f), SimpleMath::Vector3(1.0f,1.0f,1.0f), 300.0f, "RoughCube", false);
-	cube->SetRotation(SimpleMath::Vector3(0, -0.1f, -0.3f));
-	cube->SetActorName("Cube");
-	cube->OnStatic(true, false);
-	ActorManager::GetInstance().AddActor(cube);
+	//auto cube = new Cube(SimpleMath::Vector3(4.5f, 1.0f, -0.810f), SimpleMath::Vector3(1.0f, 1.0f, 1.0f), 300.0f, "RoughCube", false);
+	//cube->SetRotation(SimpleMath::Vector3(0, -0.1f, -0.3f));
+	//cube->SetActorName("Cube");
+	//cube->OnStatic(true, false);
+	//ActorManager::GetInstance().AddActor(cube);
+
 
 	//for (int i = 0; i < 200; ++i)
 	//{
@@ -204,6 +207,15 @@ void MainGame::Update()
 	_blenderMonkyMaterial._albedo.z = fmodf(_blenderMonkyMaterial._albedo.z,1.0f);
 
 	_test->UpdateMaterial(_blenderMonkyMaterial);
+
+	if(DirectXInput::GetInstance().IsKeyDown(DIK_SPACE))
+	{
+		auto cube = new Cube(SimpleMath::Vector3(4.5f, -1.0f, -0.810f), SimpleMath::Vector3(1.0f, 1.0f, 1.0f), 300.0f, "RoughCube", false);
+		cube->SetRotation(SimpleMath::Vector3(0, -0.1f, -0.3f));
+		cube->SetActorName("Cube");
+		cube->OnStatic(true, false);
+		ActorManager::GetInstance().AddActor(cube);
+	}
 	
 	if (!_IsGenerate)
 	{

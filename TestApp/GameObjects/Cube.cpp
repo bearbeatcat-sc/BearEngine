@@ -95,7 +95,7 @@ void Cube::Init()
 	AddComponent(_rigidBodyComponent);
 	m_pCollisionComponent->RegistRigidBody(_rigidBodyComponent);
 	_rigidBodyComponent->_Mass = 1.0f;
-	_rigidBodyComponent->_Elasticty = 1.0f;
+	_rigidBodyComponent->_Elasticty = 3.0f;
 	_rigidBodyComponent->_AddGravity = SimpleMath::Vector3(-0.6f, 0.0f, 0.0f);
 
 	_rigidBodyComponent->SetStaticFlag(_IsStaticPosition, _IsStaticRotate);

@@ -25,6 +25,10 @@ const bool CollisionInterSect::SphereToOBBInterSect(SphereCollisionComponent* sp
 
 	interSect._PoisitionA = pos;
 	interSect._PoisitionB = obb->GetCenter();
+
+	float test = CMP(dot, 0.0f);
+
+
 	
 	if (CMP(dot, 0.0f))
 	{
@@ -37,18 +41,22 @@ const bool CollisionInterSect::SphereToOBBInterSect(SphereCollisionComponent* sp
 		}
 
 		interSect._Normal = v2;
-		interSect._Normal.Normalize();
 	}
 	else
 	{
-		interSect._Normal = point - pos;
-		interSect._Normal.Normalize();
+
+
+		interSect._Normal = pos - point;
+
 	}
+
+	interSect._Normal.Normalize();
+
 	
 	//interSect._InterSectPositionA = pos + interSect._Normal * radius;
 
-	auto outsidePoint = pos + interSect._Normal * radius;;
-	auto vec = (outsidePoint - point);
+	auto outsidePoint = pos - interSect._Normal * radius;
+	auto vec = (point - outsidePoint);
 
 	//float distance = sqrtf(vec.Dot(vec));
 	float distance = sqrtf(vec.Length());
@@ -56,13 +64,11 @@ const bool CollisionInterSect::SphereToOBBInterSect(SphereCollisionComponent* sp
 	interSect.depth = distance * 0.5f;
 
 	interSect._InterSectPositions.push_back(
-		point + (outsidePoint - point) * 0.5f);
-
-
+		point - (outsidePoint + point) * 0.5f);
 
 
 	interSect._InterSectPositionA = pos + interSect._Normal * radius;
-	interSect._InterSectPositionB = point;
+	interSect._InterSectPositionB = point + (outsidePoint - point) * 0.5f;
 
 	return true;
 }
@@ -406,8 +412,8 @@ const bool CollisionInterSect::SphereToSphereInterSect(SphereCollisionComponent*
 	float dtp = thisRadius - interSect.depth;
 	SimpleMath::Vector3 contact = thisPos + normal * dtp;
 
-	interSect._InterSectPositionA = thisPos + normal * thisRadius;
-	interSect._InterSectPositionB = otherPos - normal * otherRadius;
+	//interSect._InterSectPositionA = thisPos + normal * thisRadius;
+	//interSect._InterSectPositionB = otherPos - normal * otherRadius;
 
 	interSect._InterSectPositions.push_back(contact);
 

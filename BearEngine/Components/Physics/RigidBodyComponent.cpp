@@ -19,12 +19,12 @@ void RigidBodyComponent::UpdatePosition()
 {
 	if (_isStaticPosition)return;
 
-
 	AddGravity();
+	
 	SimpleMath::Vector3 accel = _Forces * InvMass();
 
 	_Velocity += accel * Time::DeltaTime;
-	//_Velocity *= 0.98f;
+	_Velocity *= 0.98f;
 
 	auto position = _user->GetPosition();
 	position += _Velocity * Time::DeltaTime;
@@ -38,7 +38,7 @@ void RigidBodyComponent::UpdateRotation()
 	if (_isStaticRotate)return;
 
 	auto qu = _user->GetVecRotation();
-	qu += _AngVel * Time::DeltaTime;
+	qu += _AngVel;
 
 	_user->SetRotation(qu);
 
@@ -100,7 +100,7 @@ void RigidBodyComponent::SetStaticFlag(bool positionFlag, bool rotateFlag)
 void RigidBodyComponent::OnResolveContact(Actor* other, CollisionComponent* otherCollisionComponent, InterSectInfo& inter_sect_info)
 {
 	// �����v�Z�͍s��Ȃ��B
-	if (!IsCalculatePhysics() || !otherCollisionComponent->GetRigidBody()->IsCalculatePhysics())
+	if (!IsCalculatePhysics() && !otherCollisionComponent->GetRigidBody()->IsCalculatePhysics())
 	{
 		return;
 	}
@@ -146,6 +146,18 @@ void RigidBodyComponent::DrawProperties()
 		if (ImGui::DragFloat3("Velocity", f_velocity, 0.01f))
 		{
 			_Velocity = DirectX::SimpleMath::Vector3(f_velocity);
+		}
+
+		if (ImGui::DragFloat("Mass", &_Mass, 0.01f))
+		{
+		}
+
+		if (ImGui::DragFloat("Elasticty", &_Elasticty, 0.01f))
+		{
+		}
+
+		if (ImGui::DragFloat("Friction", &_Friction, 0.01f))
+		{
 		}
 
 		if (ImGui::Checkbox("IsStaticPosition", &_isStaticPosition))
@@ -219,7 +231,7 @@ void RigidBodyComponent::CalculateMoment(Actor* other, std::shared_ptr<RigidBody
 	// お互い、まったく質量を持たない場合は計算できない
 	if (invMassSum == 0.0f) { return; }
 
-	SimpleMath::Vector3 r1 = inter_sect_info._InterSectPositionA - inter_sect_info._PoisitionA;
+	SimpleMath::Vector3 r1 = inter_sect_info._InterSectPositionB - inter_sect_info._PoisitionA;
 	SimpleMath::Vector3 r2 = inter_sect_info._InterSectPositionB - inter_sect_info._PoisitionB;
 
 	auto i1 = InvTensor();
@@ -316,8 +328,8 @@ void RigidBodyComponent::CalculateMoment(Actor* other, std::shared_ptr<RigidBody
 	auto i2 = otherRigidBody->InvTensor();
 
 	//auto relativeVel = otherRigidBody->_Velocity - _Velocity;
-	auto relativeVel = (otherRigidBody->_Velocity + otherRigidBody->_AngVel.Cross(r2))
-		- (_Velocity + _AngVel.Cross(r1));
+	//auto relativeVel = (_Velocity + _AngVel.Cross(r1)) - (otherRigidBody->_Velocity + otherRigidBody->_AngVel.Cross(r2));
+	auto relativeVel = (otherRigidBody->_Velocity + otherRigidBody->_AngVel.Cross(r2)) - (_Velocity + _AngVel.Cross(r1));
 
 	auto relativeNorm = inter_sect_info._Normal;
 	relativeNorm.Normalize();
@@ -446,7 +458,7 @@ SimpleMath::Matrix RigidBodyComponent::InvTensor(SphereCollisionComponent* spher
 	float ix = 0.0f;
 	float iy = 0.0f;
 	float iz = 0.0f;
-	float iw = 0.0f;
+	float iw = 1.0f;
 
 	if (_Mass != 0.0f)
 	{
@@ -458,7 +470,10 @@ SimpleMath::Matrix RigidBodyComponent::InvTensor(SphereCollisionComponent* spher
 		iy = r2 * _Mass * fraction;
 		iz = r2 * _Mass * fraction;
 
-		iw = 1.0f;
+	}
+	else
+	{
+		return SimpleMath::Matrix::Identity;
 	}
 
 
@@ -494,6 +509,10 @@ SimpleMath::Matrix RigidBodyComponent::InvTensor(OBBCollisionComponent* obb_coll
 		iz = (x2 + y2) * _Mass * fraction;
 
 		iw = 1.0f;
+	}
+	else
+	{
+		return SimpleMath::Matrix::Identity;
 	}
 
 	auto result = SimpleMath::Matrix(

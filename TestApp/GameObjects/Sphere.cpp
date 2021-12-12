@@ -118,7 +118,7 @@ void Sphere::Init()
 
 	_rigidBodyComponent->_AddGravity = SimpleMath::Vector3(0, -8.0f, 0.0f);
 	_rigidBodyComponent->_Mass = 1.0f;
-	_rigidBodyComponent->_Elasticty = 1.0f;
+	_rigidBodyComponent->_Elasticty = 3.0f;
 
 	_rigidBodyComponent->SetStaticFlag(true, false);
 	
