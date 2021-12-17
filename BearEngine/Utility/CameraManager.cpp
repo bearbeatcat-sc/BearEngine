@@ -1,6 +1,9 @@
 #include "CameraManager.h"
 #include "Camera.h"
 
+#include <stdexcept>
+
+
 void CameraManager::Init()
 {
 

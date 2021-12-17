@@ -33,7 +33,8 @@ public:
 	void SetChild(Actor* child);	
 	std::vector<Actor*>& GetChildren();
 
-	const DirectX::SimpleMath::Vector3 GetPosition() ;
+	const DirectX::SimpleMath::Vector3 GetPosition();
+	const DirectX::SimpleMath::Vector3 GetLocalPosition();
 	void SetPosition(const DirectX::SimpleMath::Vector3& pos);
 
 	const DirectX::SimpleMath::Vector3& GetScale() ;

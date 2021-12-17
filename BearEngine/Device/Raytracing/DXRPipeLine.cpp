@@ -101,7 +101,7 @@ DXRPipeLine::DXRPipeLine()
 	_meshDatas.clear();
 	_instances.clear();
 
-	_AllocateCount = 3;
+	_AllocateCount = _SRVResourceCount;
 }
 
 bool DXRPipeLine::InitPipeLine()
@@ -120,6 +120,7 @@ bool DXRPipeLine::InitPipeLine()
 	CreateSceneCB();
 	CreateMaterialCB();
 	CreateShaderTable();
+	CreateResultBuffer();
 
 	return true;
 }
@@ -172,7 +173,7 @@ std::shared_ptr<DXRMeshData> DXRPipeLine::AddMeshData(std::shared_ptr<MeshData> 
 
 	std::shared_ptr<DXRMeshData> dxrMesh = nullptr;
 
-	
+
 	if (textureName != "")
 	{
 		dxrMesh = std::make_shared<DXRMeshData>(hitGroupName, pMeshData->GetPhysicsBaseMaterial(), textureName);
@@ -181,7 +182,7 @@ std::shared_ptr<DXRMeshData> DXRPipeLine::AddMeshData(std::shared_ptr<MeshData> 
 	{
 		dxrMesh = std::make_shared<DXRMeshData>(hitGroupName, pMeshData->GetPhysicsBaseMaterial());
 	}
-	
+
 	CreateResourceView(pMeshData, dxrMesh);
 
 	dxrMesh->_ibView = pMeshData->m_ib_h_gpu_descriptor_handle;
@@ -313,6 +314,8 @@ void DXRPipeLine::UpdateTLAS()
 		p_instance_desc[i].InstanceContributionToHitGroupIndex = _instances[i]->_raytracingInstanceDesc->InstanceContributionToHitGroupIndex;
 		p_instance_desc[i].AccelerationStructure = _instances[i]->_raytracingInstanceDesc->AccelerationStructure;
 
+		_instances[i]->_instnaceID = i;
+
 		SimpleMath::Matrix mat = _instances[i]->_matrix;
 		//memcpy(p_instance_desc[i].Transform, &mat, sizeof(_instances[i]->_raytracingInstanceDesc->Transform));
 
@@ -385,9 +388,15 @@ void DXRPipeLine::UpdateMaterial()
 	_IsUpdateMaterial = false;
 }
 
+const std::vector<HitResult>& DXRPipeLine::GetHitResult()
+{
+	return _hitResult;
+}
+
 void DXRPipeLine::Render(ID3D12Resource* pRenderResource, SkyBox* pSkyBox)
 {
 	auto commandList = DirectXGraphics::GetInstance().GetCommandList();
+	const int frameIndex = DirectXGraphics::GetInstance().GetBackBufferIndex();
 
 	DirectXGraphics::GetInstance().ResourceBarrier(
 		_OutPutResource.Get(),
@@ -395,7 +404,14 @@ void DXRPipeLine::Render(ID3D12Resource* pRenderResource, SkyBox* pSkyBox)
 		D3D12_RESOURCE_STATE_UNORDERED_ACCESS
 	);
 
+	DirectXGraphics::GetInstance().ResourceBarrier(
+		_hitResultResources[0].Get(),
+		D3D12_RESOURCE_STATE_COPY_SOURCE,
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS
+	);
+
 	UpdateTLAS();
+
 
 	// カメラ用のCBの更新
 	// 後でパラメータの変更したときだけ変えるようにする。
@@ -414,23 +430,39 @@ void DXRPipeLine::Render(ID3D12Resource* pRenderResource, SkyBox* pSkyBox)
 	skyboxHandle.ptr += DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	commandList->SetComputeRootDescriptorTable(GlobalRootParamter_SkyBoxTexture, skyboxHandle);
 
-
+	auto descriptorSize = DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	ID3D12DescriptorHeap* heaps[] = { _SrvUavHeap.Get() };
 	commandList->SetDescriptorHeaps(ARRAYSIZE(heaps), heaps);
 
 	// 加速構造のセット
-	D3D12_GPU_DESCRIPTOR_HANDLE srvHandle = _SrvUavHeap->GetGPUDescriptorHandleForHeapStart();
-	srvHandle.ptr += DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	commandList->SetComputeRootDescriptorTable(GlobalRootParamter_TLAS, srvHandle);
+	CD3DX12_GPU_DESCRIPTOR_HANDLE tlas_srv_handle(_SrvUavHeap->GetGPUDescriptorHandleForHeapStart(), DescriptrIndex_TLAS_SRV, descriptorSize);
+	commandList->SetComputeRootDescriptorTable(GlobalRootParamter_TLAS, tlas_srv_handle);
 
 	// ライトのセット
-	srvHandle.ptr += DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	commandList->SetComputeRootDescriptorTable(GlobalRootParamter_PointLight, srvHandle);
+	CD3DX12_GPU_DESCRIPTOR_HANDLE light_srv_handle(_SrvUavHeap->GetGPUDescriptorHandleForHeapStart(), DescriptrIndex_PointLights, descriptorSize);
+	commandList->SetComputeRootDescriptorTable(GlobalRootParamter_PointLight, light_srv_handle);
+
+	// ヒットリザルトのセット
+	//if(frameIndex == 0)
+	//{
+	//	CD3DX12_GPU_DESCRIPTOR_HANDLE hitResult_uav_handle(_SrvUavHeap->GetGPUDescriptorHandleForHeapStart(), DescriptrIndex_Result_UAV0, descriptorSize);
+	//	commandList->SetComputeRootDescriptorTable(GlobalRootParamter_HitResult, hitResult_uav_handle);
+	//}
+	//else
+	//{
+	//	CD3DX12_GPU_DESCRIPTOR_HANDLE hitResult_uav_handle(_SrvUavHeap->GetGPUDescriptorHandleForHeapStart(), DescriptrIndex_Result_UAV1, descriptorSize);
+	//	commandList->SetComputeRootDescriptorTable(GlobalRootParamter_HitResult, hitResult_uav_handle);
+	//}
+	//CD3DX12_GPU_DESCRIPTOR_HANDLE hitResult_uav_handle(_SrvUavHeap->GetGPUDescriptorHandleForHeapStart(), DescriptrIndex_Result_UAV0, descriptorSize);
+	//commandList->SetComputeRootDescriptorTable(GlobalRootParamter_HitResult, hitResult_uav_handle);
+
 
 	// カメラCBのセット
 	commandList->SetComputeRootConstantBufferView(GlobalRootParamter_SceneParams, _SceneCB->GetGPUVirtualAddress());
 	commandList->DispatchRays(&_dispathRaysDesc);
+
+
 
 	DirectXGraphics::GetInstance().ResourceBarrier(
 		_OutPutResource.Get(),
@@ -445,10 +477,18 @@ void DXRPipeLine::Render(ID3D12Resource* pRenderResource, SkyBox* pSkyBox)
 		D3D12_RESOURCE_STATE_COPY_DEST
 	);
 
+	DirectXGraphics::GetInstance().ResourceBarrier(
+		_hitResultResources[0].Get(),
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+		D3D12_RESOURCE_STATE_COPY_SOURCE
+	);
+
+
 	DirectXGraphics::GetInstance().GetCommandList()->CopyResource(
 		pRenderResource, _OutPutResource.Get()
 	);
 
+	UpdateHitResult();
 }
 
 
@@ -594,11 +634,14 @@ ComPtr<ID3D12RootSignature> DXRPipeLine::CreateRayGenRootDesc()
 	descUAV.BaseShaderRegister = 0;
 	descUAV.NumDescriptors = 1;
 
+
 	std::array<D3D12_ROOT_PARAMETER, 1> rootParams;
 	rootParams[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	rootParams[0].DescriptorTable.NumDescriptorRanges = 1;
 	rootParams[0].DescriptorTable.pDescriptorRanges = &descUAV;
+
+
 
 	ComPtr<ID3DBlob> blob, errBlob;
 	D3D12_ROOT_SIGNATURE_DESC rootSigDesc{};
@@ -630,6 +673,12 @@ ComPtr<ID3D12RootSignature> DXRPipeLine::CreateClosestHitRootDesc()
 	rangeTexture.RegisterSpace = 1;
 
 
+	D3D12_DESCRIPTOR_RANGE descHitResult{};
+	descHitResult.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+	descHitResult.BaseShaderRegister = 1;
+	descHitResult.NumDescriptors = 1;
+
+
 
 	//D3D12_DESCRIPTOR_RANGE rangeMat{};
 	//rangeMat.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
@@ -638,7 +687,7 @@ ComPtr<ID3D12RootSignature> DXRPipeLine::CreateClosestHitRootDesc()
 	//rangeMat.RegisterSpace = 1;
 
 
-	std::array<D3D12_ROOT_PARAMETER, 4> rootParams;
+	std::array<D3D12_ROOT_PARAMETER, 5> rootParams;
 
 	rootParams[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
@@ -660,6 +709,11 @@ ComPtr<ID3D12RootSignature> DXRPipeLine::CreateClosestHitRootDesc()
 	rootParams[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	rootParams[3].Descriptor.ShaderRegister = 0;
 	rootParams[3].Descriptor.RegisterSpace = 1;
+
+	rootParams[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	rootParams[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	rootParams[4].DescriptorTable.NumDescriptorRanges = 1;
+	rootParams[4].DescriptorTable.pDescriptorRanges = &descHitResult;
 
 	D3D12_ROOT_SIGNATURE_DESC rootSigDesc{};
 	rootSigDesc.NumParameters = UINT(rootParams.size());
@@ -774,6 +828,8 @@ void DXRPipeLine::CreateShaderTable()
 	hitGroupRecordSize += D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 	hitGroupRecordSize += sizeof(D3D12_GPU_DESCRIPTOR_HANDLE);
 	hitGroupRecordSize += sizeof(D3D12_GPU_DESCRIPTOR_HANDLE);
+	hitGroupRecordSize += sizeof(D3D12_GPU_DESCRIPTOR_HANDLE);
+	hitGroupRecordSize += sizeof(D3D12_GPU_VIRTUAL_ADDRESS);
 	hitGroupRecordSize += sizeof(D3D12_GPU_DESCRIPTOR_HANDLE);
 	hitGroupRecordSize = align_to(ShaderRecordAlignment, hitGroupRecordSize);
 
@@ -940,14 +996,15 @@ void DXRPipeLine::CreateShaderResource()
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.RaytracingAccelerationStructure.Location = _TopLevelASResource->GetGPUVirtualAddress();
 
-	D3D12_CPU_DESCRIPTOR_HANDLE srvHandle = _SrvUavHeap->GetCPUDescriptorHandleForHeapStart();
-	srvHandle.ptr += DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	DirectXDevice::GetInstance().GetDevice()->CreateShaderResourceView(nullptr, &srvDesc, srvHandle);
+	auto descriptorSize = DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE tlasSrvHandle(_SrvUavHeap->GetCPUDescriptorHandleForHeapStart(), DescriptrIndex_TLAS_SRV, descriptorSize);
 
+
+	DirectXDevice::GetInstance().GetDevice()->CreateShaderResourceView(nullptr, &srvDesc, tlasSrvHandle);
 
 	// ポイントライト
-	srvHandle.ptr += DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	LightManager::GetInstance().AllocateDescriptor(srvHandle);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE pointLightsSrvHandle(_SrvUavHeap->GetCPUDescriptorHandleForHeapStart(), DescriptrIndex_PointLights, descriptorSize);
+	LightManager::GetInstance().AllocateDescriptor(pointLightsSrvHandle);
 
 }
 
@@ -1092,10 +1149,15 @@ void DXRPipeLine::CreateGlobalRootSignature()
 	CD3DX12_DESCRIPTOR_RANGE descPointLights;
 	descPointLights.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2);
 
+	// 衝突時のリザルト
+	//CD3DX12_DESCRIPTOR_RANGE descHitResult;
+	//descHitResult.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 1);
+
 	rootParams[GlobalRootParamter_TLAS].InitAsDescriptorTable(1, &descRangeTLAS);
 	rootParams[GlobalRootParamter_SceneParams].InitAsConstantBufferView(0); //b0
 	rootParams[GlobalRootParamter_SkyBoxTexture].InitAsDescriptorTable(1, &descRangeSkyBoxTex);
 	rootParams[GlobalRootParamter_PointLight].InitAsDescriptorTable(1, &descPointLights);
+	//rootParams[GlobalRootParamter_HitResult].InitAsDescriptorTable(1, &descHitResult);
 
 	CD3DX12_STATIC_SAMPLER_DESC desc;
 	desc.Init(
@@ -1142,6 +1204,97 @@ void DXRPipeLine::CreateSceneCB()
 	sceneCBSize = (sceneCBSize + 0xff) & ~0xff;
 	_SceneCB = CreateBuffer(sceneCBSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ,
 		uploadHeapProps);
+}
+
+void DXRPipeLine::CreateResultBuffer()
+{
+	_hitResultResources.resize(2);
+	_uploadHitResultResources.resize(2);
+
+	std::vector<HitResult> hitDatas;
+	hitDatas.resize(_MaxInstanceCount);
+	_hitResult.resize(_MaxInstanceCount);
+
+	std::copy(hitDatas.begin(), hitDatas.end(), _hitResult.begin());
+
+
+	UINT dataSize = (sizeof(HitResult) * _MaxInstanceCount + 0xff) & ~0xff;
+	D3D12_HEAP_PROPERTIES defaultHeapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+	D3D12_HEAP_PROPERTIES uploadHeapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+
+
+	D3D12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(dataSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+	D3D12_RESOURCE_DESC uploadBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(dataSize);
+
+	for (int i = 0; i < _hitResultResources.size(); ++i)
+	{
+		DirectXDevice::GetInstance().GetDevice()->CreateCommittedResource(
+			&defaultHeapProp,
+			D3D12_HEAP_FLAG_NONE,
+			&bufferDesc,
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			nullptr,
+			IID_PPV_ARGS(&_hitResultResources[i])
+		);
+
+		_hitResultResources[i]->SetName(L"HitResultResource");
+	}
+
+	for (int i = 0; i < _hitResultResources.size(); ++i)
+	{
+		DirectXDevice::GetInstance().GetDevice()->CreateCommittedResource(
+			&uploadHeapProp,
+			D3D12_HEAP_FLAG_NONE,
+			&uploadBufferDesc,
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&_uploadHitResultResources[i])
+		);
+
+		_uploadHitResultResources[i]->SetName(L"HitUploadResultResource");
+	}
+
+	D3D12_SUBRESOURCE_DATA hitData = {};
+	hitData.pData = reinterpret_cast<UINT8*>(&hitDatas[0]);
+	hitData.RowPitch = dataSize;
+	hitData.SlicePitch = hitData.RowPitch;
+
+	auto commandList = DirectXGraphics::GetInstance().GetCommandList();
+	// リソースの転送
+	UpdateSubresources<1>(commandList, _hitResultResources[0].Get(), _uploadHitResultResources[0].Get(), 0, 0, 1, &hitData);
+	UpdateSubresources<1>(commandList, _hitResultResources[1].Get(), _uploadHitResultResources[1].Get(), 0, 0, 1, &hitData);
+
+	// リソースをコピー状態から、ピクセルシェーダー以外のシェーダーで扱うに変更
+	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(_hitResultResources[0].Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
+	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(_hitResultResources[1].Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
+
+	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+	uavDesc.Format = DXGI_FORMAT_UNKNOWN;
+	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+	uavDesc.Buffer.FirstElement = 0;
+	uavDesc.Buffer.NumElements = _MaxInstanceCount; // 要素数
+	uavDesc.Buffer.StructureByteStride = sizeof(HitResult);
+	uavDesc.Buffer.CounterOffsetInBytes = 0;
+	uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+
+	auto descriptorSize = DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE uavHandle0(_SrvUavHeap->GetCPUDescriptorHandleForHeapStart(), DescriptrIndex_Result_UAV0, descriptorSize);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE uavHandle1(_SrvUavHeap->GetCPUDescriptorHandleForHeapStart(), DescriptrIndex_Result_UAV1, descriptorSize);
+	DirectXDevice::GetInstance().GetDevice()->CreateUnorderedAccessView(_hitResultResources[0].Get(), nullptr, &uavDesc, uavHandle0);
+	DirectXDevice::GetInstance().GetDevice()->CreateUnorderedAccessView(_hitResultResources[1].Get(), nullptr, &uavDesc, uavHandle1);
+
+
+	// 読み戻し用のバッファ
+	D3D12_HEAP_PROPERTIES readbackHeapProperties{ CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK) };
+	D3D12_RESOURCE_DESC readbackBufferDesc{ CD3DX12_RESOURCE_DESC::Buffer(dataSize) };
+
+	DirectXDevice::GetInstance().GetDevice()->CreateCommittedResource(
+		&readbackHeapProperties,
+		D3D12_HEAP_FLAG_NONE,
+		&readbackBufferDesc,
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		nullptr,
+		IID_PPV_ARGS(&_readbackHitResultResource));
 }
 
 // メッシュ登録数が多い場合、処理が重くなる可能性
@@ -1241,9 +1394,11 @@ uint8_t* DXRPipeLine::WriteMeshShaderRecord(uint8_t* dst, const std::shared_ptr<
 	dst += WriteGPUDescriptor(dst, mesh->_ibView);
 	dst += WriteGPUDescriptor(dst, mesh->_vbView);
 	dst += WriteGPUDescriptor(dst, mesh->_textureView);
-
 	// バッファのアドレスを直接書き込み
 	dst += WriteGPUResourceAddr(dst, address);
+
+	auto hitResultDescriptrHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(_SrvUavHeap->GetGPUDescriptorHandleForHeapStart(), DescriptrIndex_Result_UAV0, DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+	dst += WriteGPUDescriptor(dst, hitResultDescriptrHandle);
 
 	dst = entryBegin + recordSize;
 
@@ -1292,5 +1447,51 @@ void DXRPipeLine::SceneCBUpdate()
 	_SceneCB->Map(0, nullptr, &dst);
 	memcpy(dst, &m_sceneParam, sizeof(SceneParam));
 	_SceneCB->Unmap(0, nullptr);
+}
+
+void DXRPipeLine::UpdateHitResult()
+{
+	UINT dataSize = (sizeof(HitResult) * _MaxInstanceCount + 0xff) & ~0xff;
+
+	auto commandList = DirectXGraphics::GetInstance().GetCommandList();
+	int frameIndex = 0;
+
+	commandList->CopyResource(
+		_readbackHitResultResource.Get(), _hitResultResources[ frameIndex].Get());
+
+	D3D12_RANGE readbackBufferRange{ 0,dataSize };
+	HitResult* pReadBackBufferData{};
+
+	if(_readbackHitResultResource->Map(
+		0,
+		&readbackBufferRange,
+		reinterpret_cast<void**>(&pReadBackBufferData)) == S_OK)
+	{
+		D3D12_RANGE emptyRange{ 0,0 };
+		_readbackHitResultResource->Unmap(
+			0,
+			&emptyRange
+		);
+
+		for(int i = 0; i < _instances.size(); ++i)
+		{
+			_hitResult[i] = pReadBackBufferData[i];
+		}
+
+		std::vector<HitResult> hitDatas;
+		hitDatas.resize(_MaxInstanceCount);
+
+
+		D3D12_SUBRESOURCE_DATA hitData = {};
+		hitData.pData = reinterpret_cast<UINT8*>(&hitDatas[0]);
+		hitData.RowPitch = dataSize;
+		hitData.SlicePitch = hitData.RowPitch;
+
+		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(_hitResultResources[frameIndex].Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COPY_DEST));
+		// リソースの転送
+		UpdateSubresources<1>(commandList, _hitResultResources[frameIndex].Get(), _uploadHitResultResources[frameIndex].Get(), 0, 0, 1, &hitData);
+		// リソースをコピー状態から、ピクセルシェーダー以外のシェーダーで扱うに変更
+		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(_hitResultResources[frameIndex].Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+	}
 }
 

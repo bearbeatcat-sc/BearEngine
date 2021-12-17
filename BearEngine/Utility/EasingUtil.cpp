@@ -3,41 +3,6 @@
 
 const float EasingUtil::PI = 3.14159265358979323846;
 
-float EasingUtil::ease_in(float t, float start, float end, float maxTime)
-{
-	float c = end - start;
-	float x = t / maxTime;
-	float v = ease_in_cubic(x);
-	float ret = c * v + start;
-	return ret;
-}
-
-float EasingUtil::ease_out(float t, float start, float end, float maxTime)
-{
-	float c = end - start;
-	float x = t / maxTime;
-	float v = ease_out_elastic(x);
-	float ret = c * v + start;
-	return ret;
-}
-
-float EasingUtil::ease_in_out(float t, float start, float end, float maxTime)
-{
-	float c = end - start;
-	float x = t / maxTime;
-	float v = ease_inout_cublic(x);
-	float ret = c * v + start;
-	return ret;
-}
-
-float EasingUtil::ease_out_quart(float t, float start, float end, float maxTime)
-{
-	float c = end - start;
-	float x = t / maxTime;
-	float v = ease_out_quart(x);
-	float ret = c * v + start;
-	return ret;
-}
 
 
 float EasingUtil::ease_in_none(float x)

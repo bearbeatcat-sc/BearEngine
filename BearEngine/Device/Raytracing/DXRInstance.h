@@ -24,7 +24,8 @@ public:
 
 	SimpleMath::Matrix _matrix;
 	std::shared_ptr<D3D12_RAYTRACING_INSTANCE_DESC> _raytracingInstanceDesc;
-	int _hitGroupIndex;
+	int _hitGroupIndex = -1;
+	int _instnaceID = -1;
 
 	std::shared_ptr<DXRMeshData> _pDXRMeshData;
 	bool _DestroyFlag;

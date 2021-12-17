@@ -54,7 +54,7 @@ void CollisionComponent::RegistRigidBody(std::shared_ptr<RigidBodyComponent> rig
 
 void CollisionComponent::OnResolveContact(Actor* other, CollisionComponent* otherCollisionComponent,InterSectInfo& inter_sect_info)
 {
-	if (!_rigidBodyComponent)return;;
+	if (!_rigidBodyComponent || !otherCollisionComponent->_rigidBodyComponent)return;;
 	
 	_rigidBodyComponent->OnResolveContact(other,otherCollisionComponent,inter_sect_info);
 }

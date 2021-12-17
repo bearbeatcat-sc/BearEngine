@@ -5,6 +5,7 @@
 #include "PointLight.h"
 #include "Device/DirectX/DirectXDevice.h"
 #include "Device/DirectX/Core/Buffer.h"
+#include <stdexcept>
 
 LightManager::LightManager()
 	:m_IsDebugMode(true)

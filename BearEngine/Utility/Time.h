@@ -21,6 +21,9 @@ private:
 	static float lastTime;
 	static float BackTickCount;
 	static int FPSCounter;
+
+	static LARGE_INTEGER TimeFreq;
+	static LARGE_INTEGER TimeStart;
 };
 
 #endif

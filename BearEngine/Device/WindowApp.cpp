@@ -1,5 +1,7 @@
 #include "WindowApp.h"
 
+#include <algorithm>
+
 #include "../Utility/Time.h"
 #include "../BearEngine.h"
 

@@ -91,6 +91,11 @@ const DirectX::SimpleMath::Vector3 Actor::GetPosition()
 	return DirectX::SimpleMath::Vector3(matrix._41, matrix._42, matrix._43);
 }
 
+const DirectX::SimpleMath::Vector3 Actor::GetLocalPosition()
+{
+	return m_Position;
+}
+
 void Actor::SetPosition(const DirectX::SimpleMath::Vector3& pos)
 {
 	m_Position = pos;
@@ -228,9 +233,19 @@ void Actor::RemoveChild()
 
 void Actor::UpdateChild()
 {
-	for (auto itr = m_Children.begin(); itr != m_Children.end(); itr++)
+	for (auto itr = m_Children.begin(); itr != m_Children.end();)
 	{
+		if((*itr)->GetDestroyFlag())
+		{
+			(*itr)->Clean();
+			delete (*itr);
+			(*itr) = nullptr;
+			itr = m_Children.erase(itr);
+			continue;
+		}
+
 		(*itr)->Update();
+		itr++;
 	}
 }
 

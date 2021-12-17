@@ -67,12 +67,16 @@ struct IncidentLight
     bool visible;
 };
 
+struct HitResult
+{
+    int _isHit;
+};
 
 // GlobalSignature
 RaytracingAccelerationStructure gRtScene : register(t0);
-ConstantBuffer<SceneCB> gSceneParam : register(b0);
 TextureCube<float4> gBackGround : register(t1);
 StructuredBuffer<PointLight> gPointLights : register(t2);
+ConstantBuffer<SceneCB> gSceneParam : register(b0);
 SamplerState gSampler : register(s0);
 
 // Local  RayGen
@@ -83,6 +87,8 @@ StructuredBuffer<uint> indexBuffer : register(t0, space1);
 StructuredBuffer<Vertex> vertexBuffer : register(t1, space1);
 Texture2D<float4> texture : register(t2, space1);
 ConstantBuffer<Material> matBuffer : register(b0, space1);
+RWStructuredBuffer<HitResult> hitResultBuffer : register(u1);
+
 
 static const float PI = 3.1415926f;
 static const float EPSILON = 1e-6;
@@ -467,6 +473,8 @@ void CalculateLight(in IncidentLight incident_light, float3 normal, float3 diffu
 [shader("raygeneration")]
 void rayGen()
 {
+
+
 	// Ç±Ç±ÇÁÇ÷ÇÒóvÅAï◊ã≠
     uint2 lanchIndex = DispatchRaysIndex().xy;
     float2 dims = float2(DispatchRaysDimensions().xy);
@@ -496,13 +504,16 @@ void rayGen()
 
     float3 col = linearToSrgb(payload.color);
     //float3 col = payload.color;
-	
 
-    gOutput[lanchIndex.xy] = float4(col, 1);
+
+    gOutput[lanchIndex.xy] = float4(col.rgb, 1);
+
 }
 
 bool ShotShadowRay(float3 origin, float3 direction)
 {
+
+
     RayDesc rayDesc;
     rayDesc.Origin = origin;
     rayDesc.Direction = direction;
@@ -565,7 +576,6 @@ void anyHit(inout Payload payload,in MyAttribute attribs)
 	
     float4 tex = texture.SampleLevel(gSampler, vtx.uv, 0.0f);
 
-
     if (tex.w <= 0.0f)
     {
         IgnoreHit();
@@ -585,7 +595,9 @@ void chs(inout Payload payload, in MyAttribute attribs)
     Vertex vtx = GetHitVertex(attribs);
     uint id = InstanceID();
     uint3 dispatchRayIndex = DispatchRaysIndex();
-	
+
+    hitResultBuffer[id]._isHit = 0;
+
     float3 worldNormal = normalize(mul(vtx.normal, (float3x3) ObjectToWorld4x3()));
     float3 worldPosition = mul(float4(vtx.pos, 1), ObjectToWorld4x3());
 
@@ -597,11 +609,10 @@ void chs(inout Payload payload, in MyAttribute attribs)
 
     float4 tex = texture.SampleLevel(gSampler, vtx.uv, 0.0f);
     albedo *= tex;
-	
+
     bool isRefract = (transmission < 1.0f) ? true : false;
     bool isReflection = (metallic.w > 0.0f) ? true : false;
 
-	
 
 
     float3 diffuseColor = lerp(albedo.rgb, float3(0.0f, 0.0f, 0.0f), metallic.w);

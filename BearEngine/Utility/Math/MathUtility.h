@@ -21,7 +21,8 @@ public:
 	static const SimpleMath::Vector3& GetMin(const std::vector<SimpleMath::Vector3>& vectors);
 	static const SimpleMath::Vector3& GetMin(const std::vector<XMFLOAT3>& vectors);
 	static const SimpleMath::Vector3& GetMax(const std::vector<SimpleMath::Vector3>& vectors);
-	static const SimpleMath::Vector3& GetMax(const std::vector<XMFLOAT3>& vectors);
+	static const SimpleMath::Vector3& GetMax(const std::vector<XMFLOAT3>& vectors);	   
+	static const SimpleMath::Vector3 GetBezierCube(const SimpleMath::Vector3& start, const SimpleMath::Vector3& end,const SimpleMath::Vector3& point0, const SimpleMath::Vector3& point1, const float time);
 
 	// 近似値かどうか
 	static const bool NaerZero(float val, float epsilon = 0.001f);

@@ -21,7 +21,15 @@ class SkyBox;
 // アライメント用
 #define align_to(_alignment, _val) (((_val + _alignment - 1) / _alignment) * _alignment)
 
+struct HitResult
+{
+	HitResult()
+	{
 
+	}
+
+	int _isHit = 1;
+};
 
 struct AccelerationStructureBuffers
 {
@@ -204,6 +212,7 @@ public:
 	void DrawDebugGUI();
 	void OnUpdateMaterial();
 	void UpdateMaterial();
+	const std::vector<HitResult>& GetHitResult();
 
 private:
 
@@ -213,6 +222,16 @@ private:
 		GlobalRootParamter_SceneParams,
 		GlobalRootParamter_SkyBoxTexture,
 		GlobalRootParamter_PointLight,
+		GlobalRootParamter_HitResult,
+	};
+
+	enum DescriptrIndex
+	{
+		DescriptrIndex_TLAS_UAV,
+		DescriptrIndex_TLAS_SRV,
+		DescriptrIndex_PointLights,
+		DescriptrIndex_Result_UAV0,
+		DescriptrIndex_Result_UAV1,
 	};
 	
 	ComPtr<ID3D12Resource> CreateBuffer(uint64_t size, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES initState, const D3D12_HEAP_PROPERTIES& heapProps);
@@ -231,7 +250,8 @@ private:
 	void CreateShaderResource();
 	void CreateGlobalRootSignature();
 	void CreateSceneCB();
-	
+	void CreateResultBuffer();
+
 	void UpdateMaterialCB();
 	void CreateMaterialCB();
 	void CreateDescriptorHeaps();
@@ -242,17 +262,14 @@ private:
 	uint8_t* WriteMeshShaderRecord(uint8_t* dst, const std::shared_ptr<DXRMeshData> mesh, D3D12_GPU_VIRTUAL_ADDRESS address, UINT recordSize);
 	
 	D3D12_RAYTRACING_GEOMETRY_DESC GetGeomtryDesc(std::shared_ptr<MeshData> meshData);
-
 	void SceneCBUpdate();
+	void UpdateHitResult();
+
+private:
 
 	WindowSize _WindowSize;
-
-	ComPtr<ID3D12Resource> _shaderTable;
 	uint32_t _shaderTableEntrySize = 0;
-
-	ComPtr<ID3D12Resource> _vertex_buffer;
 	AccelerationStructureBuffers _AccelerationStructureBuffers;
-	ComPtr<ID3D12Resource> _TopLevelASResource;
 	std::vector<ComPtr<ID3D12Resource>> _instanceDescBuffers;;
 
 	uint64_t _tlasSize;
@@ -260,8 +277,18 @@ private:
 	ComPtr<ID3D12StateObject> _PipelineState;
 	ComPtr<ID3D12RootSignature> _EmptyRootSig;
 
+	ComPtr<ID3D12Resource> _shaderTable;
 	ComPtr<ID3D12Resource> _OutPutResource;
 
+	std::vector<ComPtr<ID3D12Resource>> _hitResultResources;
+	std::vector<ComPtr<ID3D12Resource>> _uploadHitResultResources;
+	ComPtr<ID3D12Resource> _readbackHitResultResource;
+
+	ComPtr<ID3D12Resource> _materialCB;
+	ComPtr<ID3D12Resource> _SceneCB;
+
+	ComPtr<ID3D12Resource> _TopLevelASResource;
+	ComPtr<ID3D12Resource> _vertex_buffer;
 	
 	ComPtr<ID3D12DescriptorHeap> _SrvUavHeap;
 	ComPtr<ID3D12DescriptorHeap> _MeshSrvHeap;
@@ -276,12 +303,13 @@ private:
 		SimpleMath::Vector4 ambientColor;  // 環境光.
 		int pointLightCount;
 	};
+
 	SceneParam m_sceneParam;
-	ComPtr<ID3D12Resource> _SceneCB;
 
 	std::vector<std::shared_ptr<DXRMeshData>> _meshDatas;
-	
 	std::vector<std::shared_ptr<DXRInstance>> _instances;;
+	std::vector<HitResult> _hitResult;
+
 
 	D3D12_DISPATCH_RAYS_DESC _dispathRaysDesc;
 
@@ -307,9 +335,8 @@ private:
 	ComPtr<ID3D12RootSignature> _closesHitLocalRootSignature;
 	ComPtr<ID3D12RootSignature> _rayGenerationLocalRootSignature;
 
-	ComPtr<ID3D12Resource> _materialCB;
 
-	const UINT _SRVResourceCount = 2;
+	const UINT _SRVResourceCount = 5;
 	const UINT _MeshDataSize = 3;
 	const UINT _MaxMeshCount = 256 * 2;
 	UINT _AllocateCount = 0;

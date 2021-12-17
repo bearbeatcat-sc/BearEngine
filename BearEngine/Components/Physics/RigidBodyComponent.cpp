@@ -17,14 +17,15 @@ RigidBodyComponent::RigidBodyComponent(Actor* pActor, CollisionComponent* collis
 
 void RigidBodyComponent::UpdatePosition()
 {
-	if (_isStaticPosition)return;
-
 	AddGravity();
+
+	if (_isStaticPosition)return;
+	if (_Forces.Length() <= 0.0f && _Velocity.Length() <= 0.0f)return;
+
 	
 	SimpleMath::Vector3 accel = _Forces * InvMass();
 
 	_Velocity += accel * Time::DeltaTime;
-	_Velocity *= 0.98f;
 
 	auto position = _user->GetPosition();
 	position += _Velocity * Time::DeltaTime;
@@ -36,6 +37,7 @@ void RigidBodyComponent::UpdatePosition()
 void RigidBodyComponent::UpdateRotation()
 {
 	if (_isStaticRotate)return;
+	if (_AngVel.Length() <= 0.0f)return;
 
 	auto qu = _user->GetVecRotation();
 	qu += _AngVel;

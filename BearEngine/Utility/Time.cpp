@@ -11,9 +11,13 @@ int Time::FPSCounter = 0.0f;
 float LOW_LIMIT = 0.0167f;
 float HIGH_LIMIT = 0.1f;
 
+LARGE_INTEGER Time::TimeFreq;
+LARGE_INTEGER Time::TimeStart;
+
 Time::Time()
 {
-	Time::lastTime = timeGetTime();
+	QueryPerformanceFrequency(&TimeFreq);
+	QueryPerformanceCounter(&TimeStart);
 }
 
 Time::~Time()
@@ -22,21 +26,25 @@ Time::~Time()
 
 void Time::Update()
 {
+	LARGE_INTEGER currentTime;
+	QueryPerformanceCounter(&currentTime);
 
-	float currTime = timeGetTime();
-	float deltaTime = (currTime - Time::lastTime) / 1000.0f;
-	Time::lastTime = currTime;
+	//float deltaTime = (currentTime - Time::lastTime) / 1000.0f;
+	float deltaTime = static_cast<double>(currentTime.QuadPart - TimeStart.QuadPart) / static_cast<double>(TimeFreq.QuadPart);
+	Time::TimeStart = currentTime;
 
-	FPSCounter++;
-	if (currTime - BackTickCount >= 1000)
-	{
-		BackTickCount = currTime;
-		FPS = FPSCounter;
-		FPSCounter = 0;
-	}
+	FPS = 1 / deltaTime;
 
-	if (deltaTime < LOW_LIMIT) deltaTime = LOW_LIMIT;
-	if (deltaTime > HIGH_LIMIT) deltaTime = HIGH_LIMIT;
+	//FPSCounter++;
+	//if (currTime - BackTickCount >= 1000)
+	//{
+	//	BackTickCount = currTime;
+	//	FPS = FPSCounter;
+	//	FPSCounter = 0;
+	//}
+
+	//if (deltaTime < LOW_LIMIT) deltaTime = LOW_LIMIT;
+	//if (deltaTime > HIGH_LIMIT) deltaTime = HIGH_LIMIT;
 
 	Time::DeltaTime = deltaTime * Time::TimeScale;
 

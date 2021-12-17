@@ -133,6 +133,15 @@ const SimpleMath::Vector3& MathUtility::GetMax(const std::vector<XMFLOAT3>& vect
 	return temp;
 }
 
+const SimpleMath::Vector3 MathUtility::GetBezierCube(const SimpleMath::Vector3& start, const SimpleMath::Vector3& end,
+	const SimpleMath::Vector3& point0, const SimpleMath::Vector3& point1, const float time)
+{
+	return (1.0f - time)* (1.0f - time)* (1.0f - time) * start
+		+ 3.0f * (1.0f - time) * (1.0f - time) * time * point0
+		+ 3.0f * (1.0f - time) * time * time * point1
+		+ time * time * time * end;
+}
+
 
 const bool MathUtility::NaerZero(float val, float epsilon)
 {

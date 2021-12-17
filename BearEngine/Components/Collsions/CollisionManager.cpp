@@ -58,6 +58,7 @@ void CollisionManager::UpdateRegistTree(CollisionComponent* component, Collision
 
 void CollisionManager::Update()
 {
+	Delete();
 
 	int componentSize = m_components.size();
 
@@ -79,7 +80,6 @@ void CollisionManager::Update()
 
 	m_CurrentCollisitonTime = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000.0);
 
-	Delete();
 
 }
 

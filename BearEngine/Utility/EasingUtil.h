@@ -3,11 +3,11 @@
 class EasingUtil
 {
 public:
-	static float ease_in(float t, float start, float end,float maxTime);
-	static float ease_out(float t, float start, float end,float maxTime);
-	static float ease_in_out(float t, float start, float end, float maxTime);
-	static float ease_out_quart(float t, float start, float end, float maxTime);
-private:
+	//static float ease_in(float t, float start, float end,float maxTime);
+	//static float ease_out(float t, float start, float end,float maxTime);
+	//static float ease_in_out(float t, float start, float end, float maxTime);
+	//static float ease_out_quart(float t, float start, float end, float maxTime);
+
 	static float ease_in_none(float x);
 	static float ease_in_cubic(float x);
 	static float ease_in_elastic(float x);

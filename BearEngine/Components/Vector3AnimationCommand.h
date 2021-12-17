@@ -11,7 +11,7 @@ class Vector3AnimationCommand
 	:public AnimationCommand
 {
 public:
-	Vector3AnimationCommand(const SimpleMath::Vector3& start,const SimpleMath::Vector3& target,SimpleMath::Vector3& pRet);
+	Vector3AnimationCommand(const SimpleMath::Vector3& start,const SimpleMath::Vector3& target,SimpleMath::Vector3& pRet,const float speed = 1.0f,AnimationSpeedType animationspeedType = AnimationSpeedType::AnimationSpeedType_None);
 	~Vector3AnimationCommand() override;
 
 	void Play() override;
@@ -24,6 +24,7 @@ private:
 	SimpleMath::Vector3 &mRet;
 
 	float mLerpTime;
+	float m_Speed;
 };
 
 #endif

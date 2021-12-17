@@ -1,4 +1,7 @@
 #include "TextureManager.h"
+
+#include <stdexcept>
+
 #include "Texture.h"
 #include "../Utility/StringUtil.h"
 #include "DirectX/DirectXDevice.h"
