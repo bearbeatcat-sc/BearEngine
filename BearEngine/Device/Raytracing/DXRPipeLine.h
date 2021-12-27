@@ -338,11 +338,12 @@ private:
 
 	const UINT _SRVResourceCount = 5;
 	const UINT _MeshDataSize = 3;
-	const UINT _MaxMeshCount = 256 * 2;
+	const UINT _MaxMeshCount = 64 * 1;
 	UINT _AllocateCount = 0;
 	UINT _IncSize;
 
-	const UINT _MaxInstanceCount = 300;
+	const UINT _MaxInstanceCount = 10000;
 
 	bool _IsUpdateMaterial;
+	bool _IsFirst;
 };

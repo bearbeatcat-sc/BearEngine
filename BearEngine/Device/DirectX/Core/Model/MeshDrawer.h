@@ -96,7 +96,7 @@ private:
 	int m_DescHandleCount;
 	int m_MatIncSize;
 
-	int m_ObjectCount = 128 * 100;
+	int m_ObjectCount = 128 * 4;
 
 	double m_CurrentDrawTime;
 	int m_CurrentVisibleMeshCount;

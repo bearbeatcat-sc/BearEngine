@@ -109,7 +109,7 @@ void LightManager::Draw()
 		auto dir = m_DirectionalLight->GetDirection();
 		float dir_[3] = { dir.x,dir.y,dir.z };
 		
-		if (ImGui::BeginTabItem("LightProperties"))
+		if (ImGui::BeginTabItem("Light Properties"))
 		{
 			ImGui::Text("DirectionalLight");
 			ImGui::DragFloat3("LightDirection X", dir_, 0.01f, -1.0f, 1.0f);

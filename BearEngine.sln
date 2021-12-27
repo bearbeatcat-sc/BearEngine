@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30204.135
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31919.166
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BearEngine", "BearEngine\BearEngine.vcxproj", "{F8049B04-4486-4327-84EB-D00BD4E0BE76}"
 EndProject
@@ -18,6 +18,9 @@ Global
 		Release|ARM64 = Release|ARM64
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
+		Test|ARM64 = Test|ARM64
+		Test|x64 = Test|x64
+		Test|x86 = Test|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{F8049B04-4486-4327-84EB-D00BD4E0BE76}.Debug|ARM64.ActiveCfg = Debug|Win32
@@ -36,6 +39,12 @@ Global
 		{F8049B04-4486-4327-84EB-D00BD4E0BE76}.Release|x64.Build.0 = Release|x64
 		{F8049B04-4486-4327-84EB-D00BD4E0BE76}.Release|x86.ActiveCfg = Release|Win32
 		{F8049B04-4486-4327-84EB-D00BD4E0BE76}.Release|x86.Build.0 = Release|Win32
+		{F8049B04-4486-4327-84EB-D00BD4E0BE76}.Test|ARM64.ActiveCfg = Test|x64
+		{F8049B04-4486-4327-84EB-D00BD4E0BE76}.Test|ARM64.Build.0 = Test|x64
+		{F8049B04-4486-4327-84EB-D00BD4E0BE76}.Test|x64.ActiveCfg = Test|x64
+		{F8049B04-4486-4327-84EB-D00BD4E0BE76}.Test|x64.Build.0 = Test|x64
+		{F8049B04-4486-4327-84EB-D00BD4E0BE76}.Test|x86.ActiveCfg = Test|Win32
+		{F8049B04-4486-4327-84EB-D00BD4E0BE76}.Test|x86.Build.0 = Test|Win32
 		{576B602F-A22A-4FFB-8A90-0025A9F07F62}.Debug|ARM64.ActiveCfg = Debug|Win32
 		{576B602F-A22A-4FFB-8A90-0025A9F07F62}.Debug|x64.ActiveCfg = Debug|x64
 		{576B602F-A22A-4FFB-8A90-0025A9F07F62}.Debug|x64.Build.0 = Debug|x64
@@ -52,6 +61,12 @@ Global
 		{576B602F-A22A-4FFB-8A90-0025A9F07F62}.Release|x64.Build.0 = Release|x64
 		{576B602F-A22A-4FFB-8A90-0025A9F07F62}.Release|x86.ActiveCfg = Release|Win32
 		{576B602F-A22A-4FFB-8A90-0025A9F07F62}.Release|x86.Build.0 = Release|Win32
+		{576B602F-A22A-4FFB-8A90-0025A9F07F62}.Test|ARM64.ActiveCfg = Test|x64
+		{576B602F-A22A-4FFB-8A90-0025A9F07F62}.Test|ARM64.Build.0 = Test|x64
+		{576B602F-A22A-4FFB-8A90-0025A9F07F62}.Test|x64.ActiveCfg = Test|x64
+		{576B602F-A22A-4FFB-8A90-0025A9F07F62}.Test|x64.Build.0 = Test|x64
+		{576B602F-A22A-4FFB-8A90-0025A9F07F62}.Test|x86.ActiveCfg = Test|Win32
+		{576B602F-A22A-4FFB-8A90-0025A9F07F62}.Test|x86.Build.0 = Test|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

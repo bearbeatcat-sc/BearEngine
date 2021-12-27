@@ -7,6 +7,7 @@
 #include "Lights/LightManager.h"
 #include "Raytracing/DXRPipeLine.h"
 #include "Utility/LogSystem.h"
+#include "Utility/Time.h"
 
 void GUISystem::BeginGUI()
 {
@@ -31,12 +32,17 @@ void GUISystem::RenderRenderingDebugWindow()
 	{
 		ImGui::Begin("Rendering_System", &_isShowDebugRenderingWindow, ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysVerticalScrollbar);
 
-		CollisionManager::GetInstance().Draw();
+		ImGui::Text("Application Properties");
+		ImGui::Text("FPS:%i", Time::FPS);
+		ImGui::Text("DeltaTime:%f", Time::DeltaTime);
 
+		ImGui::Separator();
 		ImGui::Dummy(ImVec2(0, 30));
 
 		ImGui::BeginTabBar("DebugTabs");
 
+		CollisionManager::GetInstance().Draw();
+		DirectXDevice::GetInstance().RenderDebug();
 		MeshDrawer::GetInstance().DrawDebug();
 		LightManager::GetInstance().Draw();
 		DXRPipeLine::GetInstance().DrawDebugGUI();

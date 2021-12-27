@@ -231,6 +231,8 @@ void Actor::RemoveChild()
 	}
 }
 
+
+
 void Actor::UpdateChild()
 {
 	for (auto itr = m_Children.begin(); itr != m_Children.end();)

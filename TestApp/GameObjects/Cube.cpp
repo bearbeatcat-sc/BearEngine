@@ -54,10 +54,7 @@ void Cube::UpdateActor()
 	auto mtx = GetWorldMatrix();
 	_instance->SetMatrix(mtx);
 
-	if(DirectXInput::GetInstance().IsKeyDown(DIK_SPACE))
-	{
-		_rigidBodyComponent->AddAngularImpulse(SimpleMath::Vector3(0, 0.1f, 0), SimpleMath::Vector3(0,0,1));
-	}
+
 }
 
 void Cube::Generate()
@@ -85,27 +82,13 @@ void Cube::Init()
 	_instance->SetMatrix(mtx);
 	_instance->CreateRaytracingInstanceDesc();
 
-	m_pCollisionComponent = new OBBCollisionComponent(this, GetPosition(), m_Scale, "Object");
-	//m_pCollisionComponent = new SphereCollisionComponent(this, 10.0f, "Object");
 
-
-	CollisionManager::GetInstance().AddComponent(m_pCollisionComponent);
-	CollisionManager::GetInstance().AddRegistTree(m_pCollisionComponent);
-	_rigidBodyComponent = std::make_shared<RigidBodyComponent>(this,m_pCollisionComponent);
-	AddComponent(_rigidBodyComponent);
-	m_pCollisionComponent->RegistRigidBody(_rigidBodyComponent);
-	_rigidBodyComponent->_Mass = 1.0f;
-	_rigidBodyComponent->_Elasticty = 3.0f;
-	_rigidBodyComponent->_AddGravity = SimpleMath::Vector3(-0.6f, 0.0f, 0.0f);
-
-	_rigidBodyComponent->SetStaticFlag(_IsStaticPosition, _IsStaticRotate);
 
 	SetTag("Block");
 }
 
 void Cube::Shutdown()
 {
-	m_pCollisionComponent->Delete();
 }
 
 void Cube::OnCollsion(Actor* other)

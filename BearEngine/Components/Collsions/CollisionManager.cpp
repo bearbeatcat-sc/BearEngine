@@ -164,16 +164,18 @@ void CollisionManager::Reset()
 void CollisionManager::Draw()
 {
 
+
 	if (m_isDebugMode)
 	{
-		ImGui::Text("Application Properties");
-		ImGui::Text("FPS:%i", Time::FPS);
-		ImGui::Text("DeltaTime:%f", Time::DeltaTime);
 
-		ImGui::Separator();
 
-		ImGui::Text("CollisionTime:%f", time);
-		ImGui::Text("ObjectCount:%i", m_components.size());
+		if (ImGui::BeginTabItem("Collision Properties"))
+		{
+			ImGui::Text("CollisionTime:%f", time);
+			ImGui::Text("ObjectCount:%i", m_components.size());
+			ImGui::EndTabItem();
+		}
+
 	}
 
 }

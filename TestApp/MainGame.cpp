@@ -41,9 +41,9 @@ void MainGame::Init()
 	MeshManager::GetInstance().GetSpehereMesh(12, "NormalMeshEffect");
 	MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "blenderMonkey.obj", "BlenderMonkey");
 	MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "cube0.obj", "Cube0");
-	TextureManager::GetInstance().AddTexture("Resources/bear.png","Bear");
-	TextureManager::GetInstance().AddTexture("Resources/flog.png","Flog");
-	TextureManager::GetInstance().AddTexture("Resources/TestUI.png","TestUI");
+	TextureManager::GetInstance().AddTexture("Resources/bear.png", "Bear");
+	TextureManager::GetInstance().AddTexture("Resources/flog.png", "Flog");
+	TextureManager::GetInstance().AddTexture("Resources/TestUI.png", "TestUI");
 
 	auto cubeMeshData = MeshManager::GetInstance().GetMeshData("CubeModelData");
 	cubeMeshData->SetPhysicsBaseMaterial(PhysicsBaseMaterial(SimpleMath::Vector4(1.0f, 0.0f, 0.0f, 1.0f), SimpleMath::Vector4(1.0f, 10.0f, 1.0f, 0.5f), 0.5f));
@@ -60,7 +60,7 @@ void MainGame::Init()
 	_blenderMonkyMaterial = PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.6f), 0.8f, 1.0f, 1.22f);
 
 
-	_test = DXRPipeLine::GetInstance().AddMeshData(planeMeshData, L"HitGroup", "WhiteCube", _blenderMonkyMaterial,"TestUI");
+	//_test = DXRPipeLine::GetInstance().AddMeshData(planeMeshData, L"HitGroup", "WhiteCube", _blenderMonkyMaterial,"TestUI");
 	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "GrayCube", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f), 0.1));
 	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "RoughCube", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.0f), 0.5f, 0.2f, 2.4f), "Bear");
 
@@ -98,7 +98,7 @@ void MainGame::Init()
 	CollisionTagManagaer::GetInstance().AddTag("Object", ObjectCollTable);
 
 
-	//auto meshData = MeshManager::GetInstance().FindSpehere(6);
+	auto meshData = MeshManager::GetInstance().FindSpehere(6);
 
 	_AddTimer = std::make_shared<Timer>(3.0f);
 	_GenerateTimer = std::make_shared<Timer>(0.0001f);
@@ -112,17 +112,12 @@ void MainGame::Init()
 	const SimpleMath::Vector3 basePos = SimpleMath::Vector3(-5.5f, -2.5f, -5.5f);
 
 
-	auto sphere = new Sphere(SimpleMath::Vector3(-2.0f, 0.0f, 0.6f), Sphere::SphereType_Normal);
-	sphere->SetScale(SimpleMath::Vector3(1.0f));
-	sphere->SetRotation(SimpleMath::Vector3(3.0f, 0.0f, 0.0f));
-	ActorManager::GetInstance().AddActor(sphere);
+	//auto sphere = new Sphere(SimpleMath::Vector3(-2.0f, 0.0f, 0.6f), Sphere::SphereType_Normal);
+	//sphere->SetScale(SimpleMath::Vector3(1.0f));
+	//sphere->SetRotation(SimpleMath::Vector3(3.0f, 0.0f, 0.0f));
+	//ActorManager::GetInstance().AddActor(sphere);
 
-	//auto sphere2 = new Sphere(SimpleMath::Vector3(-2.8f, 6.0f, 0.6f), Sphere::SphereType_Normal);
-	//sphere2->SetScale(SimpleMath::Vector3(1.0f));
-	//sphere2->SetRotation(SimpleMath::Vector3(3.0f, 0.0f, 0.0f));
-	//ActorManager::GetInstance().AddActor(sphere2);
 
-	
 	auto floor = new Cube(SimpleMath::Vector3(1.45f, -2.5f, 0.640f), SimpleMath::Vector3(grid_size_x, 1, grid_size_z), 300.0f, "GrayCube", false);
 	floor->SetRotation(SimpleMath::Vector3(0, 0.0f, 0.0f));
 	floor->SetActorName("Floor");
@@ -192,6 +187,18 @@ void MainGame::Init()
 	//	//}
 	//}
 
+	for (int i = 0; i < 9999; i++)
+	{
+		auto pos_x = Random::GetRandom(-12.0f, 12.0f);
+		auto pos_z = Random::GetRandom(-12.0f, 12.0f);
+		float pos_y = 3.0f;
+
+
+		auto cube = new Cube(SimpleMath::Vector3(pos_x, 3.0f, pos_z), SimpleMath::Vector3(0.3f), 300.0f, "RoughCube", false);
+		cube->SetActorName("Cube");
+		cube->OnStatic(true, false);
+		ActorManager::GetInstance().AddActor(cube);
+	}
 }
 
 
@@ -199,35 +206,34 @@ void MainGame::Update()
 {
 	m_CameraAsistant->Update();
 
-	_blenderMonkyMaterial._albedo.x += 0.4f * Time::DeltaTime;
-	_blenderMonkyMaterial._albedo.y += 0.4f * Time::DeltaTime;
-	_blenderMonkyMaterial._albedo.z += 0.4f * Time::DeltaTime;
-	_blenderMonkyMaterial._albedo.x = fmodf(_blenderMonkyMaterial._albedo.x, 1.0f);
-	_blenderMonkyMaterial._albedo.y = fmodf(_blenderMonkyMaterial._albedo.y, 1.0f);
-	_blenderMonkyMaterial._albedo.z = fmodf(_blenderMonkyMaterial._albedo.z,1.0f);
+	//_blenderMonkyMaterial._albedo.x += 0.4f * Time::DeltaTime;
+	//_blenderMonkyMaterial._albedo.y += 0.4f * Time::DeltaTime;
+	//_blenderMonkyMaterial._albedo.z += 0.4f * Time::DeltaTime;
+	//_blenderMonkyMaterial._albedo.x = fmodf(_blenderMonkyMaterial._albedo.x, 1.0f);
+	//_blenderMonkyMaterial._albedo.y = fmodf(_blenderMonkyMaterial._albedo.y, 1.0f);
+	//_blenderMonkyMaterial._albedo.z = fmodf(_blenderMonkyMaterial._albedo.z,1.0f);
 
-	_test->UpdateMaterial(_blenderMonkyMaterial);
+	//_test->UpdateMaterial(_blenderMonkyMaterial);
 
-	if(DirectXInput::GetInstance().IsKeyDown(DIK_SPACE))
+	if (DirectXInput::GetInstance().IsKeyDown(DIK_SPACE))
 	{
-		auto cube = new Cube(SimpleMath::Vector3(4.5f, -1.0f, -0.810f), SimpleMath::Vector3(1.0f, 1.0f, 1.0f), 300.0f, "RoughCube", false);
-		cube->SetRotation(SimpleMath::Vector3(0, -0.1f, -0.3f));
-		cube->SetActorName("Cube");
-		cube->OnStatic(true, false);
-		ActorManager::GetInstance().AddActor(cube);
+
+
+
+
 	}
-	
-	if (!_IsGenerate)
-	{
-		_AddTimer->Update();
-		if (_AddTimer->IsTime())
-		{
-			_IsGenerate = true;
-			_GenerateCount = 0;
-			_AddTimer->Reset();
-		}
-		return;
-	}
+	//
+	//if (!_IsGenerate)
+	//{
+	//	_AddTimer->Update();
+	//	if (_AddTimer->IsTime())
+	//	{
+	//		_IsGenerate = true;
+	//		_GenerateCount = 0;
+	//		_AddTimer->Reset();
+	//	}
+	//	return;
+	//}
 
 
 

@@ -1,8 +1,9 @@
 ﻿#include "Vector3AnimationCommand.h"
 
-#include "../Utility/Time.h"
-#include "../Utility/Math/MathUtility.h"
+
 #include "Utility/EasingUtil.h"
+#include "Utility/Time.h"
+#include "Utility/Math/MathUtility.h"
 
 Vector3AnimationCommand::Vector3AnimationCommand(const SimpleMath::Vector3& start, const SimpleMath::Vector3& target,SimpleMath::Vector3& pRet,float speed, AnimationSpeedType animationSpeedType)
 	:AnimationCommand(animationSpeedType),mTarget(target),mStart(start),mLerpTime(0.0f), mRet(pRet), m_Speed(speed)

@@ -24,6 +24,10 @@ private:
 
 	static LARGE_INTEGER TimeFreq;
 	static LARGE_INTEGER TimeStart;
+
+	// 近似化のための係数
+	static const float k ;
+	static float avgTime;
 };
 
 #endif

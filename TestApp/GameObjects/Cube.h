@@ -42,8 +42,6 @@ private:
 	bool _IsStaticRotate;
 
 private:
-	CollisionComponent* m_pCollisionComponent;
-	std::shared_ptr<RigidBodyComponent> _rigidBodyComponent;
 
 	std::string _DXRMeshName;
 };

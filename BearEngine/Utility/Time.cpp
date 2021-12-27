@@ -2,12 +2,16 @@
 #include "../imgui/imgui.h"
 #include <Windows.h>
 
+#include "Math/MathUtility.h"
+
 float Time::DeltaTime = 0.0f;
 float Time::TimeScale = 1.0f;
 float Time::lastTime = 0.0f;
 float Time::BackTickCount = 0.0f;
 int Time::FPS = 0.0f;
 int Time::FPSCounter = 0.0f;
+const float Time::k = 0.1f;
+float Time::avgTime = 0.0f;
 float LOW_LIMIT = 0.0167f;
 float HIGH_LIMIT = 0.1f;
 
@@ -33,7 +37,12 @@ void Time::Update()
 	float deltaTime = static_cast<double>(currentTime.QuadPart - TimeStart.QuadPart) / static_cast<double>(TimeFreq.QuadPart);
 	Time::TimeStart = currentTime;
 
-	FPS = 1 / deltaTime;
+
+	avgTime *= 1.0f - k;
+	avgTime += deltaTime * k;
+
+	FPS = 1.0f / avgTime;
+
 
 	//FPSCounter++;
 	//if (currTime - BackTickCount >= 1000)

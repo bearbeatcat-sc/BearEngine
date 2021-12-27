@@ -99,6 +99,24 @@ void ActorManager::DeleteActor()
 {
 	for (auto iter = m_Actos.begin(); iter != m_Actos.end();)
 	{
+		//auto children = (*iter)->GetChildren();
+
+		//for(auto child = children.begin(); child != children.end();)
+		//{
+
+
+		//	if ((*child)->GetDestroyFlag())
+		//	{
+		//		(*child)->Clean();
+		//		delete (*child);
+		//		(*child) = nullptr;
+		//		child = children.erase(child);
+		//		continue;
+		//	}
+
+		//	child++;
+		//}
+
 		if ((*iter)->GetDestroyFlag())
 		{
 			(*iter)->Clean();

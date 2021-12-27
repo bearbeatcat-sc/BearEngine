@@ -97,6 +97,7 @@ ComPtr<IDxcBlob> CompileLibrary(const WCHAR* filename, const WCHAR* targetString
 }
 
 DXRPipeLine::DXRPipeLine()
+	:_IsFirst(true)
 {
 	_meshDatas.clear();
 	_instances.clear();
@@ -292,19 +293,25 @@ void DXRPipeLine::CreateBLAS(std::shared_ptr<DXRMeshData> pDXRMeshData, std::sha
 
 void DXRPipeLine::UpdateTLAS()
 {
+	// 初回フレームは飛ばす。
+	if(_IsFirst)
+	{
+		_IsFirst = false;
+		return;
+	}
+
 	// 死亡処理を行う
 	DeleteInstance();
 
-	auto instanceCount = _instances.size();
-	auto size = _MaxInstanceCount * sizeof(D3D12_RAYTRACING_INSTANCE_DESC);
+	const auto instanceCount = _instances.size();	
+
+	const auto maxSize = _MaxInstanceCount * sizeof(D3D12_RAYTRACING_INSTANCE_DESC);
 
 	const int frameIndex = DirectXGraphics::GetInstance().GetBackBufferIndex();
 
-
-
 	D3D12_RAYTRACING_INSTANCE_DESC* p_instance_desc;
 	_instanceDescBuffers[frameIndex]->Map(0, nullptr, (void**)&p_instance_desc);
-	ZeroMemory(p_instance_desc, sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * _MaxInstanceCount);
+	ZeroMemory(p_instance_desc, maxSize);
 
 	for (int i = 0; i < instanceCount; i++)
 	{
@@ -340,18 +347,19 @@ void DXRPipeLine::UpdateTLAS()
 
 	asDesc.Inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 	asDesc.Inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
-	asDesc.Inputs.NumDescs = _MaxInstanceCount;
+	// インスタンスが一つも登録されていない場合でも、生成できるように+1
+	asDesc.Inputs.NumDescs = _MaxInstanceCount;;
 	asDesc.Inputs.InstanceDescs = _instanceDescBuffers[frameIndex]->GetGPUVirtualAddress();
 
 	// TLAS の更新処理を行うためのフラグを設定する.
 	// 今回は、インスタンスの追加もするので、新しく構築する。
 	asDesc.Inputs.Flags =
-		D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE;
+		D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
 
 	//asDesc.SourceAccelerationStructureData = _AccelerationStructureBuffers.pResult->GetGPUVirtualAddress();
 	asDesc.DestAccelerationStructureData = _AccelerationStructureBuffers.pResult->GetGPUVirtualAddress();
 
-	asDesc.ScratchAccelerationStructureData = _AccelerationStructureBuffers.pUpdate->GetGPUVirtualAddress();
+	asDesc.ScratchAccelerationStructureData = _AccelerationStructureBuffers.pScratch->GetGPUVirtualAddress();
 
 
 	DirectXGraphics::GetInstance().GetCommandList()->BuildRaytracingAccelerationStructure(&asDesc, 0, nullptr);
@@ -367,7 +375,7 @@ void DXRPipeLine::UpdateTLAS()
 
 void DXRPipeLine::DrawDebugGUI()
 {
-	if (ImGui::BeginTabItem("DXRPipeline"))
+	if (ImGui::BeginTabItem("DXRPipeline Properties"))
 	{
 		ImGui::Text("InstanceCount:%i", _instances.size());
 		ImGui::EndTabItem();
@@ -521,17 +529,16 @@ ComPtr<ID3D12Resource> DXRPipeLine::CreateBuffer(uint64_t size, D3D12_RESOURCE_F
 
 void DXRPipeLine::CreateTopLevelAS()
 {
-	uint64_t tlasSize;
+	const auto instanceCount = _instances.size();
 
-	const int instanceCount = _instances.size();
+	const auto maxSize = _MaxInstanceCount * sizeof(D3D12_RAYTRACING_INSTANCE_DESC);
 
 	_instanceDescBuffers.resize(2);
 
-	auto size = UINT(_MaxInstanceCount * sizeof(D3D12_RAYTRACING_INSTANCE_DESC));
-
+	// バッファの生成
 	for (int i = 0; i < 2; i++)
 	{
-		_instanceDescBuffers[i] = CreateBuffer(size, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, uploadHeapProps);
+		_instanceDescBuffers[i] = CreateBuffer(maxSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, uploadHeapProps);
 		_instanceDescBuffers[i]->SetName(L"RayTracing_InstanceBuffer");
 	}
 
@@ -540,7 +547,9 @@ void DXRPipeLine::CreateTopLevelAS()
 
 	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
 	inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
-	inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE;
+	inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
+
+	// インスタンスが一つも登録されていない場合でも、生成できるように+1
 	inputs.NumDescs = _MaxInstanceCount;
 	inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 
@@ -556,17 +565,14 @@ void DXRPipeLine::CreateTopLevelAS()
 	_AccelerationStructureBuffers.pResult->SetName(L"TLAS_ResultBuffer");
 
 
-	_AccelerationStructureBuffers.pUpdate = CreateBuffer(info.UpdateScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, defaultHeapProps);
-	_AccelerationStructureBuffers.pUpdate->SetName(L"TLAS_UpdateBuffer");
-
-
-	tlasSize = info.ResultDataMaxSizeInBytes;
+	//_AccelerationStructureBuffers.pUpdate = CreateBuffer(info.UpdateScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, defaultHeapProps);
+	//_AccelerationStructureBuffers.pUpdate->SetName(L"TLAS_UpdateBuffer");
 
 	_AccelerationStructureBuffers.pInstanceDesc = _instanceDescBuffers[currentBuffer];
 
 	D3D12_RAYTRACING_INSTANCE_DESC* p_instance_desc;
 	_AccelerationStructureBuffers.pInstanceDesc->Map(0, nullptr, (void**)&p_instance_desc);
-	ZeroMemory(p_instance_desc, sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * _MaxInstanceCount);
+	ZeroMemory(p_instance_desc, maxSize);
 
 	for (int i = 0; i < instanceCount; i++)
 	{

@@ -3,6 +3,7 @@
 #include <dxcapi.h>
 #include <string>
 #include "../WindowApp.h"
+#include "imgui/imgui.h"
 
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
@@ -28,6 +29,11 @@ ID3D12Device5* DirectXDevice::GetDevice()
 IDXGIFactory6* DirectXDevice::GetDxgiFactory()
 {
 	return dxgi_factory_.Get();
+}
+
+void DirectXDevice::GetVideoMemoryInfo(DXGI_QUERY_VIDEO_MEMORY_INFO* info)
+{
+	adapter_->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, info);
 }
 
 ComPtr<ID3D12Resource1> DirectXDevice::CreateResource(const CD3DX12_RESOURCE_DESC& desc, D3D12_RESOURCE_STATES resourceStates, const D3D12_CLEAR_VALUE* clearValue, D3D12_HEAP_TYPE heapType)
@@ -121,7 +127,7 @@ void DirectXDevice::FindAdapter()
 {
 	std::vector<ComPtr<IDXGIAdapter>> adapters;
 
-	for (int i = 0; dxgi_factory_->EnumAdapters(i, &adapter_) != DXGI_ERROR_NOT_FOUND; i++)
+	for (int i = 0; dxgi_factory_->EnumAdapters(i, reinterpret_cast<ComPtr<IDXGIAdapter>&>(adapter_).GetAddressOf()) != DXGI_ERROR_NOT_FOUND; i++)
 	{
 		adapters.push_back(adapter_.Get());
 	}
@@ -135,7 +141,7 @@ void DirectXDevice::FindAdapter()
 
 		if (strDesc.find(L"Microsoft") == std::wstring::npos)
 		{
-			adapter_ = adapters[i];
+			adapter_ = reinterpret_cast<ComPtr<IDXGIAdapter4>&>(adapters[i]);
 			break;
 		}
 	}
@@ -199,4 +205,23 @@ ComPtr<ID3D12DescriptorHeap> DirectXDevice::CreateDescriptorHeap(uint32_t count,
 	device_->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&pHeap));
 
 	return pHeap;
+}
+
+void DirectXDevice::RenderDebug()
+{
+	DXGI_QUERY_VIDEO_MEMORY_INFO info;
+	DirectXDevice::GetInstance().GetVideoMemoryInfo(&info);
+
+	// メガバイトに変換
+	size_t usedVRAM = info.CurrentUsage / 1024 / 1024;
+	size_t VRAM = info.Budget / 1024 / 1024;
+	float parcent = (float)usedVRAM / (float)VRAM;
+
+	if (ImGui::BeginTabItem("Device Properties"))
+	{
+		ImGui::Text("VidemoRAM:%iMB", VRAM);
+		ImGui::Text("UsedVideoRAM:%iMB",usedVRAM);
+		ImGui::Text("Used:%f", parcent);
+		ImGui::EndTabItem();
+	}
 }

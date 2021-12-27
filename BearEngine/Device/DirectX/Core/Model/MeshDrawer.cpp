@@ -270,7 +270,7 @@ void MeshDrawer::DrawDebug()
 {
 #ifdef _DEBUG
 
-	if (ImGui::BeginTabItem("MeshDrawProperties"))
+	if (ImGui::BeginTabItem("MeshDraw Properties"))
 	{
 		ImGui::Text("MeshDrawTime:%d", m_CurrentDrawTime);
 		ImGui::Text("CullingObject:%i", m_meshs.size() - m_CurrentVisibleMeshCount);
