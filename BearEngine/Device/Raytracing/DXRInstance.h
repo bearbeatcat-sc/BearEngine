@@ -19,7 +19,7 @@ public:
 	~DXRInstance() = default;
 
 	void SetMatrix(const SimpleMath::Matrix mat);
-	void CreateRaytracingInstanceDesc();
+	void CreateRaytracingInstanceDesc(UINT instanceMask = 0xFF);
 	void Destroy();
 
 	SimpleMath::Matrix _matrix;

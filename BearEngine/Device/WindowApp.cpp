@@ -17,6 +17,7 @@
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND, UINT, WPARAM, LPARAM);
 WindowSize WindowApp::window_size;
+SimpleMath::Vector2 WindowApp::_debugGameWindowSize;
 int WindowApp::sync_interval;
 
 LRESULT WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
@@ -88,6 +89,7 @@ HRESULT WindowApp::Run(Game* game)
 	window_size.window_Width = clientSize.right - clientSize.left;
 	window_size.window_Height = clientSize.bottom - clientSize.top;
 
+	_debugGameWindowSize = SimpleMath::Vector2(window_size.window_Width, window_size.window_Height) * 0.7f;
 
 	// リフレッシュレートに合わせて制限
 	auto hdc = GetDC(hwnd_);
@@ -98,7 +100,7 @@ HRESULT WindowApp::Run(Game* game)
 	if (rate >= 120) interval = 2;
 
 	sync_interval = interval;
-	
+
 	bear_engine_ = new BearEngine();
 	bear_engine_->InitEngine();
 
@@ -171,6 +173,13 @@ const WindowSize& WindowApp::GetWindowSize()
 	return window_size;
 }
 
+const SimpleMath::Vector2& WindowApp::GetDebugGameWindowSize()
+{
+	return _debugGameWindowSize;
+}
+
+
+
 WNDCLASSEX WindowApp::GetWndClassEx()
 {
 	return w_;
@@ -222,15 +231,15 @@ const std::string WindowApp::FileOpen()
 
 	std::string filePath = dest;
 
-	if(dest)
+	if (dest)
 	{
 		free(dest);
 	}
-	
+
 	return filePath;
 }
 
-void WindowApp::MsgBox(const std::string&& msg,const std::string& caption)
+void WindowApp::MsgBox(const std::string&& msg, const std::string& caption)
 {
 	MessageBoxA(hwnd_, msg.c_str(), caption.c_str(), MB_OK);
 }

@@ -19,9 +19,9 @@ void DXRInstance::SetMatrix(const SimpleMath::Matrix mat)
 
 }
 
-void DXRInstance::CreateRaytracingInstanceDesc()
+void DXRInstance::CreateRaytracingInstanceDesc(UINT instanceMask )
 {
-	_raytracingInstanceDesc->InstanceMask = 0xFF;
+	_raytracingInstanceDesc->InstanceMask = instanceMask;
 	_raytracingInstanceDesc->Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
 
 	XMStoreFloat3x4(

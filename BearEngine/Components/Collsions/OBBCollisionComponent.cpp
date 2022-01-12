@@ -3,7 +3,7 @@
 #include "CollisionInterSect.h"
 #include "../../Game_Object/Actor.h"
 #include "SphereCollisionComponent.h"
-#include "CollisionTree_Object.h"
+#include "RayCollisionComponent.h"
 #include "Device/DirectX/Core/Model/DebugDrawer.h"
 
 OBBCollisionComponent::OBBCollisionComponent(Actor* actor, SimpleMath::Vector3 center, SimpleMath::Vector3 size,std::string collisonTag)
@@ -57,7 +57,7 @@ void OBBCollisionComponent::SetAdjustPos(SimpleMath::Vector3 pos)
 
 bool OBBCollisionComponent::IsInterSect(CollisionComponent* collisionComponent, InterSectInfo& inter_sect_info)
 {
-	auto otherCollisionType = collisionComponent->GetCollisionType();
+	const auto otherCollisionType = collisionComponent->GetCollisionType();
 
 	if (otherCollisionType == CollisionType_Sphere)
 	{
@@ -69,6 +69,11 @@ bool OBBCollisionComponent::IsInterSect(CollisionComponent* collisionComponent, 
 	if (otherCollisionType == CollisionType_OBB)
 	{
 		return CollisionInterSect::OBBToOBBInterSect(this, static_cast<OBBCollisionComponent*>(collisionComponent), inter_sect_info);
+	}
+
+	if(otherCollisionType == CollisionType_Ray)
+	{
+		return CollisionInterSect::OBBToRayInterSect(this, static_cast<RayCollisionComponent*>(collisionComponent), inter_sect_info);
 	}
 
 	return false;

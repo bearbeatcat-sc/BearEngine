@@ -62,7 +62,7 @@ void MainGame::Init()
 
 	//_test = DXRPipeLine::GetInstance().AddMeshData(planeMeshData, L"HitGroup", "WhiteCube", _blenderMonkyMaterial,"TestUI");
 	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "GrayCube", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f), 0.1));
-	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "RoughCube", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.0f), 0.5f, 0.2f, 2.4f), "Bear");
+	DXRPipeLine::GetInstance().AddMeshData(blenderMonkyMeshData, L"HitGroup", "RoughCube", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.0f), 0.5f, 0.2f, 2.4f), "Bear");
 
 	DXRPipeLine::GetInstance().AddMeshData(sphereMeshData, L"HitGroup", "Sphere", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f), 0.2f),"Bear");
 	_blenderMonkey = DXRPipeLine::GetInstance().AddMeshData(sphereMeshData, L"HitGroup", "Sphere2", _blenderMonkyMaterial,"Bear");
@@ -118,11 +118,11 @@ void MainGame::Init()
 	//ActorManager::GetInstance().AddActor(sphere);
 
 
-	auto floor = new Cube(SimpleMath::Vector3(1.45f, -2.5f, 0.640f), SimpleMath::Vector3(grid_size_x, 1, grid_size_z), 300.0f, "GrayCube", false);
-	floor->SetRotation(SimpleMath::Vector3(0, 0.0f, 0.0f));
-	floor->SetActorName("Floor");
-	ActorManager::GetInstance().AddActor(floor);
-	floor->OnStatic(true, true);
+	//auto floor = new Cube(SimpleMath::Vector3(1.45f, -2.5f, 0.640f), SimpleMath::Vector3(grid_size_x, 1, grid_size_z), 300.0f, "GrayCube", false);
+	//floor->SetRotation(SimpleMath::Vector3(0, 0.0f, 0.0f));
+	//floor->SetActorName("Floor");
+	//ActorManager::GetInstance().AddActor(floor);
+	//floor->OnStatic(true, true);
 
 	//auto wall = new Cube(SimpleMath::Vector3(2.830f, 2.240f, 8.840f), SimpleMath::Vector3(grid_size_x, 6, 1), 300.0f, "WhiteCube", false);
 	//ActorManager::GetInstance().AddActor(wall);
@@ -187,15 +187,18 @@ void MainGame::Init()
 	//	//}
 	//}
 
-	for (int i = 0; i < 9999; i++)
+	for (int i = 0; i < 10000; i++)
 	{
-		auto pos_x = Random::GetRandom(-12.0f, 12.0f);
-		auto pos_z = Random::GetRandom(-12.0f, 12.0f);
+		auto pos_x = 1.0f * i / 100;
+		auto pos_z = 1.0f * (i % 100);
 		float pos_y = 3.0f;
+
+		
 
 
 		auto cube = new Cube(SimpleMath::Vector3(pos_x, 3.0f, pos_z), SimpleMath::Vector3(0.3f), 300.0f, "RoughCube", false);
 		cube->SetActorName("Cube");
+		cube->SetRotation(SimpleMath::Vector3(pos_x, pos_z, pos_y));
 		cube->OnStatic(true, false);
 		ActorManager::GetInstance().AddActor(cube);
 	}

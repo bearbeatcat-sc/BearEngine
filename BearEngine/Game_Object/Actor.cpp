@@ -119,20 +119,21 @@ const DirectX::SimpleMath::Vector3& Actor::GetScale()
 	return DirectX::SimpleMath::Vector3(size_x, size_y, size_z);
 }
 
-const DirectX::SimpleMath::Quaternion Actor::GetRotation()
-{
-	return DirectX::SimpleMath::Quaternion::CreateFromYawPitchRoll(m_Rotation.x, m_Rotation.y, m_Rotation.z);
-
-}
-
-const DirectX::SimpleMath::Vector3& Actor::GetVecRotation()
+const DirectX::SimpleMath::Quaternion& Actor::GetRotation()
 {
 	return m_Rotation;
 }
 
-void Actor::SetRotation(const DirectX::SimpleMath::Vector3 rotate)
+const DirectX::SimpleMath::Vector3& Actor::GetEulerRotation()
 {
-	m_Rotation = rotate;
+	return m_EulerRotation;
+}
+
+
+void Actor::SetRotation(const DirectX::SimpleMath::Vector3& rotate)
+{
+	m_Rotation = SimpleMath::Quaternion::CreateFromYawPitchRoll(rotate.x,rotate.y,rotate.z);
+	m_EulerRotation = rotate;
 	SetWorldMatrix();
 }
 
@@ -142,6 +143,12 @@ void Actor::SetScale(const DirectX::SimpleMath::Vector3& scale)
 	SetWorldMatrix();
 }
 
+
+void Actor::SetRotation(const DirectX::SimpleMath::Quaternion rotate)
+{
+	m_Rotation = rotate;
+	SetWorldMatrix();
+}
 
 const DirectX::SimpleMath::Matrix Actor::GetWorldMatrix()
 {
@@ -280,9 +287,9 @@ void Actor::RenderHierarchy(int index)
 
 	float f_rotation[3] =
 	{
-		m_Rotation.x,
-		m_Rotation.y,
-		m_Rotation.z
+		m_EulerRotation.x,
+		m_EulerRotation.y,
+		m_EulerRotation.z
 	};
 
 	bool isChange = false;
@@ -308,7 +315,8 @@ void Actor::RenderHierarchy(int index)
 	if (isChange)
 	{
 		m_Position = DirectX::SimpleMath::Vector3(f_position);
-		m_Rotation = DirectX::SimpleMath::Vector3(f_rotation);
+		m_EulerRotation = DirectX::SimpleMath::Vector3(f_rotation);
+		SetRotation(m_EulerRotation);
 		m_Scale = DirectX::SimpleMath::Vector3(f_scale);
 	}
 	ImGui::End();

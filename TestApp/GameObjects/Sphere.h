@@ -62,7 +62,6 @@ private:
 	DirectX::SimpleMath::Color mColor;
 	Vector3 mInitPos;
 	Vector3 mStartPos;
-	std::shared_ptr<RigidBodyComponent> _rigidBodyComponent;
 };
 
 #endif

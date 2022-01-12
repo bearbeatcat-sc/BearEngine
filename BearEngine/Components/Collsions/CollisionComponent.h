@@ -21,8 +21,8 @@ public:
 	
 	void OnDrawDebug();
 	void OffDrawDebug();
-	void RegistRigidBody(std::shared_ptr<RigidBodyComponent> rigid_body_component);
-	void OnResolveContact(Actor* other, CollisionComponent* otherCollisionComponent,InterSectInfo& inter_sect_info);
+	//void RegistRigidBody(std::shared_ptr<RigidBodyComponent> rigid_body_component);
+	//void OnResolveContact(Actor* other, CollisionComponent* otherCollisionComponent,InterSectInfo& inter_sect_info);
 	
 	const DirectX::SimpleMath::Vector3& GetUserPosition();
 
@@ -30,7 +30,7 @@ public:
 	const std::string& GetCollsionTag();
 	int GetCollisionIndex();
 	Actor* GetUser();
-	std::shared_ptr<RigidBodyComponent> GetRigidBody();
+	//std::shared_ptr<RigidBodyComponent> GetRigidBody();
 
 	void SetCollisionTag(const std::string& tag);
 	void SetTreeObject(CollisionTreeObject* treeobj);
@@ -56,7 +56,7 @@ protected:
 	int _collisionIndex;
 
 	// 今回はとりあえず、ポインタをもたせる。
-	std::shared_ptr<RigidBodyComponent> _rigidBodyComponent;
+	//std::shared_ptr<RigidBodyComponent> _rigidBodyComponent;
 	
 };
 

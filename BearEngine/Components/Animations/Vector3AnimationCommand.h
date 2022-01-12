@@ -17,14 +17,15 @@ public:
 	void Play() override;
 	void AnimationUpdate() override;
 	bool IsEnd() override;
+
+	SimpleMath::Vector3 _target;
+	SimpleMath::Vector3 _start;
 private:
-	SimpleMath::Vector3 mTarget;
-	SimpleMath::Vector3 mStart;
 
-	SimpleMath::Vector3 &mRet;
+	SimpleMath::Vector3 &_ret;
 
-	float mLerpTime;
-	float m_Speed;
+	float _lerpTime;
+	float _speed;
 };
 
 #endif

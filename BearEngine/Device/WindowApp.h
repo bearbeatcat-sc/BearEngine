@@ -2,6 +2,7 @@
 #include "Singleton.h"
 #include <Windows.h>
 #include "../Game.h"
+#include "Components/Animations/Vector3AnimationCommand.h"
 
 class Game;
 class BearEngine;
@@ -21,12 +22,14 @@ public:
 	HRESULT Run(Game* m_Game);
 	HWND GetHWND();
 	const WindowSize& GetWindowSize();
+	const SimpleMath::Vector2& GetDebugGameWindowSize();
 	WNDCLASSEX GetWndClassEx();
 	float GetAspect();
 	const std::string FileOpen();
 	void MsgBox(const std::string&& msg, const std::string& caption);
 
 	static WindowSize window_size;
+	static SimpleMath::Vector2 _debugGameWindowSize;
 	static int sync_interval;
 
 protected:

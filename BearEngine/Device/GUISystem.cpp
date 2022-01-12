@@ -34,7 +34,8 @@ void GUISystem::RenderRenderingDebugWindow()
 
 		ImGui::Text("Application Properties");
 		ImGui::Text("FPS:%i", Time::FPS);
-		ImGui::Text("DeltaTime:%f", Time::DeltaTime);
+		ImGui::Text("Delta Time:%f", Time::DeltaTime);
+		ImGui::Text("Elapsed Time:%f", Time::ElapsedTime);
 
 		ImGui::Separator();
 		ImGui::Dummy(ImVec2(0, 30));

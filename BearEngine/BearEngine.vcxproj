@@ -280,6 +280,7 @@
     <ClCompile Include="Components\Collsions\CollisionTree_Manager.cpp" />
     <ClCompile Include="Components\Collsions\CollisionTree_Object.cpp" />
     <ClCompile Include="Components\Collsions\OBBCollisionComponent.cpp" />
+    <ClCompile Include="Components\Collsions\RayCollisionComponent.cpp" />
     <ClCompile Include="Components\Collsions\SphereCollisionComponent.cpp" />
     <ClCompile Include="Components\Component.cpp" />
     <ClCompile Include="Components\MeshComponent.cpp" />
@@ -354,7 +355,6 @@
     <ClCompile Include="imgui\imgui_impl_dx12.cpp" />
     <ClCompile Include="imgui\imgui_impl_win32.cpp" />
     <ClCompile Include="imgui\imgui_widgets.cpp" />
-    <ClCompile Include="Components\Physics\RigidBodyComponent.cpp" />
     <ClCompile Include="SceneSystems\SceneManager.cpp" />
     <ClCompile Include="Utility\Camera.cpp" />
     <ClCompile Include="Utility\CameraManager.cpp" />
@@ -381,7 +381,7 @@
     <ClInclude Include="Components\Collsions\CollisionInterSect.h" />
     <ClInclude Include="Components\Collsions\InterSectInfo.h" />
     <ClInclude Include="Components\Collsions\OBBCollisionComponent.h" />
-    <ClInclude Include="Components\Physics\RigidBodyComponent.h" />
+    <ClInclude Include="Components\Collsions\RayCollisionComponent.h" />
     <ClInclude Include="Components\SpriteComponent3D.h" />
     <ClInclude Include="Components\Collsions\AABBCollsionComponent.h" />
     <ClInclude Include="Components\Collsions\CollisionComponent.h" />

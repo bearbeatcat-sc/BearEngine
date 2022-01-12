@@ -1,17 +1,17 @@
 #include "Time.h"
-#include "../imgui/imgui.h"
 #include <Windows.h>
 
-#include "Math/MathUtility.h"
 
 float Time::DeltaTime = 0.0f;
 float Time::TimeScale = 1.0f;
-float Time::lastTime = 0.0f;
-float Time::BackTickCount = 0.0f;
-int Time::FPS = 0.0f;
-int Time::FPSCounter = 0.0f;
+float Time::ElapsedTime = 0.0f;
+
+double Time::lastTime = 0.0f;
+int Time::FPS = 0;
+
 const float Time::k = 0.1f;
 float Time::avgTime = 0.0f;
+
 float LOW_LIMIT = 0.0167f;
 float HIGH_LIMIT = 0.1f;
 
@@ -34,9 +34,10 @@ void Time::Update()
 	QueryPerformanceCounter(&currentTime);
 
 	//float deltaTime = (currentTime - Time::lastTime) / 1000.0f;
-	float deltaTime = static_cast<double>(currentTime.QuadPart - TimeStart.QuadPart) / static_cast<double>(TimeFreq.QuadPart);
-	Time::TimeStart = currentTime;
+	const double elasped = static_cast<double>(currentTime.QuadPart - TimeStart.QuadPart) / static_cast<double>(TimeFreq.QuadPart);
 
+	const float deltaTime = static_cast<float>(elasped - lastTime);
+	lastTime = elasped;
 
 	avgTime *= 1.0f - k;
 	avgTime += deltaTime * k;
@@ -55,8 +56,9 @@ void Time::Update()
 	//if (deltaTime < LOW_LIMIT) deltaTime = LOW_LIMIT;
 	//if (deltaTime > HIGH_LIMIT) deltaTime = HIGH_LIMIT;
 
-	Time::DeltaTime = deltaTime * Time::TimeScale;
+	Time::DeltaTime = deltaTime;
 
+	ElapsedTime += Time::DeltaTime;
 }
 
 float Time::GetNow()

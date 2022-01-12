@@ -316,8 +316,8 @@ void DXRPipeLine::UpdateTLAS()
 	for (int i = 0; i < instanceCount; i++)
 	{
 		p_instance_desc[i].InstanceID = i;
-		p_instance_desc[i].Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-		p_instance_desc[i].InstanceMask = 0xFF;
+		p_instance_desc[i].InstanceMask = _instances[i]->_raytracingInstanceDesc->Flags;
+		p_instance_desc[i].InstanceMask = _instances[i]->_raytracingInstanceDesc->InstanceMask;
 		p_instance_desc[i].InstanceContributionToHitGroupIndex = _instances[i]->_raytracingInstanceDesc->InstanceContributionToHitGroupIndex;
 		p_instance_desc[i].AccelerationStructure = _instances[i]->_raytracingInstanceDesc->AccelerationStructure;
 
@@ -577,8 +577,8 @@ void DXRPipeLine::CreateTopLevelAS()
 	for (int i = 0; i < instanceCount; i++)
 	{
 		p_instance_desc[i].InstanceID = i;
-		p_instance_desc[i].Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-		p_instance_desc[i].InstanceMask = 0xFF;
+		p_instance_desc[i].InstanceMask = _instances[i]->_raytracingInstanceDesc->Flags;
+		p_instance_desc[i].InstanceMask = _instances[i]->_raytracingInstanceDesc->InstanceMask;
 		p_instance_desc[i].InstanceContributionToHitGroupIndex = _instances[i]->_hitGroupIndex;
 		p_instance_desc[i].AccelerationStructure = _instances[i]->_raytracingInstanceDesc->AccelerationStructure;
 

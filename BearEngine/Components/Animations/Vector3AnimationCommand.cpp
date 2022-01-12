@@ -6,7 +6,7 @@
 #include "Utility/Math/MathUtility.h"
 
 Vector3AnimationCommand::Vector3AnimationCommand(const SimpleMath::Vector3& start, const SimpleMath::Vector3& target,SimpleMath::Vector3& pRet,float speed, AnimationSpeedType animationSpeedType)
-	:AnimationCommand(animationSpeedType),mTarget(target),mStart(start),mLerpTime(0.0f), mRet(pRet), m_Speed(speed)
+	:AnimationCommand(animationSpeedType),_target(target),_start(start),_lerpTime(0.0f), _ret(pRet), _speed(speed)
 {
 }
 
@@ -16,14 +16,14 @@ Vector3AnimationCommand::~Vector3AnimationCommand()
 
 void Vector3AnimationCommand::Play()
 {
-	mLerpTime = 0.0f;
+	_lerpTime = 0.0f;
 }
 
 void Vector3AnimationCommand::AnimationUpdate()
 {
-	mLerpTime = MathUtility::Clamp(mLerpTime + Time::DeltaTime * m_Speed, 0.0f, 1.0f);
+	_lerpTime = MathUtility::Clamp(_lerpTime + Time::DeltaTime * _speed, 0.0f, 1.0f);
 
-	float x = mLerpTime / 1.0f;
+	float x = _lerpTime / 1.0f;
 
 	switch(_animationSpeedType)
 	{
@@ -31,44 +31,44 @@ void Vector3AnimationCommand::AnimationUpdate()
 		break;
 
 	case AnimationSpeedType_InCubic:
-		x = EasingUtil::ease_in_cubic(mLerpTime);
+		x = EasingUtil::ease_in_cubic(_lerpTime);
 		break;
 
 	case AnimationSpeedType_InElastic:
-		x = EasingUtil::ease_in_elastic(mLerpTime);
+		x = EasingUtil::ease_in_elastic(_lerpTime);
 		break;
 	case AnimationSpeedType_OutSin:
-		x = EasingUtil::ease_out_sin(mLerpTime);
+		x = EasingUtil::ease_out_sin(_lerpTime);
 		break;
 
 	case AnimationSpeedType_OutElastic:
-		x = EasingUtil::ease_in_elastic(mLerpTime);
+		x = EasingUtil::ease_in_elastic(_lerpTime);
 		break;
 
 	case AnimationSpeedType_InOutCulbic:
-		x = EasingUtil::ease_inout_cublic(mLerpTime);
+		x = EasingUtil::ease_inout_cublic(_lerpTime);
 		break;
 
 	case AnimationSpeedType_InOutElastic:
-		x = EasingUtil::ease_inout_elastic(mLerpTime);
+		x = EasingUtil::ease_inout_elastic(_lerpTime);
 		break;
 
 	case AnimationSpeedType_Out_Quart:
-		x = EasingUtil::ease_out_quart(mLerpTime);
+		x = EasingUtil::ease_out_quart(_lerpTime);
 		break;
 
 	default: 
 		;
 	}
 
-	auto c = mTarget - mStart;
+	auto c = _target - _start;
 	
 
-	mRet = c * x + mStart;
+	_ret = c * x + _start;
 
 }
 
 bool Vector3AnimationCommand::IsEnd()
 {
-	return mLerpTime >= 1.0f;
+	return _lerpTime >= 1.0f;
 }

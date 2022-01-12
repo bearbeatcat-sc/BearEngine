@@ -93,9 +93,7 @@ void Sphere::Init()
 		CollisionManager::GetInstance().AddComponent(_sphereCollisionComponent);
 		CollisionManager::GetInstance().AddRegistTree(_sphereCollisionComponent);
 
-		_rigidBodyComponent = std::make_shared<RigidBodyComponent>(this, _sphereCollisionComponent);
-		AddComponent(_rigidBodyComponent);
-		_sphereCollisionComponent->RegistRigidBody(_rigidBodyComponent);
+
 
 	}
 	else
@@ -109,18 +107,10 @@ void Sphere::Init()
 		CollisionManager::GetInstance().AddComponent(_sphereCollisionComponent);
 		CollisionManager::GetInstance().AddRegistTree(_sphereCollisionComponent);
 
-		_rigidBodyComponent = std::make_shared<RigidBodyComponent>(this, _sphereCollisionComponent);
-		AddComponent(_rigidBodyComponent);
-		//_obbCollisionComponent->RegistRigidBody(_rigidBodyComponent);
-		_sphereCollisionComponent->RegistRigidBody(_rigidBodyComponent);
+
 
 	}
 
-	_rigidBodyComponent->_AddGravity = SimpleMath::Vector3(0, -8.0f, 0.0f);
-	_rigidBodyComponent->_Mass = 1.0f;
-	_rigidBodyComponent->_Elasticty = 3.0f;
-
-	_rigidBodyComponent->SetStaticFlag(true, false);
 	
 	auto mtx = GetWorldMatrix();
 	_instance->SetMatrix(mtx);

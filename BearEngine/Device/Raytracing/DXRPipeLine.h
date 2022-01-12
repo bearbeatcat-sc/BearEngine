@@ -28,7 +28,7 @@ struct HitResult
 
 	}
 
-	int _isHit = 1;
+	int _isHit = 0;
 };
 
 struct AccelerationStructureBuffers

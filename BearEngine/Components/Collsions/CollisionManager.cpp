@@ -109,7 +109,7 @@ void CollisionManager::InterSect()
 		if (collisonList[i]->IsInterSect(collisonList[i + 1], inter_sect_info))
 		{
 			// 衝突解決
-			collisonList[i]->OnResolveContact(collisonList[i + 1]->GetUser(), collisonList[i + 1],inter_sect_info);
+			//collisonList[i]->OnResolveContact(collisonList[i + 1]->GetUser(), collisonList[i + 1],inter_sect_info);
 			
 			collisonList[i]->UserOnCollision(collisonList[i + 1]->GetUser(), collisonList[i + 1], inter_sect_info);
 			collisonList[i + 1]->UserOnCollision(collisonList[i]->GetUser(), collisonList[i], inter_sect_info);

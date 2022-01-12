@@ -4,6 +4,8 @@
 #include "Components/Collsions/OBBCollisionComponent.h"
 #include <Components/Collsions/InterSectInfo.h>
 
+#include "RayCollisionComponent.h"
+
 #define CMP(x, y) \
 	(fabsf(x - y) <= FLT_EPSILON * fmaxf(1.0f, fmaxf(fabsf(x), fabsf(y))))
 
@@ -29,7 +31,7 @@ const bool CollisionInterSect::SphereToOBBInterSect(SphereCollisionComponent* sp
 	float test = CMP(dot, 0.0f);
 
 
-	
+
 	if (CMP(dot, 0.0f))
 	{
 		auto v2 = point - obb->GetCenter();
@@ -52,7 +54,7 @@ const bool CollisionInterSect::SphereToOBBInterSect(SphereCollisionComponent* sp
 
 	interSect._Normal.Normalize();
 
-	
+
 	//interSect._InterSectPositionA = pos + interSect._Normal * radius;
 
 	auto outsidePoint = pos - interSect._Normal * radius;
@@ -310,7 +312,7 @@ const bool CollisionInterSect::OBBToOBBInterSect(OBBCollisionComponent* obb1, OB
 	//	test[6 + i * 3 + 1] = test[i].Cross(test[1]);
 	//	test[6 + i * 3 + 2] = test[i].Cross(test[2]);
 	//}
-	
+
 	SimpleMath::Vector3* hitNormal = nullptr;
 	bool shouldFlip;
 
@@ -389,6 +391,43 @@ const bool CollisionInterSect::OBBToOBBInterSect(OBBCollisionComponent* obb1, OB
 	interSect._PoisitionB = obb2->GetCenter();
 
 	return true;
+}
+
+const bool CollisionInterSect::OBBToRayInterSect(OBBCollisionComponent* obb1, RayCollisionComponent* ray,
+	InterSectInfo& interSect)
+{
+	const float EPSILON = 1.175494e-37;
+
+	auto obb1DirectionVec = obb1->GetDirectionVec();
+	auto obb1Size = obb1->GetSize();
+
+	SimpleMath::Vector3 m = (ray->GetOrigin() + ray->GetDir()) * 0.5f;
+	SimpleMath::Vector3 d = ray->GetDir() - m;
+
+
+
+	m = m - obb1->GetCenter();
+	m = SimpleMath::Vector3(obb1DirectionVec[0].Dot(m), obb1DirectionVec[1].Dot(m), obb1DirectionVec[2].Dot(m));
+	d = SimpleMath::Vector3(obb1DirectionVec[0].Dot(d), obb1DirectionVec[1].Dot(d), obb1DirectionVec[2].Dot(d));
+
+	float adx = fabsf(d.x);
+	if (fabsf(m.x) > obb1Size.x + adx) return true;
+
+	float ady = fabsf(d.y);
+	if (fabsf(m.y) > obb1Size.y + ady) return true;
+
+	float adz = fabsf(d.z);
+	if (fabsf(m.z) > obb1Size.z + adz) return true;
+
+	adx += EPSILON;
+	ady += EPSILON;
+	adz += EPSILON;
+
+	if (fabsf(m.y * d.z - m.z * d.y) > obb1Size.y * adz + obb1Size.z * ady)return true;
+	if (fabsf(m.z * d.x - m.x * d.z) > obb1Size.x * adz + obb1Size.z * adx)return true;
+	if (fabsf(m.x * d.y - m.y * d.x) > obb1Size.x * ady + obb1Size.y * adx)return true;
+
+	return false;
 }
 
 const bool CollisionInterSect::SphereToSphereInterSect(SphereCollisionComponent* sphere1,

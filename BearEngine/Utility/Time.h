@@ -14,13 +14,12 @@ public:
 
 public:
 	static float DeltaTime;
+	static float ElapsedTime;
 	static float TimeScale;
 	static int FPS;
 
 private:
-	static float lastTime;
-	static float BackTickCount;
-	static int FPSCounter;
+	static double lastTime;
 
 	static LARGE_INTEGER TimeFreq;
 	static LARGE_INTEGER TimeStart;

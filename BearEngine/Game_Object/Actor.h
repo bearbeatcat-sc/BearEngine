@@ -40,10 +40,11 @@ public:
 	const DirectX::SimpleMath::Vector3& GetScale() ;
 	void SetScale(const DirectX::SimpleMath::Vector3& scale);
 
-	const DirectX::SimpleMath::Quaternion GetRotation() ;
-	const DirectX::SimpleMath::Vector3& GetVecRotation() ;
+	const DirectX::SimpleMath::Quaternion& GetRotation() ;
+	const DirectX::SimpleMath::Vector3& GetEulerRotation();
 	
-	void SetRotation(const DirectX::SimpleMath::Vector3 rotate);
+	void SetRotation(const DirectX::SimpleMath::Vector3& rotate);
+	void SetRotation(const DirectX::SimpleMath::Quaternion rotate);
 
 	const DirectX::SimpleMath::Matrix GetWorldMatrix() ;
 	void SetWorldMatrix() ;
@@ -80,7 +81,8 @@ private:
 protected:
 	DirectX::SimpleMath::Vector3 m_Position;
 	DirectX::SimpleMath::Vector3 m_Scale;
-	DirectX::SimpleMath::Vector3 m_Rotation;
+	DirectX::SimpleMath::Vector3 m_EulerRotation;
+	DirectX::SimpleMath::Quaternion m_Rotation;
 	
 	bool destroyFlag;
 	std::string m_Tag;

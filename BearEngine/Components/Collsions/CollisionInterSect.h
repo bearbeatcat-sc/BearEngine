@@ -2,8 +2,10 @@
 
 #include <SimpleMath.h>
 
+
 class SphereCollisionComponent;
 class OBBCollisionComponent;
+class RayCollisionComponent;
 
 struct InterSectInfo;
 
@@ -40,6 +42,7 @@ class CollisionInterSect
 public:
 	static const bool SphereToOBBInterSect(SphereCollisionComponent* sphere, OBBCollisionComponent* obb,SimpleMath::Vector3& point, InterSectInfo& interSect);
 	static const bool OBBToOBBInterSect(OBBCollisionComponent* obb1, OBBCollisionComponent* obb2, InterSectInfo& interSect);
+	static const bool OBBToRayInterSect(OBBCollisionComponent* obb1, RayCollisionComponent* ray, InterSectInfo& interSect);
 	static const bool SphereToSphereInterSect(SphereCollisionComponent* sphere1, SphereCollisionComponent* sphere2, InterSectInfo& interSect);
 	static const bool PointToOBB(const SimpleMath::Vector3& point, OBBCollisionComponent* obb);
 
