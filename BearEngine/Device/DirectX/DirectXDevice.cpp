@@ -13,8 +13,18 @@ HRESULT DirectXDevice::InitDirectX()
 {
 	HRESULT result = S_OK;
 
-	result = CreateDevice();
-	result = CreateDxgiFactory();
+	if(CreateDevice() != S_OK)
+	{
+		MessageBoxA(nullptr, "DirectX12デバイスの生成に失敗", "ERROR", MB_OK);
+		throw std::logic_error("DirectX12デバイスの生成に失敗");
+	}
+
+	if (CreateDxgiFactory() != S_OK)
+	{
+		MessageBoxA(nullptr, "Dxgiファクトリーの生成に失敗", "ERROR", MB_OK);
+		throw std::logic_error("Dxgiファクトリーの生成に失敗");
+	}
+
 	FindAdapter();
 
 
@@ -33,7 +43,7 @@ IDXGIFactory6* DirectXDevice::GetDxgiFactory()
 
 void DirectXDevice::GetVideoMemoryInfo(DXGI_QUERY_VIDEO_MEMORY_INFO* info)
 {
-	adapter_->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, info);
+	_pAdapter->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, info);
 }
 
 ComPtr<ID3D12Resource1> DirectXDevice::CreateResource(const CD3DX12_RESOURCE_DESC& desc, D3D12_RESOURCE_STATES resourceStates, const D3D12_CLEAR_VALUE* clearValue, D3D12_HEAP_TYPE heapType)
@@ -125,12 +135,19 @@ HRESULT DirectXDevice::CreateDxgiFactory()
 
 void DirectXDevice::FindAdapter()
 {
-	std::vector<ComPtr<IDXGIAdapter>> adapters;
+	std::vector<ComPtr<IDXGIAdapter1>> adapters;
 
-	for (int i = 0; dxgi_factory_->EnumAdapters(i, reinterpret_cast<ComPtr<IDXGIAdapter>&>(adapter_).GetAddressOf()) != DXGI_ERROR_NOT_FOUND; i++)
+	UINT i = 0;
+	IDXGIAdapter1* pAdapter = nullptr;
+
+	// アダプターの列挙
+	while (dxgi_factory_->EnumAdapters1(i, &pAdapter) != DXGI_ERROR_NOT_FOUND)
 	{
-		adapters.push_back(adapter_.Get());
+		adapters.push_back(pAdapter);
+		++i;
 	}
+
+	IDXGIAdapter1* pSetAdpter = nullptr;
 
 	for (int i = 0; i < adapters.size(); i++)
 	{
@@ -139,12 +156,20 @@ void DirectXDevice::FindAdapter()
 
 		std::wstring strDesc = adesc.Description;
 
-		if (strDesc.find(L"Microsoft") == std::wstring::npos)
+		if ((strDesc.find(L"Microsoft") == std::wstring::npos && strDesc.find(L"Intel") == std::wstring::npos))
 		{
-			adapter_ = reinterpret_cast<ComPtr<IDXGIAdapter4>&>(adapters[i]);
+			pSetAdpter = adapters[i].Get();
 			break;
 		}
 	}
+
+	if(pSetAdpter == nullptr)
+	{
+		MessageBoxA(nullptr, "対応しているアダプターの取得に失敗", "ERROR", MB_OK);
+		throw std::logic_error("対応しているアダプターの取得に失敗");
+	}
+
+	_pAdapter = reinterpret_cast<ComPtr<IDXGIAdapter4>&>(pSetAdpter);
 }
 
 // DXR�ɑΉ����Ă��邩�H

@@ -43,7 +43,7 @@ private:
 private:
 	ComPtr<ID3D12Device5> device_;
 	ComPtr<IDXGIFactory6> dxgi_factory_;
-	ComPtr<IDXGIAdapter4> adapter_;
+	ComPtr<IDXGIAdapter4> _pAdapter;
 
 
 };
