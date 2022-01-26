@@ -187,7 +187,7 @@ void MainGame::Init()
 	//	//}
 	//}
 
-	for (int i = 0; i < 10000; i++)
+	for (int i = 0; i < 100; i++)
 	{
 		auto pos_x = 1.0f * i / 100;
 		auto pos_z = 1.0f * (i % 100);

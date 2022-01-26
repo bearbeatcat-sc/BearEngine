@@ -272,19 +272,19 @@ void DXRPipeLine::CreateBLAS(std::shared_ptr<DXRMeshData> pDXRMeshData, std::sha
 
 
 	buffers->pScratch = CreateBuffer(info.ScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, defaultHeapProps);;
-	//if (buffers->pScratch == nullptr)
-	//{
-	//	WindowApp::GetInstance().MsgBox("AccelerationStructureBuffersの生成に失敗しました。", "ERROR");
-	//	throw std::runtime_error("AccelerationStructureBuffersの生成に失敗");
-	//}
+	if (buffers->pScratch == nullptr)
+	{
+		WindowApp::GetInstance().MsgBox("BottomLevelAccelerationStructureBufferの生成に失敗しました。", "ERROR");
+		throw std::runtime_error("BottomLevelAccelerationStructureBufferの生成に失敗");
+	}
 	buffers->pScratch->SetName(L"BLAS_ScratchBuffer");
 
 	buffers->pResult = CreateBuffer(info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, defaultHeapProps);
-	//if (buffers->pResult == nullptr)
-	//{
-	//	WindowApp::GetInstance().MsgBox("AccelerationStructureBuffersの生成に失敗しました。", "ERROR");
-	//	throw std::runtime_error("AccelerationStructureBuffersの生成に失敗");
-	//}
+	if (buffers->pResult == nullptr)
+	{
+		WindowApp::GetInstance().MsgBox("BottomLevelAccelerationStructureBufferの生成に失敗しました。", "ERROR");
+		throw std::runtime_error("BottomLevelAccelerationStructureBufferの生成に失敗");
+	}
 	buffers->pResult->SetName(L"BLAS_ResultBuffer");
 
 	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC asDesc = {};
@@ -577,16 +577,16 @@ void DXRPipeLine::CreateTopLevelAS()
 	_AccelerationStructureBuffers.pScratch = CreateBuffer(info.ScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, defaultHeapProps);
 	if (_AccelerationStructureBuffers.pScratch == nullptr)
 	{
-		WindowApp::GetInstance().MsgBox("AccelerationStructureBuffersの生成に失敗しました。", "ERROR");
-		throw std::runtime_error("AccelerationStructureBuffersの生成に失敗");
+		WindowApp::GetInstance().MsgBox("TopLevelAccelerationStructureBufferの生成に失敗しました。", "ERROR");
+		throw std::runtime_error("TopLevelAccelerationStructureBufferの生成に失敗");
 	}
 	_AccelerationStructureBuffers.pScratch->SetName(L"TLAS_ScratchBuffer");
 
 	_AccelerationStructureBuffers.pResult = CreateBuffer(info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, defaultHeapProps);;
 	if (_AccelerationStructureBuffers.pResult == nullptr)
 	{
-		WindowApp::GetInstance().MsgBox("AccelerationStructureBuffersの生成に失敗しました。", "ERROR");
-		throw std::runtime_error("AccelerationStructureBuffersの生成に失敗");
+		WindowApp::GetInstance().MsgBox("TopLevelAccelerationStructureBufferの生成に失敗しました。", "ERROR");
+		throw std::runtime_error("TopLevelAccelerationStructureBufferの生成に失敗");
 	}
 
 	_AccelerationStructureBuffers.pResult->SetName(L"TLAS_ResultBuffer");

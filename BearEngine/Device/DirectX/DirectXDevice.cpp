@@ -62,13 +62,23 @@ ComPtr<ID3D12Resource1> DirectXDevice::CreateResource(const CD3DX12_RESOURCE_DES
 
 void DirectXDevice::EnableDebugLayer()
 {
-	ID3D12Debug* debugLayer = nullptr;
+	ComPtr<ID3D12Debug1> pDebugController1 = nullptr;
+	ComPtr<ID3D12Debug1> pDebugController2 = nullptr;
 
-	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugLayer))))
+	if (!SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&pDebugController1))))
 	{
-		debugLayer->EnableDebugLayer();
-		debugLayer->Release();
+		WindowApp::GetInstance().MsgBox("DebugInterfaceの取得に失敗", "ERROR");
+		throw std::runtime_error("DebugInterfaceの取得に失敗");
 	}
+
+	if (!SUCCEEDED(pDebugController1->QueryInterface(IID_PPV_ARGS(&pDebugController2))))
+	{
+		WindowApp::GetInstance().MsgBox("DebugInterfaceの取得に失敗", "ERROR");
+		throw std::runtime_error("DebugInterfaceの取得に失敗");
+	}
+
+	pDebugController2->SetEnableGPUBasedValidation(true);
+
 
 	ID3D12DeviceRemovedExtendedDataSettings1* d3dDredSettings1;
 	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&d3dDredSettings1))))
@@ -77,6 +87,8 @@ void DirectXDevice::EnableDebugLayer()
 		d3dDredSettings1->SetBreadcrumbContextEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
 		d3dDredSettings1->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
 	}
+
+	
 }
 
 void DirectXDevice::DeviceRemovedHandler()
@@ -175,13 +187,13 @@ void DirectXDevice::FindAdapter()
 // DXR�ɑΉ����Ă��邩�H
 bool DirectXDevice::CheckSupportedDXR()
 {
-	D3D12_FEATURE_DATA_D3D12_OPTIONS5 features5;
-	HRESULT hr = device_->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &features5, sizeof(D3D12_FEATURE_DATA_D3D12_OPTIONS5));
+	D3D12_FEATURE_DATA_D3D12_OPTIONS5 features5{};
+	HRESULT hr = device_->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &features5, UINT(sizeof(D3D12_FEATURE_DATA_D3D12_OPTIONS5)));
 
-	if (SUCCEEDED(hr) && features5.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED)
-		return true;
+	if (FAILED(hr) || features5.RaytracingTier == D3D12_RAYTRACING_TIER_NOT_SUPPORTED)
+		return false;
 
-	return false;
+	return true;
 }
 
 ComPtr<ID3D12RootSignature> DirectXDevice::CreateRootSignature(const D3D12_ROOT_SIGNATURE_DESC& desc)

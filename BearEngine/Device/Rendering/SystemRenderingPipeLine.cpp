@@ -15,7 +15,10 @@ void SystemRenderingPipeLine::InitPipeLine()
 
 	LoadAssets();
 
+#ifdef _DEBUG
 	DirectXDevice::GetInstance().EnableDebugLayer();
+#endif
+
 	DirectXDevice::GetInstance().InitDirectX();
 	DirectXGraphics::GetInstance().Init();
 	LightManager::GetInstance().Init();
