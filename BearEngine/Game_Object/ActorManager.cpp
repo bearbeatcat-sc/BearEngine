@@ -27,6 +27,9 @@ void ActorManager::AddActor()
 
 void ActorManager::Init()
 {
+	// 初期化処理
+	// アクターがすでに存在している場合は削除する。
+	Shutdown();
 	m_Actos.clear();
 }
 

@@ -268,10 +268,23 @@ void DXRPipeLine::CreateBLAS(std::shared_ptr<DXRMeshData> pDXRMeshData, std::sha
 
 	// ASBufferの作成
 	std::shared_ptr<AccelerationStructureBuffers> buffers = std::make_shared<AccelerationStructureBuffers>();
-	buffers->pScratch = CreateBuffer(info.ScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, defaultHeapProps);
+
+
+
+	buffers->pScratch = CreateBuffer(info.ScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, defaultHeapProps);;
+	//if (buffers->pScratch == nullptr)
+	//{
+	//	WindowApp::GetInstance().MsgBox("AccelerationStructureBuffersの生成に失敗しました。", "ERROR");
+	//	throw std::runtime_error("AccelerationStructureBuffersの生成に失敗");
+	//}
 	buffers->pScratch->SetName(L"BLAS_ScratchBuffer");
 
 	buffers->pResult = CreateBuffer(info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, defaultHeapProps);
+	//if (buffers->pResult == nullptr)
+	//{
+	//	WindowApp::GetInstance().MsgBox("AccelerationStructureBuffersの生成に失敗しました。", "ERROR");
+	//	throw std::runtime_error("AccelerationStructureBuffersの生成に失敗");
+	//}
 	buffers->pResult->SetName(L"BLAS_ResultBuffer");
 
 	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC asDesc = {};
@@ -517,11 +530,16 @@ ComPtr<ID3D12Resource> DXRPipeLine::CreateBuffer(uint64_t size, D3D12_RESOURCE_F
 
 	ComPtr<ID3D12Resource> resource;
 
-	if (DirectXDevice::GetInstance().GetDevice()->CreateCommittedResource(
-		&heapProps, D3D12_HEAP_FLAG_NONE, &bufDesc, initState, nullptr, IID_PPV_ARGS(resource.ReleaseAndGetAddressOf())) != S_OK)
+	HRESULT result = DirectXDevice::GetInstance().GetDevice()->CreateCommittedResource(
+		&heapProps, D3D12_HEAP_FLAG_NONE, &bufDesc, initState, nullptr, IID_PPV_ARGS(resource.ReleaseAndGetAddressOf()));
+
+	std::ostringstream errorMessage;
+	errorMessage << "バッファの生成に失敗しました" << "\n" << std::system_category().message(result);
+
+	if (result != S_OK)
 	{
-		WindowApp::GetInstance().MsgBox("バッファの生成に失敗", "ERROR");
-		assert(0);
+		WindowApp::GetInstance().MsgBox(errorMessage.str().c_str(), "ERROR");
+		return nullptr;
 	}
 
 	return resource;
@@ -556,12 +574,21 @@ void DXRPipeLine::CreateTopLevelAS()
 	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info;
 	DirectXDevice::GetInstance().GetDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
 
-
-
 	_AccelerationStructureBuffers.pScratch = CreateBuffer(info.ScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, defaultHeapProps);
+	if (_AccelerationStructureBuffers.pScratch == nullptr)
+	{
+		WindowApp::GetInstance().MsgBox("AccelerationStructureBuffersの生成に失敗しました。", "ERROR");
+		throw std::runtime_error("AccelerationStructureBuffersの生成に失敗");
+	}
 	_AccelerationStructureBuffers.pScratch->SetName(L"TLAS_ScratchBuffer");
 
-	_AccelerationStructureBuffers.pResult = CreateBuffer(info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, defaultHeapProps);
+	_AccelerationStructureBuffers.pResult = CreateBuffer(info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, defaultHeapProps);;
+	if (_AccelerationStructureBuffers.pResult == nullptr)
+	{
+		WindowApp::GetInstance().MsgBox("AccelerationStructureBuffersの生成に失敗しました。", "ERROR");
+		throw std::runtime_error("AccelerationStructureBuffersの生成に失敗");
+	}
+
 	_AccelerationStructureBuffers.pResult->SetName(L"TLAS_ResultBuffer");
 
 
@@ -857,9 +884,19 @@ void DXRPipeLine::CreateShaderTable()
 	UINT hitGroupRegion = align_to(tableAlign, hitGroupSize);
 
 	UINT tableSize = rayGenRegion + missRegion + hitGroupRegion;
+
+
+
 	_shaderTable = CreateBuffer(tableSize,
 		D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ,
 		uploadHeapProps);
+
+	if (_shaderTable == nullptr)
+	{
+		WindowApp::GetInstance().MsgBox("ShaderTableの生成に失敗しました。", "ERROR");
+		throw std::runtime_error("ShaderTableの生成に失敗しました。");
+	}
+
 	_shaderTable->SetName(L"ShaderTableBuffer");
 
 
@@ -1210,6 +1247,12 @@ void DXRPipeLine::CreateSceneCB()
 	sceneCBSize = (sceneCBSize + 0xff) & ~0xff;
 	_SceneCB = CreateBuffer(sceneCBSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ,
 		uploadHeapProps);
+
+	if (_SceneCB == nullptr)
+	{
+		WindowApp::GetInstance().MsgBox("シーンバッファの生成に失敗しました。", "ERROR");
+		throw std::runtime_error("シーンバッファの生成に失敗");
+	}
 }
 
 void DXRPipeLine::CreateResultBuffer()
@@ -1345,6 +1388,13 @@ void DXRPipeLine::CreateMaterialCB()
 
 	_materialCB = CreateBuffer(bufferSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ,
 		uploadHeapProps);
+
+	if (_materialCB == nullptr)
+	{
+		WindowApp::GetInstance().MsgBox("マテリアルバッファの生成に失敗しました。", "ERROR");
+		throw std::runtime_error("マテリアルバッファの生成に失敗");
+	}
+
 
 	void* mapped = nullptr;
 	_materialCB->Map(0, nullptr, &mapped);

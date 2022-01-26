@@ -8,6 +8,7 @@ public:
 	BearEngine();
 	~BearEngine();
 	void InitEngine();
+	void InitDevice();
 	void EngineUpdate();
 	void BeginRender();
 	void EndRender();

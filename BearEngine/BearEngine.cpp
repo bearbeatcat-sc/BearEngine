@@ -29,11 +29,16 @@ BearEngine::~BearEngine()
 
 void BearEngine::InitEngine()
 {
-	CollisionManager::GetInstance().Init(5, SimpleMath::Vector3(0, 0, 0), SimpleMath::Vector3(9000000, 9000000, 9000000));
-	SoundManager::GetInstance().Init();
+	InitDevice();
 	ActorManager::GetInstance().Init();
+}
+
+void BearEngine::InitDevice()
+{
+	SoundManager::GetInstance().Init();
 	DirectXInput::GetInstance().InitDirectInput();
 	SystemRenderingPipeLine::GetInstance().InitPipeLine();
+	CollisionManager::GetInstance().Init(5, SimpleMath::Vector3(0, 0, 0), SimpleMath::Vector3(9000000, 9000000, 9000000));
 }
 
 void BearEngine::EngineUpdate()
