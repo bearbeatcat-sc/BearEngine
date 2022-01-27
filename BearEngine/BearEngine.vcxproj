@@ -105,8 +105,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <LibraryPath>$(SolutionDir)2020.0.1\lib\vs2017\x64\debug;$(SolutionDir)DirectXTK12\Bin\Desktop_2017_Win10\x64\Debug;$(SolutionDir)DirectXTex\Bin\Desktop_2017_Win10\x64\Debug;C:\Program Files\Autodesk\FBX\FBX SDK\2020.0.1\lib\vs2017\x64\debug;C:\Program Files\Autodesk\FBX\FBX SDK\2020.1\lib\vs2017\x64\debug;$(LibraryPath)</LibraryPath>
-    <IncludePath>$(SolutionDir)BearEngine;$(SolutionDir)2020.0.1\include;$(SolutionDir)DirectXTex;$(SolutionDir)DirectXTK12\Inc;C:\Program Files\Autodesk\FBX\FBX SDK\2020.0.1\include;C:\Program Files\Autodesk\FBX\FBX SDK\2020.1\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)2020.0.1\lib\vs2017\x64\debug;$(SolutionDir)DirectXTK12\Bin\Desktop_2017_Win10\x64\Debug;$(SolutionDir)DirectXTex\Bin\Desktop_2017_Win10\x64\Debug;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)BearEngine;$(SolutionDir)2020.0.1\include;$(SolutionDir)DirectXTex;$(SolutionDir)DirectXTK12\Inc;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -116,8 +116,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)BearEngine;$(SolutionDir)2020.0.1\include;$(SolutionDir)DirectXTex;$(SolutionDir)DirectXTK12\Inc;C:\Program Files\Autodesk\FBX\FBX SDK\2020.0.1\include;C:\Program Files\Autodesk\FBX\FBX SDK\2020.1\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)2020.0.1\lib\vs2017\x64\release;$(SolutionDir)DirectXTK12\Bin\Desktop_2017_Win10\x64\Release;$(SolutionDir)DirectXTex\Bin\Desktop_2017_Win10\x64\Release;C:\Program Files\Autodesk\FBX\FBX SDK\2020.0.1\lib\vs2017\x64\release;C:\Program Files\Autodesk\FBX\FBX SDK\2020.1\lib\vs2017\x64\release;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)BearEngine;$(SolutionDir)2020.0.1\include;$(SolutionDir)DirectXTex;$(SolutionDir)DirectXTK12\Inc;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)2020.0.1\lib\vs2017\x64\release;$(SolutionDir)DirectXTK12\Bin\Desktop_2017_Win10\x64\Release;$(SolutionDir)DirectXTex\Bin\Desktop_2017_Win10\x64\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Test|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -160,7 +160,8 @@
     </FxCompile>
     <Lib>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libfbxsdk-md.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -227,7 +228,8 @@
     <Lib>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
-      <AdditionalDependencies>libfbxsdk-md.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Test|x64'">
@@ -296,9 +298,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Test|x64'">false</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Device\DirectX\Core\Model\FBX\FBXDrawer.cpp" />
-    <ClCompile Include="Device\DirectX\Core\Model\FBX\FBXMesh.cpp" />
-    <ClCompile Include="Device\DirectX\Core\Model\FBX\FBXModel.cpp" />
     <ClCompile Include="Device\DirectX\Core\Model\GeomtryGenerater.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Test|x64'">false</ExcludedFromBuild>
@@ -405,9 +404,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Test|x64'">false</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="Device\DirectX\Core\Model\FBX\FBXDrawer.h" />
-    <ClInclude Include="Device\DirectX\Core\Model\FBX\FBXMesh.h" />
-    <ClInclude Include="Device\DirectX\Core\Model\FBX\FBXModel.h" />
     <ClInclude Include="Device\DirectX\Core\Model\GeomtryGenerater.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Test|x64'">false</ExcludedFromBuild>
