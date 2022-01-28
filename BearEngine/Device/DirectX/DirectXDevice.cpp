@@ -13,12 +13,6 @@ HRESULT DirectXDevice::InitDirectX()
 {
 	HRESULT result = S_OK;
 
-	if(CreateDevice() != S_OK)
-	{
-		MessageBoxA(nullptr, "DirectX12デバイスの生成に失敗", "ERROR", MB_OK);
-		throw std::logic_error("DirectX12デバイスの生成に失敗");
-	}
-
 	if (CreateDxgiFactory() != S_OK)
 	{
 		MessageBoxA(nullptr, "Dxgiファクトリーの生成に失敗", "ERROR", MB_OK);
@@ -26,6 +20,18 @@ HRESULT DirectXDevice::InitDirectX()
 	}
 
 	FindAdapter();
+
+	if(CreateDevice() != S_OK)
+	{
+		MessageBoxA(nullptr, "DirectX12デバイスの生成に失敗", "ERROR", MB_OK);
+		throw std::logic_error("DirectX12デバイスの生成に失敗");
+	}
+
+	if (!CheckSupportedDXR())
+	{
+		WindowApp::GetInstance().MsgBox("Not Supported DXR.", "ERROR");
+		return false;
+	}
 
 
 	return result;
@@ -122,7 +128,7 @@ HRESULT DirectXDevice::CreateDevice()
 
 	for (int i = 0; i < _countof(levels); i++)
 	{
-		result = D3D12CreateDevice(nullptr, levels[i], IID_PPV_ARGS(&device_));
+		result = D3D12CreateDevice(_pAdapter.Get(), levels[i], IID_PPV_ARGS(&device_));
 
 		if (result == S_OK)
 		{

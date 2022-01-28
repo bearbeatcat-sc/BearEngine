@@ -107,12 +107,6 @@ DXRPipeLine::DXRPipeLine()
 
 bool DXRPipeLine::InitPipeLine()
 {
-	if (!DirectXDevice::GetInstance().CheckSupportedDXR())
-	{
-		WindowApp::GetInstance().MsgBox("Not Supported DXR.", "ERROR");
-		return false;
-	}
-
 	CreateAccelerationStructures();
 	CreateGlobalRootSignature();
 	CreateLocalRootSignature();
