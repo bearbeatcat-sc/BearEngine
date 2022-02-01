@@ -1,25 +1,19 @@
-﻿#ifndef _SOUND_MANAGER_H_
-#define _SOUND_MANAGER_H_
+﻿#pragma once
+
+#include "../../../Singleton.h"
+#include "AbstractSoundInstance.h"
 
 #include <xaudio2.h>
-#include "../../../Singleton.h"
 #include <string>
 #include <map>
+#include <memory>
+#include <vector>
 
-class XAudio2VoiceCallBack : public IXAudio2VoiceCallback
-{
-public:
-	STDMETHOD_(void, OnVoiceProcessingPassStart) (THIS_ UINT32 BytesRequired) {};
-	STDMETHOD_(void, OnVoiceProcessingPassEnd) (THIS) {};
-	STDMETHOD_(void, OnStreamEnd) (THIS) {};
-	STDMETHOD_(void, OnBufferStart) (THIS_ void* pBufferContext) {};
-	STDMETHOD_(void, OnBufferEnd) (THIS_ void* pBufferContext)
-	{
-		delete[] pBufferContext;
-	};
-	STDMETHOD_(void, OnLoopEnd) (THIS_ void* pBufferContext) {};
-	STDMETHOD_(void, OnVoiceError) (THIS_ void* pBufferContext, HRESULT Error) {};
-};
+
+class OneShotSoundInstance;
+class SoundInstance;
+
+
 
 
 class SoundManager
@@ -28,8 +22,11 @@ class SoundManager
 public:
 	friend class Singleton<SoundManager>;
 	bool Init();
-	void DirectPlay(const std::string& filePath, IXAudio2SourceVoice* pSourceVoice, float volume = 0.5f,bool isLoop = false);
-	void DirectPlay(const std::string& filePath, float volume = 0.5f,bool isLoop = false);
+	void Update();
+	void AddInstance(std::shared_ptr<AbstractSoundInstance> instance);
+
+	std::shared_ptr<SoundInstance> CreateSoundInstance(const std::string& filePath,bool isLoop = false);
+	void OneShot(const std::string& filePath, float volume = 0.5f);
 
 	struct Chunk
 	{
@@ -50,14 +47,15 @@ public:
 	};
 
 
+private:
+	IXAudio2* m_pXAudio;
+	IXAudio2MasteringVoice* m_pMasteringVoice;
+	std::vector<std::shared_ptr<AbstractSoundInstance>> _soundInstnaces;
+
 protected:
 	SoundManager();
 	~SoundManager();
 	void Finalize();
 
-	IXAudio2* m_pXAudio;
-	IXAudio2MasteringVoice* m_pMasteringVoice;
+
 };
-
-
-#endif

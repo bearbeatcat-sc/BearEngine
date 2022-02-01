@@ -2,6 +2,9 @@
 #include <fstream>
 #include <cassert>
 
+#include "OneShotSoundInstance.h"
+#include "SoundInstance.h"
+
 #pragma comment(lib,"xaudio2.lib")
 
 XAudio2VoiceCallBack voiceCallBack;
@@ -12,6 +15,8 @@ SoundManager::SoundManager()
 
 SoundManager::~SoundManager()
 {
+	_soundInstnaces.clear();
+
 	Finalize();
 }
 
@@ -51,80 +56,32 @@ bool SoundManager::Init()
 
 	return true;
 }
-void SoundManager::DirectPlay(const std::string& filePath, IXAudio2SourceVoice* pSourceVoice, float volume , bool isLoop)
+
+void SoundManager::Update()
 {
-	std::ifstream file;
-	file.open(filePath, std::ios_base::binary);
-
-	if (file.fail())
+	for(auto instance : _soundInstnaces)
 	{
-		assert(0);
+		instance->Update();
 	}
 
-	// Load Riff Header
-	RiffHeader riff;
-	file.read((char*)&riff, sizeof(riff));
-
-	if (strncmp(riff.chunk.id, "RIFF", 4) != 0)
+	for(auto itr = _soundInstnaces.begin(); itr != _soundInstnaces.end();)
 	{
-		assert(0);
+		if((*itr)->IsDestroy())
+		{
+			itr = _soundInstnaces.erase(itr);
+			continue;
+		}
+
+		++itr;
 	}
-
-
-	// Load Format Chunk
-	FormatChunk format;
-	file.read((char*)&format, sizeof(format));
-
-	// Load Data chunk
-	Chunk data;
-	file.read((char*)&data, sizeof(data));
-
-
-	// Load WaveData is Chunk
-
-	char* pBuffer = new char[data.size];
-	file.read(pBuffer, data.size);
-
-	file.close();
-
-
-
-	WAVEFORMATEX wfex{};
-
-	// Set WaveFormat
-	memcpy(&wfex, &format.fmt, sizeof(format.fmt));
-	wfex.wBitsPerSample = format.fmt.nBlockAlign * 8 / format.fmt.nChannels;
-
-
-	// Craete SourceVoice
-	auto result = m_pXAudio->CreateSourceVoice(&pSourceVoice, &wfex,0,2.0f,
-		&voiceCallBack);
-
-	if (FAILED(result))
-	{
-		delete[] pBuffer;
-		return;
-	}
-
-	// Set WaveData
-	XAUDIO2_BUFFER buf{};
-	buf.pAudioData = (BYTE*)pBuffer;
-	buf.Flags = XAUDIO2_END_OF_STREAM;
-	buf.AudioBytes = data.size;
-	buf.pContext = pBuffer;	
-	if (isLoop)
-	{
-		buf.LoopCount = XAUDIO2_LOOP_INFINITE;
-	}
-
-	// Play WaveData
-	pSourceVoice->SetVolume(volume);
-	result = pSourceVoice->SubmitSourceBuffer(&buf);
-	result = pSourceVoice->Start();
-
-	return;
 }
-void SoundManager::DirectPlay(const std::string& filePath, float volume, bool isLoop)
+
+void SoundManager::AddInstance(std::shared_ptr<AbstractSoundInstance> instance)
+{
+	_soundInstnaces.push_back(instance);
+}
+
+std::shared_ptr<SoundInstance> SoundManager::CreateSoundInstance(const std::string& filePath, bool isLoop)
 {
 	std::ifstream file;
 	file.open(filePath, std::ios_base::binary);
@@ -160,24 +117,11 @@ void SoundManager::DirectPlay(const std::string& filePath, float volume, bool is
 
 	file.close();
 
-	IXAudio2SourceVoice* pSourceVoice = nullptr;
-
 	WAVEFORMATEX wfex{};
 
 	// Set WaveFormat
 	memcpy(&wfex, &format.fmt, sizeof(format.fmt));
 	wfex.wBitsPerSample = format.fmt.nBlockAlign * 8 / format.fmt.nChannels;
-
-
-	// Craete SourceVoice
-	auto result = m_pXAudio->CreateSourceVoice(&pSourceVoice, &wfex, 0, 2.0f,
-		&voiceCallBack);
-
-	if (FAILED(result))
-	{
-		delete[] pBuffer;
-		return;
-	}
 
 	// Set WaveData
 	XAUDIO2_BUFFER buf{};
@@ -190,10 +134,94 @@ void SoundManager::DirectPlay(const std::string& filePath, float volume, bool is
 		buf.LoopCount = XAUDIO2_LOOP_INFINITE;
 	}
 
-	// Play WaveData
-	pSourceVoice->SetVolume(volume);
-	result = pSourceVoice->SubmitSourceBuffer(&buf);
-	result = pSourceVoice->Start();
+	//// Craete SourceVoice
+	//auto result = m_pXAudio->CreateSourceVoice(&pSourceVoice, &wfex, 0, 2.0f,
+	//	&voiceCallBack);
+
+	//if (FAILED(result))
+	//{
+	//	delete[] pBuffer;
+	//	return nullptr;
+	//}
+
+
+
+	// Submit
+	//result = pSourceVoice->SubmitSourceBuffer(&buf);
+
+	auto pInstnace = std::make_shared<SoundInstance>(pBuffer);
+	AddInstance(pInstnace);
+	pInstnace->CreateSoundVoice(m_pXAudio, buf, wfex);
+
+	return pInstnace;
+}
+
+
+void SoundManager::OneShot(const std::string& filePath, float volume)
+{
+	std::ifstream file;
+	file.open(filePath, std::ios_base::binary);
+
+	if (file.fail())
+	{
+		assert(0);
+	}
+
+	// Load Riff Header
+	RiffHeader riff;
+	file.read((char*)&riff, sizeof(riff));
+
+	if (strncmp(riff.chunk.id, "RIFF", 4) != 0)
+	{
+		assert(0);
+	}
+
+
+	// Load Format Chunk
+	FormatChunk format;
+	file.read((char*)&format, sizeof(format));
+
+	// Load Data chunk
+	Chunk data;
+	file.read((char*)&data, sizeof(data));
+
+
+	// Load WaveData is Chunk
+
+	char* pBuffer = new char[data.size];
+	file.read(pBuffer, data.size);
+
+	file.close();
+
+
+	WAVEFORMATEX wfex{};
+
+	// Set WaveFormat
+	memcpy(&wfex, &format.fmt, sizeof(format.fmt));
+	wfex.wBitsPerSample = format.fmt.nBlockAlign * 8 / format.fmt.nChannels;
+
+	XAUDIO2_BUFFER buf{};
+	buf.pAudioData = (BYTE*)pBuffer;
+	buf.Flags = XAUDIO2_END_OF_STREAM;
+	buf.AudioBytes = data.size;
+	buf.pContext = pBuffer;
+
+	// Craete SourceVoice
+	//auto result = m_pXAudio->CreateSourceVoice(pSourceVoice, &wfex, 0, 2.0f,
+	//	&voiceCallBack);
+
+	//if (FAILED(result))
+	//{
+	//	delete[] pBuffer;
+	//	return;
+	//}
+
+	//result = pSourceVoice->SubmitSourceBuffer(&buf);
+
+	auto pInstnace = std::make_shared<OneShotSoundInstance>( pBuffer);
+	AddInstance(pInstnace);
+	pInstnace->CreateSoundVoice(m_pXAudio, buf, wfex);
+	pInstnace->Play(volume, 0.5f);
 
 	return;
 }

@@ -1,5 +1,4 @@
-﻿#ifndef _TIMER_H_
-#define _TIMER_H_
+﻿#pragma once
 
 class Timer
 {
@@ -19,4 +18,3 @@ private:
 	float m_Time;
 };
 
-#endif

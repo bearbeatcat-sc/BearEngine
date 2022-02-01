@@ -45,6 +45,7 @@ void BearEngine::EngineUpdate()
 {
 	DirectXInput::GetInstance().UpdateInput();
 	LightManager::GetInstance().Update();
+	SoundManager::GetInstance().Update();
 	ActorManager::GetInstance().Update();
 	CollisionManager::GetInstance().Update();
 	SpriteDrawer::GetInstance().Update();

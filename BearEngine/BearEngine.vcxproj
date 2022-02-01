@@ -314,6 +314,8 @@
     <ClCompile Include="Device\DirectX\Core\ParticleSpriteEffect.cpp" />
     <ClCompile Include="Device\DirectX\Core\PSOManager.cpp" />
     <ClCompile Include="Device\DirectX\Core\ShaderManager.cpp" />
+    <ClCompile Include="Device\DirectX\Core\Sounds\OneShotSoundInstance.cpp" />
+    <ClCompile Include="Device\DirectX\Core\Sounds\SoundInstance.cpp" />
     <ClCompile Include="Device\DirectX\Core\Sounds\SoundManager.cpp" />
     <ClCompile Include="Device\DirectX\Core\SpriteEffect.cpp" />
     <ClCompile Include="Device\DirectX\DirectXDevice.cpp" />
@@ -421,6 +423,9 @@
     <ClInclude Include="Device\DirectX\Core\ParticleSpriteEffect.h" />
     <ClInclude Include="Device\DirectX\Core\PSOManager.h" />
     <ClInclude Include="Device\DirectX\Core\ShaderManager.h" />
+    <ClInclude Include="Device\DirectX\Core\Sounds\AbstractSoundInstance.h" />
+    <ClInclude Include="Device\DirectX\Core\Sounds\OneShotSoundInstance.h" />
+    <ClInclude Include="Device\DirectX\Core\Sounds\SoundInstance.h" />
     <ClInclude Include="Device\DirectX\Core\Sounds\SoundManager.h" />
     <ClInclude Include="Device\DirectX\Core\SpriteEffect.h" />
     <ClInclude Include="Device\DirectX\DirectXDevice.h" />
