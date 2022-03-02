@@ -190,22 +190,18 @@ bool DirectXInput::UpdateXINPUT()
 
 	m_previousTriggerState = m_currentTriggerState;
 
-	if (m_State.Gamepad.bLeftTrigger > 1.0f)
+	m_currentTriggerState.LeftTriggerFlag = false;
+
+	if (m_State.Gamepad.bLeftTrigger > 0.4f)
 	{
 		m_currentTriggerState.LeftTriggerFlag = true;
 	}
-	else
-	{
-		m_currentTriggerState.LeftTriggerFlag = false;
-	}
 
-	if (m_State.Gamepad.bRightTrigger > 1.0f)
+	m_currentTriggerState.RightTriggerFlag = false;
+
+	if (m_State.Gamepad.bRightTrigger > 0.4f)
 	{
 		m_currentTriggerState.RightTriggerFlag = true;
-	}
-	else
-	{
-		m_currentTriggerState.RightTriggerFlag = false;
 	}
 
 	for (int i = 0; i < m_Buttons.size(); ++i)

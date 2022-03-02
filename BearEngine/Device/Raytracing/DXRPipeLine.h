@@ -201,7 +201,7 @@ public:
 	bool InitPipeLine();
 	bool Init();
 
-	std::shared_ptr<DXRInstance> AddInstance(const std::string& meshDataName, const int hitGroupIndex);
+	std::shared_ptr<DXRInstance> AddInstance(const std::string& meshDataName, const int hitGroupIndex,const int instanceID = 0);
 	std::shared_ptr<DXRMeshData> AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::wstring& hitGroupName, const std::string& meshDataName, const std::string& textureName = "");
 	std::shared_ptr<DXRMeshData> AddMeshData(std::shared_ptr<MeshData> pMeshData, const std::wstring& hitGroupName,
 	                 const std::string& meshDataName,PhysicsBaseMaterial material,const std::string& textureName = "");
@@ -212,7 +212,7 @@ public:
 	void DrawDebugGUI();
 	void OnUpdateMaterial();
 	void UpdateMaterial();
-	const std::vector<HitResult>& GetHitResult();
+	//const std::vector<HitResult>& GetHitResult();
 
 private:
 
@@ -342,7 +342,7 @@ private:
 	UINT _AllocateCount = 0;
 	UINT _IncSize;
 
-	const UINT _MaxInstanceCount = 10000;
+	const UINT _MaxInstanceCount = 30000;
 
 	bool _IsUpdateMaterial;
 	bool _IsFirst;

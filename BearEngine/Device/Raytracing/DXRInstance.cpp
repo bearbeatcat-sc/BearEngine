@@ -2,8 +2,8 @@
 
 #include "DXRMeshData.h"
 
-DXRInstance::DXRInstance(const int hitGroupIndex, std::shared_ptr<DXRMeshData> meshData)
-	:_hitGroupIndex(hitGroupIndex), _pDXRMeshData(meshData),_DestroyFlag(false)
+DXRInstance::DXRInstance(const int hitGroupIndex, std::shared_ptr<DXRMeshData> meshData, const int instanceID)
+	:_hitGroupIndex(hitGroupIndex), _pDXRMeshData(meshData),_DestroyFlag(false),_instnaceID(instanceID)
 {
 	_raytracingInstanceDesc = std::make_shared<D3D12_RAYTRACING_INSTANCE_DESC>();
 }

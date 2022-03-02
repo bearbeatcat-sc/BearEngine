@@ -110,12 +110,12 @@ bool DXRPipeLine::InitPipeLine()
 	CreateAccelerationStructures();
 	CreateGlobalRootSignature();
 	CreateLocalRootSignature();
-	CreatePipeleineState(L"Resources\\Shaders\\TestShader.hlsl");
+	CreatePipeleineState(L"Resources\\Shaders\\DXRShader.hlsl");
 	CreateShaderResource();
 	CreateSceneCB();
 	CreateMaterialCB();
 	CreateShaderTable();
-	CreateResultBuffer();
+	//CreateResultBuffer();
 
 	return true;
 }
@@ -127,7 +127,7 @@ bool DXRPipeLine::Init()
 	return true;
 }
 
-std::shared_ptr<DXRInstance> DXRPipeLine::AddInstance(const std::string& meshDataName, const int hitGroupIndex)
+std::shared_ptr<DXRInstance> DXRPipeLine::AddInstance(const std::string& meshDataName, const int hitGroupIndex, const int instanceID)
 {
 	std::shared_ptr<DXRMeshData> findMesh;
 
@@ -149,7 +149,7 @@ std::shared_ptr<DXRInstance> DXRPipeLine::AddInstance(const std::string& meshDat
 		throw std::runtime_error("exceeded the number can register.");
 	}
 
-	auto instance = std::make_shared<DXRInstance>(hitGroupIndex, findMesh);
+	auto instance = std::make_shared<DXRInstance>(hitGroupIndex, findMesh, instanceID);
 	instance->_hitGroupIndex = findMesh->_hitGropIndex;
 
 	_instances.push_back(instance);
@@ -322,13 +322,11 @@ void DXRPipeLine::UpdateTLAS()
 
 	for (int i = 0; i < instanceCount; i++)
 	{
-		p_instance_desc[i].InstanceID = i;
-		p_instance_desc[i].InstanceMask = _instances[i]->_raytracingInstanceDesc->Flags;
+		p_instance_desc[i].InstanceID = _instances[i]->_instnaceID;
+		p_instance_desc[i].Flags = _instances[i]->_raytracingInstanceDesc->Flags;
 		p_instance_desc[i].InstanceMask = _instances[i]->_raytracingInstanceDesc->InstanceMask;
 		p_instance_desc[i].InstanceContributionToHitGroupIndex = _instances[i]->_raytracingInstanceDesc->InstanceContributionToHitGroupIndex;
 		p_instance_desc[i].AccelerationStructure = _instances[i]->_raytracingInstanceDesc->AccelerationStructure;
-
-		_instances[i]->_instnaceID = i;
 
 		SimpleMath::Matrix mat = _instances[i]->_matrix;
 		//memcpy(p_instance_desc[i].Transform, &mat, sizeof(_instances[i]->_raytracingInstanceDesc->Transform));
@@ -403,10 +401,10 @@ void DXRPipeLine::UpdateMaterial()
 	_IsUpdateMaterial = false;
 }
 
-const std::vector<HitResult>& DXRPipeLine::GetHitResult()
-{
-	return _hitResult;
-}
+//const std::vector<HitResult>& DXRPipeLine::GetHitResult()
+//{
+//	return _hitResult;
+//}
 
 void DXRPipeLine::Render(ID3D12Resource* pRenderResource, SkyBox* pSkyBox)
 {
@@ -419,11 +417,11 @@ void DXRPipeLine::Render(ID3D12Resource* pRenderResource, SkyBox* pSkyBox)
 		D3D12_RESOURCE_STATE_UNORDERED_ACCESS
 	);
 
-	DirectXGraphics::GetInstance().ResourceBarrier(
-		_hitResultResources[0].Get(),
-		D3D12_RESOURCE_STATE_COPY_SOURCE,
-		D3D12_RESOURCE_STATE_UNORDERED_ACCESS
-	);
+	//DirectXGraphics::GetInstance().ResourceBarrier(
+	//	_hitResultResources[0].Get(),
+	//	D3D12_RESOURCE_STATE_COPY_SOURCE,
+	//	D3D12_RESOURCE_STATE_UNORDERED_ACCESS
+	//);
 
 	UpdateTLAS();
 
@@ -492,18 +490,18 @@ void DXRPipeLine::Render(ID3D12Resource* pRenderResource, SkyBox* pSkyBox)
 		D3D12_RESOURCE_STATE_COPY_DEST
 	);
 
-	DirectXGraphics::GetInstance().ResourceBarrier(
-		_hitResultResources[0].Get(),
-		D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-		D3D12_RESOURCE_STATE_COPY_SOURCE
-	);
+	//DirectXGraphics::GetInstance().ResourceBarrier(
+	//	_hitResultResources[0].Get(),
+	//	D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+	//	D3D12_RESOURCE_STATE_COPY_SOURCE
+	//);
 
 
 	DirectXGraphics::GetInstance().GetCommandList()->CopyResource(
 		pRenderResource, _OutPutResource.Get()
 	);
 
-	UpdateHitResult();
+	//UpdateHitResult();
 }
 
 
@@ -597,8 +595,8 @@ void DXRPipeLine::CreateTopLevelAS()
 
 	for (int i = 0; i < instanceCount; i++)
 	{
-		p_instance_desc[i].InstanceID = i;
-		p_instance_desc[i].InstanceMask = _instances[i]->_raytracingInstanceDesc->Flags;
+		p_instance_desc[i].InstanceID = _instances[i]->_instnaceID;
+		p_instance_desc[i].Flags = _instances[i]->_raytracingInstanceDesc->Flags;
 		p_instance_desc[i].InstanceMask = _instances[i]->_raytracingInstanceDesc->InstanceMask;
 		p_instance_desc[i].InstanceContributionToHitGroupIndex = _instances[i]->_hitGroupIndex;
 		p_instance_desc[i].AccelerationStructure = _instances[i]->_raytracingInstanceDesc->AccelerationStructure;
@@ -700,10 +698,10 @@ ComPtr<ID3D12RootSignature> DXRPipeLine::CreateClosestHitRootDesc()
 	rangeTexture.RegisterSpace = 1;
 
 
-	D3D12_DESCRIPTOR_RANGE descHitResult{};
-	descHitResult.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-	descHitResult.BaseShaderRegister = 1;
-	descHitResult.NumDescriptors = 1;
+	//D3D12_DESCRIPTOR_RANGE descHitResult{};
+	//descHitResult.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+	//descHitResult.BaseShaderRegister = 1;
+	//descHitResult.NumDescriptors = 1;
 
 
 
@@ -714,7 +712,7 @@ ComPtr<ID3D12RootSignature> DXRPipeLine::CreateClosestHitRootDesc()
 	//rangeMat.RegisterSpace = 1;
 
 
-	std::array<D3D12_ROOT_PARAMETER, 5> rootParams;
+	std::array<D3D12_ROOT_PARAMETER, 4> rootParams;
 
 	rootParams[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
@@ -737,10 +735,10 @@ ComPtr<ID3D12RootSignature> DXRPipeLine::CreateClosestHitRootDesc()
 	rootParams[3].Descriptor.ShaderRegister = 0;
 	rootParams[3].Descriptor.RegisterSpace = 1;
 
-	rootParams[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-	rootParams[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	rootParams[4].DescriptorTable.NumDescriptorRanges = 1;
-	rootParams[4].DescriptorTable.pDescriptorRanges = &descHitResult;
+	//rootParams[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	//rootParams[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	//rootParams[4].DescriptorTable.NumDescriptorRanges = 1;
+	//rootParams[4].DescriptorTable.pDescriptorRanges = &descHitResult;
 
 	D3D12_ROOT_SIGNATURE_DESC rootSigDesc{};
 	rootSigDesc.NumParameters = UINT(rootParams.size());
@@ -857,7 +855,7 @@ void DXRPipeLine::CreateShaderTable()
 	hitGroupRecordSize += sizeof(D3D12_GPU_DESCRIPTOR_HANDLE);
 	hitGroupRecordSize += sizeof(D3D12_GPU_DESCRIPTOR_HANDLE);
 	hitGroupRecordSize += sizeof(D3D12_GPU_VIRTUAL_ADDRESS);
-	hitGroupRecordSize += sizeof(D3D12_GPU_DESCRIPTOR_HANDLE);
+	//hitGroupRecordSize += sizeof(D3D12_GPU_DESCRIPTOR_HANDLE);
 	hitGroupRecordSize = align_to(ShaderRecordAlignment, hitGroupRecordSize);
 
 	// MissShader
@@ -1447,8 +1445,8 @@ uint8_t* DXRPipeLine::WriteMeshShaderRecord(uint8_t* dst, const std::shared_ptr<
 	// バッファのアドレスを直接書き込み
 	dst += WriteGPUResourceAddr(dst, address);
 
-	auto hitResultDescriptrHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(_SrvUavHeap->GetGPUDescriptorHandleForHeapStart(), DescriptrIndex_Result_UAV0, DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
-	dst += WriteGPUDescriptor(dst, hitResultDescriptrHandle);
+	//auto hitResultDescriptrHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(_SrvUavHeap->GetGPUDescriptorHandleForHeapStart(), DescriptrIndex_Result_UAV0, DirectXDevice::GetInstance().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+	//dst += WriteGPUDescriptor(dst, hitResultDescriptrHandle);
 
 	dst = entryBegin + recordSize;
 

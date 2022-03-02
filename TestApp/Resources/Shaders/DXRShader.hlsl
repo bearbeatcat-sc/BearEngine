@@ -67,10 +67,6 @@ struct IncidentLight
     bool visible;
 };
 
-struct HitResult
-{
-    int _isHit;
-};
 
 // GlobalSignature
 RaytracingAccelerationStructure gRtScene : register(t0);
@@ -87,7 +83,6 @@ StructuredBuffer<uint> indexBuffer : register(t0, space1);
 StructuredBuffer<Vertex> vertexBuffer : register(t1, space1);
 Texture2D<float4> texture : register(t2, space1);
 ConstantBuffer<Material> matBuffer : register(b0, space1);
-RWStructuredBuffer<HitResult> hitResultBuffer : register(u1);
 
 
 static const float PI = 3.1415926f;
@@ -550,6 +545,19 @@ bool CheckShadow(in float3 lightDir, in float3 worldPosition)
     return ShotShadowRay(worldPosition, lightDir);
 }
 
+float3 GetRandomSphere(int seed,float3 position)
+{
+    const float r1 = hash(position * seed);
+    const float r2 = hash(position * seed * 4.0f);
+
+    float z = sqrt(1.0f - r2);
+    float phi = PI * 2 * r1;
+
+    float x = cos(phi) * sqrt(r2);
+    float y = sin(phi) * sqrt(r2);
+
+    return float3(x, y, z);
+}
 
 
 [shader("miss")]
@@ -596,8 +604,6 @@ void chs(inout Payload payload, in MyAttribute attribs)
     uint id = InstanceID();
     uint3 dispatchRayIndex = DispatchRaysIndex();
 
-    hitResultBuffer[id]._isHit = 0;
-
     float3 worldNormal = normalize(mul(vtx.normal, (float3x3) ObjectToWorld4x3()));
     float3 worldPosition = mul(float4(vtx.pos, 1), ObjectToWorld4x3());
 
@@ -617,8 +623,6 @@ void chs(inout Payload payload, in MyAttribute attribs)
 
     float3 diffuseColor = lerp(albedo.rgb, float3(0.0f, 0.0f, 0.0f), metallic.w);
     float3 specularColor = lerp(float3(0.04f, 0.04f, 0.04f), albedo.rgb, metallic.w);
-
-
 
     IncidentLight light;
 	

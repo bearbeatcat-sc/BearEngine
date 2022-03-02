@@ -15,7 +15,7 @@ class DXRMeshData;
 class DXRInstance
 {
 public:
-	DXRInstance(const int hitGroupIndex,std::shared_ptr<DXRMeshData> meshData);
+	DXRInstance(const int hitGroupIndex,std::shared_ptr<DXRMeshData> meshData,const int instanceID = 0);
 	~DXRInstance() = default;
 
 	void SetMatrix(const SimpleMath::Matrix mat);
