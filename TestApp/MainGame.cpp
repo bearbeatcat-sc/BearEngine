@@ -118,11 +118,11 @@ void MainGame::Init()
 	//ActorManager::GetInstance().AddActor(sphere);
 
 
-	//auto floor = new Cube(SimpleMath::Vector3(1.45f, -2.5f, 0.640f), SimpleMath::Vector3(grid_size_x, 1, grid_size_z), 300.0f, "GrayCube", false);
-	//floor->SetRotation(SimpleMath::Vector3(0, 0.0f, 0.0f));
-	//floor->SetActorName("Floor");
-	//ActorManager::GetInstance().AddActor(floor);
-	//floor->OnStatic(true, true);
+	auto floor = new Cube(SimpleMath::Vector3(1.45f, -2.5f, 0.640f), SimpleMath::Vector3(grid_size_x, 1, grid_size_z), 300.0f, "GrayCube", false);
+	floor->SetRotation(SimpleMath::Vector3(0, 0.0f, 0.0f));
+	floor->SetActorName("Floor");
+	ActorManager::GetInstance().AddActor(floor);
+	floor->OnStatic(true, true);
 
 	//auto wall = new Cube(SimpleMath::Vector3(2.830f, 2.240f, 8.840f), SimpleMath::Vector3(grid_size_x, 6, 1), 300.0f, "WhiteCube", false);
 	//ActorManager::GetInstance().AddActor(wall);
