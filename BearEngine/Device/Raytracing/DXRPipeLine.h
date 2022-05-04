@@ -250,7 +250,6 @@ private:
 	void CreateShaderResource();
 	void CreateGlobalRootSignature();
 	void CreateSceneCB();
-	void CreateResultBuffer();
 
 	void UpdateMaterialCB();
 	void CreateMaterialCB();
@@ -279,10 +278,6 @@ private:
 
 	ComPtr<ID3D12Resource> _shaderTable;
 	ComPtr<ID3D12Resource> _OutPutResource;
-
-	std::vector<ComPtr<ID3D12Resource>> _hitResultResources;
-	std::vector<ComPtr<ID3D12Resource>> _uploadHitResultResources;
-	ComPtr<ID3D12Resource> _readbackHitResultResource;
 
 	ComPtr<ID3D12Resource> _materialCB;
 	ComPtr<ID3D12Resource> _SceneCB;

@@ -61,10 +61,12 @@ void MainGame::Init()
 
 
 	//_test = DXRPipeLine::GetInstance().AddMeshData(planeMeshData, L"HitGroup", "WhiteCube", _blenderMonkyMaterial,"TestUI");
-	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "GrayCube", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f), 0.1));
-	DXRPipeLine::GetInstance().AddMeshData(blenderMonkyMeshData, L"HitGroup", "RoughCube", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.0f), 0.5f, 0.2f, 2.4f), "Bear");
+	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "BlackCube", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.0f), 1.0f));
+	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "WhiteCube", PhysicsBaseMaterial(SimpleMath::Vector4(0.8f, 0.8f, 0.8f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.0f), 1.0f));
 
-	DXRPipeLine::GetInstance().AddMeshData(sphereMeshData, L"HitGroup", "Sphere", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f), 0.2f),"Bear");
+	DXRPipeLine::GetInstance().AddMeshData(blenderMonkyMeshData, L"HitGroup", "RoughCube", PhysicsBaseMaterial(SimpleMath::Vector4(0.8f, 0.8f, 0.8f, 1.0f), SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f), 1.0f));
+
+	DXRPipeLine::GetInstance().AddMeshData(sphereMeshData, L"HitGroup", "Sphere", PhysicsBaseMaterial(SimpleMath::Vector4(0.1f,0.1f,0.1f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.0f), 1.0f));
 	_blenderMonkey = DXRPipeLine::GetInstance().AddMeshData(sphereMeshData, L"HitGroup", "Sphere2", _blenderMonkyMaterial,"Bear");
 
 	// 必ず、メッシュデータを追加してからパイプラインの初期化を行う。
@@ -73,14 +75,8 @@ void MainGame::Init()
 
 
 	auto dirlight = LightManager::GetInstance().GetDirectionalLight();
-	auto dir = SimpleMath::Vector3(-0.169f, -0.840, -0.515);
+	auto dir = SimpleMath::Vector3(-0.964f, -0.136f, -0.185f);
 	dirlight->UpdateDirectionalLight(dir, SimpleMath::Color(1, 1, 1, 1));
-
-	auto pointLight = std::make_shared<PointLight>(SimpleMath::Vector3(5.520, 2.310, -2.160), SimpleMath::Color(0, 1, 0, 1), 100.0f, 1.0f);
-	LightManager::GetInstance().AddPointLight(pointLight);
-
-	auto pointLight1 = std::make_shared<PointLight>(SimpleMath::Vector3(-2.180, 2.470, -0.360), SimpleMath::Color(1, 1, 1, 1), 200.0f, 1.0f);
-	LightManager::GetInstance().AddPointLight(pointLight1);
 
 	m_CameraAsistant = new CameraAsistant();
 
@@ -105,11 +101,10 @@ void MainGame::Init()
 	_IsGenerate = false;
 
 
-	const int grid_size_x = 8;
-	const int grid_size_z = 7;
+	const int grid_size_x = 5;
+	const int grid_size_z = 5;
 
 	const int grid_Count = grid_size_x * grid_size_z;
-	const SimpleMath::Vector3 basePos = SimpleMath::Vector3(-5.5f, -2.5f, -5.5f);
 
 
 	//auto sphere = new Sphere(SimpleMath::Vector3(-2.0f, 0.0f, 0.6f), Sphere::SphereType_Normal);
@@ -117,12 +112,32 @@ void MainGame::Init()
 	//sphere->SetRotation(SimpleMath::Vector3(3.0f, 0.0f, 0.0f));
 	//ActorManager::GetInstance().AddActor(sphere);
 
+	for(int i = 0; i < grid_Count; ++i)
+	{
+		const float x = (i % 5) * 2.0f;
+		const float z = (i / 5) * 2.0f;
+		const float y = 0.0f;
 
-	auto floor = new Cube(SimpleMath::Vector3(1.45f, -2.5f, 0.640f), SimpleMath::Vector3(grid_size_x, 1, grid_size_z), 300.0f, "GrayCube", false);
-	floor->SetRotation(SimpleMath::Vector3(0, 0.0f, 0.0f));
-	floor->SetActorName("Floor");
-	ActorManager::GetInstance().AddActor(floor);
-	floor->OnStatic(true, true);
+		const bool isBlack = i % 2;
+
+		if(isBlack)
+		{
+			auto floor = new Cube(SimpleMath::Vector3(x, y, z), SimpleMath::Vector3(1.0f, 1, 1.0f), 300.0f, "WhiteCube", false);
+			floor->SetRotation(SimpleMath::Vector3(0, 0.0f, 0.0f));
+			floor->SetActorName("Floor");
+			ActorManager::GetInstance().AddActor(floor);
+
+			continue;
+		}
+
+		auto floor = new Cube(SimpleMath::Vector3(x, y, z), SimpleMath::Vector3(1.0f, 1, 1.0f), 300.0f, "BlackCube", false);
+		floor->SetRotation(SimpleMath::Vector3(0, 0.0f, 0.0f));
+		floor->SetActorName("Floor");
+		ActorManager::GetInstance().AddActor(floor);
+	}
+
+
+
 
 	//auto wall = new Cube(SimpleMath::Vector3(2.830f, 2.240f, 8.840f), SimpleMath::Vector3(grid_size_x, 6, 1), 300.0f, "WhiteCube", false);
 	//ActorManager::GetInstance().AddActor(wall);
@@ -187,21 +202,36 @@ void MainGame::Init()
 	//	//}
 	//}
 
-	for (int i = 0; i < 100; i++)
-	{
-		auto pos_x = 1.0f * i / 10;
-		auto pos_z = 1.0f * (i % 10);
-		float pos_y = 3.0f;
+	auto cube = new Cube(SimpleMath::Vector3(3.770f,3.910f,0), SimpleMath::Vector3(0.3f), 300.0f, "Sphere", false);
+	cube->SetActorName("Cube");
+	cube->SetRotation(SimpleMath::Vector3(3.0f,0,0));
+	cube->SetScale(SimpleMath::Vector3(3.0f));
+	ActorManager::GetInstance().AddActor(cube);
 
-		
+	auto cube2 = new Cube(SimpleMath::Vector3(1.190f,2.190f,5.470f), SimpleMath::Vector3(0.3f), 300.0f, "RoughCube", false);
+	cube2->SetActorName("Cube");
+	cube2->SetRotation(SimpleMath::Vector3(2.440f, 0, 0));
+	cube2->SetScale(SimpleMath::Vector3(1.0f));
+	ActorManager::GetInstance().AddActor(cube2);
 
+	auto cube3 = new Cube(SimpleMath::Vector3(5.290f,1.830f,1.990f), SimpleMath::Vector3(0.3f), 300.0f, "RoughCube", false);
+	cube3->SetActorName("Cube");
+	cube3->SetRotation(SimpleMath::Vector3(3.890f, -0.250f, 0));
+	cube3->SetScale(SimpleMath::Vector3(1.3f));
+	ActorManager::GetInstance().AddActor(cube3);
 
-		auto cube = new Cube(SimpleMath::Vector3(pos_x, 3.0f, pos_z), SimpleMath::Vector3(0.3f), 300.0f, "RoughCube", false);
-		cube->SetActorName("Cube");
-		cube->SetRotation(SimpleMath::Vector3(pos_x, pos_z, pos_y));
-		cube->OnStatic(true, false);
-		ActorManager::GetInstance().AddActor(cube);
-	}
+	//for (int i = 0; i < 10; i++)
+	//{
+	//	auto pos_x = 1.0f * i / 2;
+	//	auto pos_z = 1.0f * (i % 2);
+	//	float pos_y = 3.0f;
+
+	//	auto cube = new Cube(SimpleMath::Vector3(pos_x, 3.0f, pos_z), SimpleMath::Vector3(0.3f), 300.0f, "RoughCube", false);
+	//	cube->SetActorName("Cube");
+	//	cube->SetRotation(SimpleMath::Vector3(pos_x, pos_z, pos_y));
+	//	cube->OnStatic(true, false);
+	//	ActorManager::GetInstance().AddActor(cube);
+	//}
 }
 
 

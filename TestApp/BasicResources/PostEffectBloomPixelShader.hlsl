@@ -62,7 +62,7 @@ float4 VerticalBokehPS(Output input) : SV_TARGET
     float2 uvSize = float2(1, 1);
     float2 uvOfst = float2(0, 0);
         
-    bloomAccum += VerticalBlur(texShrinkHighLum0, input.uv, dy, 8, 0.112f);
+    bloomAccum += VerticalBlur(texShrinkHighLum0, input.uv, dy, 64, 0.08f);
            
     bloomAccum += VerticalBlur(texShrinkHighLum1, input.uv, dy, 8, 0.112f);
     
@@ -70,8 +70,7 @@ float4 VerticalBokehPS(Output input) : SV_TARGET
     
     bloomAccum += VerticalBlur(texShrinkHighLum3, input.uv, dy, 8, 0.112f);
 
-                      
-    return tex.Sample(smp, input.uv) + saturate(bloomAccum);
+    return tex.Sample(smp,input.uv) + bloomAccum;
 
 }
 
@@ -95,7 +94,7 @@ float4 BlurPS(Output input) : SV_Target
     
     float4 ret = float4(0, 0, 0, 1);
     
-    return HorizontalBlur(texHighLum, input.uv, dx, 8, 0.112f);
+    return HorizontalBlur(texHighLum, input.uv, dx, 64, 0.08f);
 }
 
 float4 main(Output input) : SV_Target
