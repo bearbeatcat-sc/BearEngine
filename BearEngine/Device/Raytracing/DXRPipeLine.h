@@ -21,15 +21,7 @@ class SkyBox;
 // アライメント用
 #define align_to(_alignment, _val) (((_val + _alignment - 1) / _alignment) * _alignment)
 
-struct HitResult
-{
-	HitResult()
-	{
 
-	}
-
-	int _isHit = 0;
-};
 
 struct AccelerationStructureBuffers
 {
@@ -303,8 +295,6 @@ private:
 
 	std::vector<std::shared_ptr<DXRMeshData>> _meshDatas;
 	std::vector<std::shared_ptr<DXRInstance>> _instances;;
-	std::vector<HitResult> _hitResult;
-
 
 	D3D12_DISPATCH_RAYS_DESC _dispathRaysDesc;
 
@@ -324,12 +314,9 @@ private:
 	0
 	};
 
-
-
 	ComPtr<ID3D12RootSignature> _globalRootSignature;
 	ComPtr<ID3D12RootSignature> _closesHitLocalRootSignature;
 	ComPtr<ID3D12RootSignature> _rayGenerationLocalRootSignature;
-
 
 	const UINT _SRVResourceCount = 5;
 	const UINT _MeshDataSize = 3;
