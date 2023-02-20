@@ -826,7 +826,7 @@ void DXRPipeLine::CreatePipeleineState(const wchar_t* shaderPath)
 
 	// 生成
 	auto device = DirectXDevice::GetInstance().GetDevice();
-	device->CreateStateObject(
+	auto result = device->CreateStateObject(
 		subObjects, IID_PPV_ARGS(_PipelineState.ReleaseAndGetAddressOf()));
 
 }
@@ -1306,8 +1306,11 @@ void DXRPipeLine::CreateResultBuffer()
 	UpdateSubresources<1>(commandList, _hitResultResources[1].Get(), _uploadHitResultResources[1].Get(), 0, 0, 1, &hitData);
 
 	// リソースをコピー状態から、ピクセルシェーダー以外のシェーダーで扱うに変更
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(_hitResultResources[0].Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(_hitResultResources[1].Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
+	auto hitResultTrans0 = CD3DX12_RESOURCE_BARRIER::Transition(_hitResultResources[0].Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	commandList->ResourceBarrier(1, &hitResultTrans0);
+
+	auto hitResultTrans1 = CD3DX12_RESOURCE_BARRIER::Transition(_hitResultResources[1].Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	commandList->ResourceBarrier(1, &hitResultTrans1);
 
 	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 	uavDesc.Format = DXGI_FORMAT_UNKNOWN;
@@ -1535,11 +1538,12 @@ void DXRPipeLine::UpdateHitResult()
 		hitData.RowPitch = dataSize;
 		hitData.SlicePitch = hitData.RowPitch;
 
-		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(_hitResultResources[frameIndex].Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COPY_DEST));
+		auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(_hitResultResources[frameIndex].Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
+		commandList->ResourceBarrier(1, &barrier);
 		// リソースの転送
 		UpdateSubresources<1>(commandList, _hitResultResources[frameIndex].Get(), _uploadHitResultResources[frameIndex].Get(), 0, 0, 1, &hitData);
 		// リソースをコピー状態から、ピクセルシェーダー以外のシェーダーで扱うに変更
-		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(_hitResultResources[frameIndex].Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+		commandList->ResourceBarrier(1, &barrier);
 	}
 }
 

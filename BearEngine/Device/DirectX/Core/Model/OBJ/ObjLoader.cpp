@@ -118,6 +118,9 @@ void ObjLoader::loadObj(MeshData::ModelData& modelData, const std::string& fileP
 				count++;
 
 				file >> pos_id;
+
+				if (pos_id == 0) continue;
+
 				// ’¸“_‚Ìî•ñ‚ğID‚ğg‚Á‚Äæ“¾
 				vertex.pos = positions[pos_id - 1];
 				p[i] = pos_id - 1;

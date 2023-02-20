@@ -1,4 +1,4 @@
-﻿#include "MainGame.h"
+#include "MainGame.h"
 
 #include "Utility/Camera.h"
 #include "Device/DirectX/DirectXInput.h"
@@ -39,7 +39,7 @@ void MainGame::Init()
 	DirectXGraphics::GetInstance().InitFontSystem(L"font/fonttest.spritefont");
 
 	MeshManager::GetInstance().GetSpehereMesh(12, "NormalMeshEffect");
-	MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "blenderMonkey.obj", "BlenderMonkey");
+	MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "cat.obj", "Cat");
 	MeshManager::GetInstance().loadMesh("Resources/Models/Model/", "cube0.obj", "Cube0");
 	TextureManager::GetInstance().AddTexture("Resources/bear.png", "Bear");
 	TextureManager::GetInstance().AddTexture("Resources/flog.png", "Flog");
@@ -52,8 +52,8 @@ void MainGame::Init()
 	auto planeMeshData = MeshManager::GetInstance().GetPlaneMeshData();
 	//sphereMeshData->SetRaytraceMaterial(MeshData::RaytraceMaterial(SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f), 1.0f));
 
-	auto blenderMonkyMeshData = MeshManager::GetInstance().GetMeshData("BlenderMonkey");
-	blenderMonkyMeshData->SetPhysicsBaseMaterial(PhysicsBaseMaterial(SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f), SimpleMath::Vector4(1.0f, 10.0f, 1.0f, 1.0f), 1.0f));
+	auto catMeshData = MeshManager::GetInstance().GetMeshData("Cat");
+	catMeshData->SetPhysicsBaseMaterial(PhysicsBaseMaterial(SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f), SimpleMath::Vector4(1.0f, 10.0f, 1.0f, 1.0f), 1.0f));
 
 
 	//sphereMeshData->SetTestMaterial(MeshData::TestMat{ true });
@@ -61,8 +61,13 @@ void MainGame::Init()
 
 
 	//_test = DXRPipeLine::GetInstance().AddMeshData(planeMeshData, L"HitGroup", "WhiteCube", _blenderMonkyMaterial,"TestUI");
-	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "GrayCube", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f), 0.1));
-	DXRPipeLine::GetInstance().AddMeshData(blenderMonkyMeshData, L"HitGroup", "RoughCube", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.0f), 0.5f, 0.2f, 2.4f), "Bear");
+	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "GrayCube", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 0.0f), 1.0f));
+	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "WhiteCube", PhysicsBaseMaterial(SimpleMath::Vector4(0.4f, 0.4f, 0.4f, 1.0f), SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 0.0f), 1.0f));
+	DXRPipeLine::GetInstance().AddMeshData(cubeMeshData, L"HitGroup", "MirrorCube", PhysicsBaseMaterial(SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f), SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f));
+
+	DXRPipeLine::GetInstance().AddMeshData(catMeshData, L"HitGroup", "Cat", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.0f), 0.5f, 0.01f, 2.6f));
+	DXRPipeLine::GetInstance().AddMeshData(catMeshData, L"HitGroup", "MirrorCat", PhysicsBaseMaterial(SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f), SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f));
+	DXRPipeLine::GetInstance().AddMeshData(catMeshData, L"HitGroup", "WhiteCat", PhysicsBaseMaterial(SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 0.0f), 0.5f));
 
 	DXRPipeLine::GetInstance().AddMeshData(sphereMeshData, L"HitGroup", "Sphere", PhysicsBaseMaterial(SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f), SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f), 0.2f),"Bear");
 	_blenderMonkey = DXRPipeLine::GetInstance().AddMeshData(sphereMeshData, L"HitGroup", "Sphere2", _blenderMonkyMaterial,"Bear");
@@ -76,16 +81,8 @@ void MainGame::Init()
 	auto dir = SimpleMath::Vector3(-0.169f, -0.840, -0.515);
 	dirlight->UpdateDirectionalLight(dir, SimpleMath::Color(1, 1, 1, 1));
 
-	auto pointLight = std::make_shared<PointLight>(SimpleMath::Vector3(5.520, 2.310, -2.160), SimpleMath::Color(0, 1, 0, 1), 100.0f, 1.0f);
-	LightManager::GetInstance().AddPointLight(pointLight);
-
-	auto pointLight1 = std::make_shared<PointLight>(SimpleMath::Vector3(-2.180, 2.470, -0.360), SimpleMath::Color(1, 1, 1, 1), 200.0f, 1.0f);
-	LightManager::GetInstance().AddPointLight(pointLight1);
-
 	m_CameraAsistant = new CameraAsistant();
 
-
-	const SimpleMath::Vector3 base_position = Vector3(2.5f, 0.0f, 2.5f);
 
 	RenderingPipeLine::GetInstance().SetSkyBox("Resources/OutputCube.dds", SimpleMath::Vector3(10.0f));
 	RenderingPipeLine::GetInstance().SetDrawFluidFlag(false);
@@ -105,11 +102,6 @@ void MainGame::Init()
 	_IsGenerate = false;
 
 
-	const int grid_size_x = 8;
-	const int grid_size_z = 7;
-
-	const int grid_Count = grid_size_x * grid_size_z;
-	const SimpleMath::Vector3 basePos = SimpleMath::Vector3(-5.5f, -2.5f, -5.5f);
 
 
 	//auto sphere = new Sphere(SimpleMath::Vector3(-2.0f, 0.0f, 0.6f), Sphere::SphereType_Normal);
@@ -118,36 +110,35 @@ void MainGame::Init()
 	//ActorManager::GetInstance().AddActor(sphere);
 
 
-	auto floor = new Cube(SimpleMath::Vector3(1.45f, -2.5f, 0.640f), SimpleMath::Vector3(grid_size_x, 1, grid_size_z), 300.0f, "GrayCube", false);
-	floor->SetRotation(SimpleMath::Vector3(0, 0.0f, 0.0f));
-	floor->SetActorName("Floor");
-	ActorManager::GetInstance().AddActor(floor);
-	floor->OnStatic(true, true);
+	auto rightWall = new Cube(SimpleMath::Vector3(-1000, 0, 0), SimpleMath::Vector3(1, 1000, 1000), 300.0f, "WhiteCube", false);
+	rightWall->SetRotation(SimpleMath::Vector3(0, 0.0f, 0.0f));
+	rightWall->SetActorName("RightWall");
+	ActorManager::GetInstance().AddActor(rightWall);
+	rightWall->OnStatic(true, true);
 
-	//auto wall = new Cube(SimpleMath::Vector3(2.830f, 2.240f, 8.840f), SimpleMath::Vector3(grid_size_x, 6, 1), 300.0f, "WhiteCube", false);
-	//ActorManager::GetInstance().AddActor(wall);
-	//wall->SetActorName("Wall");
-	//wall->SetRotation(SimpleMath::Vector3(0, 0, -0.250f));
-	//wall->OnStatic(true,true);
+	auto backWall = new Cube(SimpleMath::Vector3(0, 0, 1000), SimpleMath::Vector3(1000, 1000, 1), 300.0f, "WhiteCube", false);
+	backWall->SetRotation(SimpleMath::Vector3(0, 0.0f, 0.0f));
+	backWall->SetActorName("BackWall");
+	ActorManager::GetInstance().AddActor(backWall);
+	backWall->OnStatic(true, true);
 
-	//auto wall2 = new Cube(SimpleMath::Vector3(11, 4.5f, 7.260f), SimpleMath::Vector3(grid_size_x, 6, 1), 300.0f, "WhiteCube", false);
-	//ActorManager::GetInstance().AddActor(wall2);
-	//wall2->SetActorName("Wall");
-	//wall2->SetRotation(SimpleMath::Vector3(0.0f, 0.0f, 0));
-	//wall2->OnStatic(true, true);
+	auto frontWall = new Cube(SimpleMath::Vector3(0, 0, -1000), SimpleMath::Vector3(1000, 1000, 1), 300.0f, "WhiteCube", false);
+	frontWall->SetRotation(SimpleMath::Vector3(0, 0.0f, 0.0f));
+	frontWall->SetActorName("FrontWall");
+	ActorManager::GetInstance().AddActor(frontWall);
+	frontWall->OnStatic(true, true);
 
-	//auto leftWall = new Cube(SimpleMath::Vector3(-7.0f, 3.0f, -0.0f), SimpleMath::Vector3(1, 6, grid_size_x), 300.0f, "RoughCube", false);
-	//ActorManager::GetInstance().AddActor(leftWall);
+	auto topWall = new Cube(SimpleMath::Vector3(0, 1000, 0), SimpleMath::Vector3(1000, 1, 1000), 300.0f, "WhiteCube", false);
+	topWall->SetRotation(SimpleMath::Vector3(0, 0.0f, 0.0f));
+	topWall->SetActorName("TopWall");
+	ActorManager::GetInstance().AddActor(topWall);
+	topWall->OnStatic(true, true);
 
-	//auto rightWall = new Cube(SimpleMath::Vector3(7.0f, 3.0f, -0.0f), SimpleMath::Vector3(1, 6, grid_size_x), 300.0f, "RoughCube", false);
-	//ActorManager::GetInstance().AddActor(rightWall);
-
-	//auto topWall = new Cube(SimpleMath::Vector3(0.0f, 8, 0.0f), SimpleMath::Vector3(grid_size_x, 1, grid_size_x), 300.0f, "RoughCube", false);
-	//ActorManager::GetInstance().AddActor(topWall);
-
-	//auto backWall = new Cube(SimpleMath::Vector3(1.5f, 3.0f, -9.0f), SimpleMath::Vector3(grid_size_x, 6, 1), 300.0f, "RoughCube", false);
-	//ActorManager::GetInstance().AddActor(backWall);
-
+	auto mirror = new Cube(SimpleMath::Vector3(0, 0, 0), SimpleMath::Vector3(10, 10, 1), 300.0f, "MirrorCube", false);
+	mirror->SetRotation(SimpleMath::Vector3(0, 0.0f, 0.0f));
+	mirror->SetActorName("Mirror");
+	ActorManager::GetInstance().AddActor(mirror);
+	mirror->OnStatic(true, true);
 
 	//auto sphere2 = new Sphere(SimpleMath::Vector3(3.0f, -150.0f, 3.0f), Sphere::SphereType_NormalLowPoly);
 	//sphere2->SetScale(SimpleMath::Vector3(300.0f));
@@ -187,20 +178,37 @@ void MainGame::Init()
 	//	//}
 	//}
 
-	for (int i = 0; i < 100; i++)
+	auto cat = new Cube(SimpleMath::Vector3(0, 3.0f, 0), SimpleMath::Vector3(10.0f), 300.0f, "Cat", false);
+	cat->SetActorName("Cat");
+	cat->SetRotation(SimpleMath::Vector3(0, 42.4f, 0));
+	cat->OnStatic(true, false);
+	ActorManager::GetInstance().AddActor(cat);
+
+	auto mirrorCat = new Cube(SimpleMath::Vector3(10.0f, 3.0f, 0), SimpleMath::Vector3(10.0f), 300.0f, "MirrorCat", false);
+	mirrorCat->SetActorName("MirrorCat");
+	mirrorCat->SetRotation(SimpleMath::Vector3(0, 42.4f, 0));
+	mirrorCat->OnStatic(true, false);
+	ActorManager::GetInstance().AddActor(mirrorCat);
+
+	auto whiteCat = new Cube(SimpleMath::Vector3(10.0f, 3.0f, 0), SimpleMath::Vector3(10.0f), 300.0f, "WhiteCat", false);
+	whiteCat->SetActorName("WhiteCat");
+	whiteCat->SetRotation(SimpleMath::Vector3(0, 42.4f, 0));
+	whiteCat->OnStatic(true, false);
+	ActorManager::GetInstance().AddActor(whiteCat);
+
+	for (auto i = 0; i < 3; ++i)
 	{
-		auto pos_x = 1.0f * i / 10;
-		auto pos_z = 1.0f * (i % 10);
+		auto pos_x = Random::GetRandom(-60.0f , 60.0f);
+		auto pos_z = Random::GetRandom(20.0f, 30.0f);
 		float pos_y = 3.0f;
 
+		float rotateX = Random::GetRandom(-3.0f, 3.0f);
 		
-
-
-		auto cube = new Cube(SimpleMath::Vector3(pos_x, 3.0f, pos_z), SimpleMath::Vector3(0.3f), 300.0f, "RoughCube", false);
-		cube->SetActorName("Cube");
-		cube->SetRotation(SimpleMath::Vector3(pos_x, pos_z, pos_y));
-		cube->OnStatic(true, false);
-		ActorManager::GetInstance().AddActor(cube);
+		auto cat = new Cube(SimpleMath::Vector3(pos_x, pos_y, pos_z), SimpleMath::Vector3(4.0f), 300.0f, "MirrorCat", false);
+		cat->SetActorName("WhiteCat");
+		cat->SetRotation(SimpleMath::Vector3(rotateX, 42.4f, 0));
+		cat->OnStatic(true, false);
+		ActorManager::GetInstance().AddActor(cat);
 	}
 }
 

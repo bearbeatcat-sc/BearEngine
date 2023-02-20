@@ -1,8 +1,7 @@
 ﻿#ifndef _TIME_H_
 #define _TIME_H_
 
-#include <d3dx12.h>
-
+#include <Windows.h>
 
 class Time
 {

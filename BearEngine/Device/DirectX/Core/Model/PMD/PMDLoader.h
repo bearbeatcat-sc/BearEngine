@@ -7,6 +7,7 @@
 #include "../MeshDatas.h"
 #include <memory>
 #include <vector>
+#include <string>
 
 using namespace DirectX;
 

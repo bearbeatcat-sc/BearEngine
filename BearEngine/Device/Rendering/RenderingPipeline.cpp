@@ -180,12 +180,13 @@ void RenderingPipeLine::DrawEnd()
 
 bool RenderingPipeLine::DefaultRenderingBegin()
 {
+	auto transiton = CD3DX12_RESOURCE_BARRIER::Transition(
+		m_OutputRenderResource.Get(),
+		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+		D3D12_RESOURCE_STATE_RENDER_TARGET);
 
 	m_pCommandList->ResourceBarrier(
-		1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			m_OutputRenderResource.Get(),
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-			D3D12_RESOURCE_STATE_RENDER_TARGET));
+		1, &transiton);
 
 	
 	DirectXGraphics::GetInstance().SetRenderTarget(m_peraRTVHeap->GetCPUDescriptorHandleForHeapStart());
@@ -199,9 +200,11 @@ bool RenderingPipeLine::DefaultRenderingBegin()
 
 bool RenderingPipeLine::DefaultRenderingEnd()
 {
-	m_pCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_OutputRenderResource.Get(),
+	auto transition = CD3DX12_RESOURCE_BARRIER::Transition(m_OutputRenderResource.Get(),
 		D3D12_RESOURCE_STATE_RENDER_TARGET,
-		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+	m_pCommandList->ResourceBarrier(1, &transition);
 
 	return true;
 }
@@ -249,20 +252,21 @@ void RenderingPipeLine::EffectBloom()
 	m_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	m_pCommandList->IASetVertexBuffers(0, 1, &m_PeraVBV);
 
-
+	auto transition = CD3DX12_RESOURCE_BARRIER::Transition(m_BloomBuffer[0].Get(),
+		D3D12_RESOURCE_STATE_RENDER_TARGET,
+		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
 	// 高輝度成分のバッファをシェーダーリソースに
-	m_pCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_BloomBuffer[0].Get(),
-		D3D12_RESOURCE_STATE_RENDER_TARGET,
-		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+	m_pCommandList->ResourceBarrier(1, &transition);
 
 	// 縮小バッファをレンダーターゲットに
 	for (int i = 1; i < m_BloomBufferCount; ++i)
 	{
-		m_pCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_BloomBuffer[i].Get(),
+		auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(m_BloomBuffer[i].Get(),
 			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-			D3D12_RESOURCE_STATE_RENDER_TARGET
-		));
+			D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+		m_pCommandList->ResourceBarrier(1, &barrier);
 	}
 
 	auto bloomBufferPointer = m_peraRTVHeap->GetCPUDescriptorHandleForHeapStart();
@@ -330,16 +334,20 @@ void RenderingPipeLine::EffectBloom()
 	//　縮小バッファをシェーダーリソースに
 	for (int i = 1; i < m_BloomBufferCount; ++i)
 	{
-		m_pCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_BloomBuffer[i].Get(),
+		auto transiton = CD3DX12_RESOURCE_BARRIER::Transition(m_BloomBuffer[i].Get(),
 			D3D12_RESOURCE_STATE_RENDER_TARGET,
 			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
-		));
+		);
+
+		m_pCommandList->ResourceBarrier(1, &transiton);
 	}
 
-	// 最終的なBloomのリザルトを描画
-	m_pCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(_processed_resource.Get(),
+	transition = CD3DX12_RESOURCE_BARRIER::Transition(_processed_resource.Get(),
 		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-		D3D12_RESOURCE_STATE_RENDER_TARGET));
+		D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+	// 最終的なBloomのリザルトを描画
+	m_pCommandList->ResourceBarrier(1, &transition);
 
 	m_pCommandList->OMSetRenderTargets(1, &bloomBufferPointer, false, nullptr);
 	m_pCommandList->ClearRenderTargetView(bloomBufferPointer, clerColorArray.data(), 0, nullptr);
@@ -397,9 +405,10 @@ void RenderingPipeLine::BeginRenderResult()
 
 void RenderingPipeLine::EndRenderResult()
 {
-	m_pCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(_processed_resource.Get(),
+	auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(_processed_resource.Get(),
 		D3D12_RESOURCE_STATE_RENDER_TARGET,
-		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	m_pCommandList->ResourceBarrier(1, &barrier);
 }
 
 // 加工前の3Dレンダリング結果を渡すよう
@@ -690,10 +699,14 @@ HRESULT RenderingPipeLine::CreateBlurWeightResource()
 	// ブラー用パラメータのバッファ作成
 	auto weights = MathUtility::GetGaussianWeights(8, 1.2f);
 	int size = (sizeof(weights[0]) * weights.size() + 0xff) & ~0xff;
+
+	auto heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(size);
+
 	auto result = DirectXDevice::GetInstance().GetDevice()->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		&heapProp,
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(size),
+		&resourceDesc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		IID_PPV_ARGS(m_BlurPramResource.ReleaseAndGetAddressOf()));
@@ -987,12 +1000,14 @@ HRESULT RenderingPipeLine::CreatePeraPolygon()
 						{{1,-1,0.1},{1,1}},
 						{{1,1,0.1},{1,0}} };
 
+	auto heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(pv));
 
 	// 頂点バッファの準備
 	auto result = DirectXDevice::GetInstance().GetDevice()->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		&heapProp,
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(sizeof(pv)),
+		&resourceDesc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		IID_PPV_ARGS(m_peraVB.ReleaseAndGetAddressOf()));
@@ -1015,19 +1030,23 @@ HRESULT RenderingPipeLine::CreatePeraPolygon()
 
 void RenderingPipeLine::RenderingHighLight()
 {
+	auto transition = CD3DX12_RESOURCE_BARRIER::Transition(
+		m_BloomBuffer[0].Get(),
+		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+		D3D12_RESOURCE_STATE_RENDER_TARGET);
+
 	// 高輝度
 	m_pCommandList->ResourceBarrier(
-		1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			m_BloomBuffer[0].Get(),
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-			D3D12_RESOURCE_STATE_RENDER_TARGET));
+		1, &transition);
+
+	transition = CD3DX12_RESOURCE_BARRIER::Transition(
+		m_RaytracingResource.Get(),
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
 	// レイトーレーシングを使用したレンダリングの場合
 	m_pCommandList->ResourceBarrier(
-		1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			m_RaytracingResource.Get(),
-			D3D12_RESOURCE_STATE_COPY_DEST,
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+		1, &transition);
 
 
 	auto bloomBufferPointer = m_peraRTVHeap->GetCPUDescriptorHandleForHeapStart();
@@ -1114,8 +1133,10 @@ HRESULT RenderingPipeLine::InitCubeMapResource()
 	texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 	texDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 
+	auto heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+
 	if (DirectXDevice::GetInstance().GetDevice()->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+		&heapProp,
 		D3D12_HEAP_FLAG_NONE,
 		&texDesc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
@@ -1234,13 +1255,15 @@ void RenderingPipeLine::RenderingCubeMap()
 {
 	auto pCommandList = DirectXGraphics::GetInstance().GetCommandList();
 
+	auto transtion = CD3DX12_RESOURCE_BARRIER::Transition(
+		mCubeMapTex.Get(),
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		D3D12_RESOURCE_STATE_RENDER_TARGET
+	);
+
 	// キューブマップを描画可能に
 	pCommandList->ResourceBarrier(1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(
-			mCubeMapTex.Get(),
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			D3D12_RESOURCE_STATE_RENDER_TARGET
-		)
+		&transtion
 	);
 
 	pCommandList->RSSetScissorRects(1, &mCubeMapRenderRect);
@@ -1318,12 +1341,14 @@ void RenderingPipeLine::RenderingCubeMap()
 	camera->SetFov(initFov);
 	camera->SetAspect(initaspect);
 
+	auto transition = CD3DX12_RESOURCE_BARRIER::Transition(
+		mCubeMapTex.Get(),
+		D3D12_RESOURCE_STATE_RENDER_TARGET,
+		D3D12_RESOURCE_STATE_GENERIC_READ
+	);
+
 	pCommandList->ResourceBarrier(1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(
-			mCubeMapTex.Get(),
-			D3D12_RESOURCE_STATE_RENDER_TARGET,
-			D3D12_RESOURCE_STATE_GENERIC_READ
-		)
+		&transition
 	);
 }
 

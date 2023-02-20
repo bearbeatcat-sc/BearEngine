@@ -214,7 +214,7 @@ bool SkyBox::generateTextureBuffer()
 	DirectX::TexMetadata metadata;
 
 	LoadFromDDSFile(StringUtil::GetWideStringFromString(m_TextureName).c_str(),
-		0, &metadata, image);
+		DirectX::DDS_FLAGS_NONE, &metadata, image);
 
 	// DDSファイルのテクスチャからリソースを作成
 	CreateTexture(DirectXDevice::GetInstance().GetDevice(),

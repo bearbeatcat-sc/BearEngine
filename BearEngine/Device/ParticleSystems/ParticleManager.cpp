@@ -8,6 +8,8 @@
 #include "../DirectX/Core/ShaderManager.h"
 #include "NormalParticleAction.h"
 
+#include <algorithm>
+
 ParticleManager::ParticleManager()
 {
 	m_ParticleActionManager = new ParticleActionManager();

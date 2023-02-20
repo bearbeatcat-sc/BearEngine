@@ -696,7 +696,8 @@ bool PSOManager::CreatePSO(PSO& pso, GraphicsPipelineState& gps)
 
 	ID3DBlob* rootSigBlob;
 	ID3DBlob* errorBlob;
-	if (FAILED(D3DX12SerializeVersionedRootSignature(&gps.GetRootDesc(), D3D_ROOT_SIGNATURE_VERSION_1_0, &rootSigBlob, &errorBlob)))
+	auto rootSig = gps.GetRootDesc();
+	if (FAILED(D3DX12SerializeVersionedRootSignature(&rootSig, D3D_ROOT_SIGNATURE_VERSION_1_0, &rootSigBlob, &errorBlob)))
 	{
 		return false;
 	}

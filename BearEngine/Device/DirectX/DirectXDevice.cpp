@@ -55,8 +55,8 @@ void DirectXDevice::GetVideoMemoryInfo(DXGI_QUERY_VIDEO_MEMORY_INFO* info)
 ComPtr<ID3D12Resource1> DirectXDevice::CreateResource(const CD3DX12_RESOURCE_DESC& desc, D3D12_RESOURCE_STATES resourceStates, const D3D12_CLEAR_VALUE* clearValue, D3D12_HEAP_TYPE heapType)
 {
 	ComPtr<ID3D12Resource1> ret;
-
-	device_->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(heapType),
+	auto heapProp = CD3DX12_HEAP_PROPERTIES(heapType);
+	device_->CreateCommittedResource(&heapProp,
 		D3D12_HEAP_FLAG_NONE,
 		&desc,
 		resourceStates,

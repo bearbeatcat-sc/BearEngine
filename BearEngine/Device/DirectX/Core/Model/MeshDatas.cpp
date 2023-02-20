@@ -7,6 +7,7 @@
 #include "Utility/StringUtil.h"
 
 #include "../../../../Utility/Math/MathUtility.h"
+#include <algorithm>
 
 MeshData::MeshData()
 {

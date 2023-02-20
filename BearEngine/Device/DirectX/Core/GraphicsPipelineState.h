@@ -1,7 +1,6 @@
 ﻿#ifndef _GRAPHICS_PIPELINE_STATE_H_
 #define _GRAPHICS_PIPELINE_STATE_H_
 
-#include <d3d12.h>
 #include <string>
 #include <d3dx12.h>
 

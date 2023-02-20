@@ -185,12 +185,12 @@ void ParticleEmitter::UpdateParticle(std::shared_ptr<NormalParticleAction> actio
 		pUavResoruce = m_ParticleDataBuff0.Get();
 	}
 
-
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+	auto trans = CD3DX12_RESOURCE_BARRIER::Transition(
 		pUavResoruce,
 		D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
 		D3D12_RESOURCE_STATE_UNORDERED_ACCESS
-	));
+	);
+	commandList->ResourceBarrier(1, &trans);
 
 	auto pso = action->GetUpdatePSO();
 	commandList->SetPipelineState(pso.pso.Get());
@@ -221,7 +221,8 @@ void ParticleEmitter::UpdateParticle(std::shared_ptr<NormalParticleAction> actio
 
 
 	commandList->Dispatch(static_cast<int>(ceil(m_ObjectCount / 256.0f)), 1, 1);
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(pUavResoruce, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
+	 trans = CD3DX12_RESOURCE_BARRIER::Transition(pUavResoruce, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	commandList->ResourceBarrier(1, &trans);
 
 	//// リソースのインデックス切り替え
 	//m_UavIndex = 1 - m_UavIndex;
@@ -270,11 +271,12 @@ void ParticleEmitter::InitParticle(std::shared_ptr<ParticleAction> action, ID3D1
 
 
 	// 多分、読み書き可にする
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+	auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
 		pUavResoruce,
 		D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
 		D3D12_RESOURCE_STATE_UNORDERED_ACCESS
-	));
+	);
+	commandList->ResourceBarrier(1, &barrier);
 
 
 	auto pso = action->GetInitPSO();
@@ -296,7 +298,8 @@ void ParticleEmitter::InitParticle(std::shared_ptr<ParticleAction> action, ID3D1
 	commandList->SetComputeRootDescriptorTable(NormalParticleAction::RootParam_EmiiterDataParam, cbvHandle);
 	commandList->Dispatch(m_ObjectCount / 256, 1, 1);
 
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(pUavResoruce, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
+	auto trans = CD3DX12_RESOURCE_BARRIER::Transition(pUavResoruce, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	commandList->ResourceBarrier(1, &trans);
 
 	// リソースのインデックス切り替え
 	m_UavIndex = 1 - m_UavIndex;
@@ -680,9 +683,13 @@ void ParticleEmitter::GenerateCBParticleData()
 	UpdateSubresources<1>(commandList, m_ParticleDataBuff0.Get(), m_UploadConstBuff0.Get(), 0, 0, 1, &particleData);
 	UpdateSubresources<1>(commandList, m_ParticleDataBuff1.Get(), m_UploadConstBuff1.Get(), 0, 0, 1, &particleData);
 
+	auto trans = CD3DX12_RESOURCE_BARRIER::Transition(m_ParticleDataBuff0.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+
 	// リソースをコピー状態から、ピクセルシェーダー以外のシェーダーで扱うに変更
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_ParticleDataBuff0.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_ParticleDataBuff1.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
+	commandList->ResourceBarrier(1, &trans);
+
+	trans = CD3DX12_RESOURCE_BARRIER::Transition(m_ParticleDataBuff1.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	commandList->ResourceBarrier(1, &trans);
 
 	// シェーダーリソースビューの生成
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -855,8 +862,10 @@ void ParticleEmitter::GenerateVerticesPositionBuffer(const std::vector<XMFLOAT3>
 	// リソースの転送
 	UpdateSubresources<1>(commandList, m_VerticesDataBuff.Get(), m_UploadVerticesDataBuff.Get(), 0, 0, 1, &verticesData);
 
+	auto trans = CD3DX12_RESOURCE_BARRIER::Transition(m_VerticesDataBuff.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+
 	// リソースをコピー状態から、ピクセルシェーダー以外のシェーダーで扱うに変更
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_VerticesDataBuff.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
+	commandList->ResourceBarrier(1, &trans);
 
 	// シェーダーリソースビューの生成
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};

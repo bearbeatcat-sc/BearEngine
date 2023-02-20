@@ -36,8 +36,10 @@ ID3D12Resource* Buffer::init(D3D12_HEAP_TYPE type, UINT bufferSize, D3D12_RESOUR
 	resDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 	resDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 	
+	auto heapProp = CD3DX12_HEAP_PROPERTIES(type);
+
 	HRESULT result = DirectXDevice::GetInstance().GetDevice()->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(type),
+		&heapProp,
 		D3D12_HEAP_FLAG_NONE,
 		&resDesc,
 		state,

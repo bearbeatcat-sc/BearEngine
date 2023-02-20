@@ -31,7 +31,7 @@
     <ProjectGuid>{F8049B04-4486-4327-84EB-D00BD4E0BE76}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>DirectX12School</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.20348.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -57,7 +57,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
@@ -105,8 +105,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <LibraryPath>$(SolutionDir)2020.0.1\lib\vs2017\x64\debug;$(SolutionDir)DirectXTK12\Bin\Desktop_2017_Win10\x64\Debug;$(SolutionDir)DirectXTex\Bin\Desktop_2017_Win10\x64\Debug;$(LibraryPath)</LibraryPath>
-    <IncludePath>$(SolutionDir)BearEngine;$(SolutionDir)2020.0.1\include;$(SolutionDir)DirectXTex;$(SolutionDir)DirectXTK12\Inc;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)2020.0.1\lib\vs2017\x64\debug;C:\Projects\BearEngine\BearEngine\DirectXTK12\Bin\Desktop_2019_Win10\x64\Debug;C:\Projects\BearEngine\BearEngine\DirectXTex\DirectXTex\Bin\Desktop_2019_Win10\x64\Debug;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)BearEngine;$(SolutionDir)2020.0.1\include;C:\Projects\BearEngine\BearEngine\DirectXTex\DirectXTex;C:\Projects\BearEngine\BearEngine\DirectXTK12\Inc</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -145,7 +145,8 @@
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OpenMPSupport>true</OpenMPSupport>
       <AdditionalOptions>/Zc:twoPhase- %(AdditionalOptions)</AdditionalOptions>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>Default</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
