@@ -624,6 +624,24 @@ void chs(inout Payload payload, in MyAttribute attribs)
     float3 diffuseColor = lerp(albedo.rgb, float3(0.0f, 0.0f, 0.0f), metallic.w);
     float3 specularColor = lerp(float3(0.04f, 0.04f, 0.04f), albedo.rgb, metallic.w);
 
+    //const int sampleCount = 128;
+
+    //float sum = 0.0f;
+
+    //for (int i = 0; i < sampleCount; ++i)
+    //{
+    //    float3 direction = GetRandomSphere(3, dispatchRayIndex);
+    //    int flag = 1 - ShotShadowRay(worldPosition, direction);
+
+    //    sum += flag;
+    //}
+
+    //sum /= sampleCount;
+    //payload.color.rgb = float4(sum, sum, sum, 1);
+
+    //return;
+
+
     IncidentLight light;
 	
     ReflectedLight reflected;

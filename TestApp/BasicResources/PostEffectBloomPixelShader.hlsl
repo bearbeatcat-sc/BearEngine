@@ -1,46 +1,8 @@
 #include "PostEffectBloomHeader.hlsli"
 
-
-
-//float4 Bluer(Texture2D<float4> tex, SamplerState smp, float2 uv, float dx, float dy)
-//{
-//    float4 ret = float4(0, 0, 0, 0);
-    
-    
-//    ret += bkweights[0] * tex.Sample(smp, uv);
-    
-//    for (int i = 1; i < 3; ++i)
-//    {
-//        //ret += bkweights[i >> 2][i % 4] * tex.Sample(smp, uv + float2(i * dx, i * dy));
-//        //ret += bkweights[i >> 2][i % 4] * tex.Sample(smp, uv + float2(-i * dx, -i * dy));
-//        ret += bkweights[i >> 2][i % 4] * tex.Sample(smp, uv + float2(i * dx, 0));
-//        ret += bkweights[i >> 2][i % 4] * tex.Sample(smp, uv + float2(-i * dx, 0));
-//    }
-
-//    return ret;
-//}
-
-//float4 HorizontalBluer(Texture2D<float4> tex, SamplerState smp, float2 uv, float dx, float dy)
-//{
-//    float4 ret = float4(0, 0, 0, 0);
-    
-    
-//    ret += bkweights[0] * tex.Sample(smp, uv);
-    
-//    for (int i = 1; i < 3; ++i)
-//    {
-//        //ret += bkweights[i >> 2][i % 4] * tex.Sample(smp, uv + float2(i * dx, i * dy));
-//        //ret += bkweights[i >> 2][i % 4] * tex.Sample(smp, uv + float2(-i * dx, -i * dy));
-//        ret += bkweights[i >> 2][i % 4] * tex.Sample(smp, uv + float2(0, i * dx));
-//        ret += bkweights[i >> 2][i % 4] * tex.Sample(smp, uv + float2(0, -i * dx));
-//    }
-
-//    return ret;
-//}
-
 float4 VerticalBlur(Texture2D<float4> tex, float2 uv, float dy, float filletrRadius, float bluerScale)
 {
-    float sum = 0;
+    float4 sum = float4(0,0,0,0);
     float wsum = 0;
 
     for (float y = -filletrRadius; y <= filletrRadius; y += 1.0f)
@@ -65,7 +27,7 @@ float4 VerticalBlur(Texture2D<float4> tex, float2 uv, float dy, float filletrRad
 
 float4 HorizontalBlur(Texture2D<float4> tex, float2 uv, float dx, float filletrRadius, float bluerScale)
 {
-    float sum = 0;
+    float4 sum = float4(0, 0, 0, 0);
     float wsum = 0;
 
     for (float x = -filletrRadius; x <= filletrRadius; x += 1.0f)
@@ -107,9 +69,7 @@ float4 VerticalBokehPS(Output input) : SV_TARGET
     bloomAccum += VerticalBlur(texShrinkHighLum2, input.uv, dy, 8, 0.112f);
     
     bloomAccum += VerticalBlur(texShrinkHighLum3, input.uv, dy, 8, 0.112f);
-	
-    //Get5x5GaussianBlur(texHighLum, smp, input.uv, dx, dy, float4(uvOfst, uvOfst + uvSize)) +
-    //saturate(bloomAccum);
+
                       
     return tex.Sample(smp, input.uv) + saturate(bloomAccum);
 
@@ -133,8 +93,7 @@ float4 BlurPS(Output input) : SV_Target
     float2 uvSize = float2(0.5f, 0.5f);
     float2 uvOfst = float2(0, 0);
     
-    float4 ret = float4(0, 0, 0, 0);
-    
+    float4 ret = float4(0, 0, 0, 1);
     
     return HorizontalBlur(texHighLum, input.uv, dx, 8, 0.112f);
 }

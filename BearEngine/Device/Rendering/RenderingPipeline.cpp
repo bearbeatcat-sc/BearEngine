@@ -1022,6 +1022,7 @@ void RenderingPipeLine::RenderingHighLight()
 			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
 			D3D12_RESOURCE_STATE_RENDER_TARGET));
 
+	// レイトーレーシングを使用したレンダリングの場合
 	m_pCommandList->ResourceBarrier(
 		1, &CD3DX12_RESOURCE_BARRIER::Transition(
 			m_RaytracingResource.Get(),
